@@ -10,7 +10,7 @@ import org.eclipse.swt.ole.win32.Variant;
  * @author Elvis
  *
  */
-public class OleActionsHelper {
+public class OleActionHelper {
 	
 	protected static boolean getListOfCommandBars(OleAutomation excelApplication) {
 		
@@ -49,7 +49,7 @@ public class OleActionsHelper {
 			return false;
 		}
 
-		System.out.println("\nList of command bars:\n".toUpperCase());
+		System.out.println("\nlist of command bars:\n".toUpperCase());
 		for (int i = 1; i <= count; i++) {
 			Variant[] args = new Variant[1];
 			args[0] = new Variant(i);		
@@ -153,7 +153,7 @@ public class OleActionsHelper {
 	 * @param excelApplication
 	 * @return
 	 */
-	private boolean setShowToolTips(OleAutomation excelApplication, boolean option){
+	protected static boolean setShowToolTips(OleAutomation excelApplication, boolean option){
 		
 		int[] showToolTipsIds = excelApplication.getIDsOfNames(new String[]{"ShowToolTips"});	
 		if (showToolTipsIds == null){			
@@ -165,5 +165,83 @@ public class OleActionsHelper {
 		System.out.println("Set \"ShowToolTips\" was successful? "+result);
 		return result;
 	}
+	
+	
+	/**
+	 * Get the command bar automation by its name
+ 	 * @param application
+	 * @return
+	 */
+	protected static OleAutomation getCommandBarByName(OleAutomation application, String commandBarName) {
 		
+		int[] commandBarsPropertyIds = application.getIDsOfNames(new String[]{"CommandBars"});
+		if (commandBarsPropertyIds == null) {
+			System.out.println("Property \"CommandBars\" of \"Application\" OLE Object is null!");
+			return null;
+		}
+		
+		Variant commandBarsVariant =  application.getProperty(commandBarsPropertyIds[0]);	
+		if(commandBarsVariant == null){
+			System.out.println("\"CommandBars\" variant is null!");
+			return null;		
+		}
+		OleAutomation commandBarsAutomation = commandBarsVariant.getAutomation();
+		commandBarsVariant.dispose();
+			
+		int[] itemPropertyIds = commandBarsAutomation.getIDsOfNames(new String[]{"Item"});
+		if(itemPropertyIds == null){
+			System.out.println("Property \"Item\" of \"CommandBars\" OLE object not found!");
+			return null;
+		}
+
+		Variant[] parameters = new Variant[1];
+		parameters[0] = new Variant(commandBarName);
+		Variant cbVariant = commandBarsAutomation.getProperty(itemPropertyIds[0],parameters);
+		parameters[0].dispose();
+		
+		if(cbVariant==null){
+			System.out.println("There is no CommandBar named \""+commandBarName+"\"");
+			return null;
+		}
+		OleAutomation commandBarAutomation = cbVariant.getAutomation();
+		cbVariant.dispose();
+
+		return commandBarAutomation;
+	}
+	
+	
+	protected static OleAutomation getControls(OleAutomation commandBarAutomation){
+		
+		int[] controlsPropertyIds = commandBarAutomation.getIDsOfNames(new String[]{"Controls"});
+		Variant controlsVariant = commandBarAutomation.getProperty(controlsPropertyIds[0]);
+		OleAutomation contolsAutomation = controlsVariant.getAutomation();
+		controlsVariant.dispose();
+		
+		return contolsAutomation;
+	}
+	
+	
+	protected static boolean hideAllControls(OleAutomation commandBarContols){
+
+		//make existing controls not visible
+		int[] itemPropertyIds = commandBarContols.getIDsOfNames(new String[]{"Item"});
+	
+		Variant[] parameters = new Variant[1];
+		parameters[0] = new Variant(1);
+		Variant controlItemVariant = commandBarContols.getProperty(itemPropertyIds[0],parameters);
+		parameters[0].dispose();
+		
+		int i=1;
+		while (controlItemVariant!=null) {			
+			OleAutomation controlItemAutomation = controlItemVariant.getAutomation();
+			int[] visiblePropertyIds = controlItemAutomation.getIDsOfNames(new String[]{"Visible"});
+			controlItemAutomation.setProperty(visiblePropertyIds[0],new Variant(false));
+			parameters[0] = new Variant(i++);
+			controlItemVariant.dispose();
+			controlItemVariant = commandBarContols.getProperty(itemPropertyIds[0],parameters);
+			parameters[0].dispose();
+		}
+
+		return true;
+	}
 }

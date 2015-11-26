@@ -374,123 +374,64 @@ public class GUIWindow {
 	
 	
 	private void createCustomCellCommandBar(OleAutomation application){
-		
-		OleAutomation cellCBAutomation = getCellCommandBar(application);
-				
+		// Get the "Cell" command bar automation
+		OleAutomation cellCBAutomation = OleActionHelper.getCommandBarByName(application,"cell");		
 		if(cellCBAutomation==null)
 			return;
 		
-		int[] controlsPropertyIds = cellCBAutomation.getIDsOfNames(new String[]{"Controls"});
-		Variant controlsVariant = cellCBAutomation.getProperty(controlsPropertyIds[0]);
-		OleAutomation contolsAutomation = controlsVariant.getAutomation();
-		controlsVariant.dispose();
+		// Get CommandBarsControls object automation.
+		OleAutomation contolsAutomation = OleActionHelper.getControls(cellCBAutomation);
+		cellCBAutomation.dispose();
+		// Hide all the control (menu) items in the "Cell" command bar
+		OleActionHelper.hideAllControls(contolsAutomation);
 		
-		//make existing controls not visible
-		int[] itemPropertyIds = contolsAutomation.getIDsOfNames(new String[]{"Item"});
-	
-		Variant[] parameters = new Variant[1];
-		parameters[0] = new Variant(1);
-		Variant controlItemVariant = contolsAutomation.getProperty(itemPropertyIds[0],parameters);
-		parameters[0].dispose();
+		// Add new CommandBarPopup control
+		int[] addMethodIds = contolsAutomation.getIDsOfNames(new String[]{"Add", "Type", "Before"});
 		
-		int i=1;
-		while (controlItemVariant!=null) {			
-			OleAutomation controlItemAutomation = controlItemVariant.getAutomation();
-			int[] visiblePropertyIds = controlItemAutomation.getIDsOfNames(new String[]{"Visible"});
-			controlItemAutomation.setProperty(visiblePropertyIds[0],new Variant(false));
-			parameters[0] = new Variant(i++);
-			controlItemVariant.dispose();
-			controlItemVariant = contolsAutomation.getProperty(itemPropertyIds[0],parameters);
-			parameters[0].dispose();
+		Variant[] args = new Variant[addMethodIds.length-1];
+		args[0] = new Variant(10);
+		args[1] = new Variant(1);
+		
+		Variant myControlItemVariant = contolsAutomation.invoke(addMethodIds[0],args,Arrays.copyOfRange(addMethodIds, 1, addMethodIds.length));
+		OleAutomation myPopUpControl = myControlItemVariant.getAutomation();
+		myControlItemVariant.dispose();	
+		for (Variant arg : args) {
+			arg.dispose();
 		}
 		
-		// create custom control item
-		int[] addMethodIds = contolsAutomation.getIDsOfNames(new String[]{"Add"});
-		if(addMethodIds==null){
-			System.out.println("addMethodIds is null");
-			return;
-		}else{
-			System.out.println(Arrays.toString(addMethodIds));
-		}
+		// Set the properties of the control
+		int[] captionProperyIds = myPopUpControl.getIDsOfNames(new String[]{"Caption"});
+		int[] tagProperyIds = myPopUpControl.getIDsOfNames(new String[]{"Tag"});
+		myPopUpControl.setProperty(captionProperyIds[0], new Variant("Annotate as"));
+		myPopUpControl.setProperty(tagProperyIds[0], new Variant("annotation_controls"));
 		
-		Variant[] args = new Variant[1];
-		args[0] = new Variant();
-		//args[0] = new Variant("msoControlPopup");
-		//args[0] = new Variant(1);
-		Variant myControlItemVariant =  contolsAutomation.invoke(addMethodIds[0]);
-		if(myControlItemVariant==null){
-			System.out.println("myControlItemVariant is null");
-			return;
-		}
-		OleAutomation myControlItem = myControlItemVariant.getAutomation();
-		myControlItemVariant.dispose();
+		// Add sub-controls (sub-menus) 
+		OleAutomation mySubContolsAutomation = OleActionHelper.getControls(myPopUpControl);
+		addMethodIds = contolsAutomation.getIDsOfNames(new String[]{"Add", "Type"});
+		args = new Variant[addMethodIds.length-1];
+		args[0] = new Variant(1);
 		
-		int[] captionProperyIds = myControlItem.getIDsOfNames(new String[]{"Caption"});
-		int[] tagProperyIds = myControlItem.getIDsOfNames(new String[]{"Tag"});
-		myControlItem.setProperty(captionProperyIds[0], new Variant("Annotate"));
-		myControlItem.setProperty(tagProperyIds[0], new Variant("annotation_controls"));
-	}
-	
-	
-	/**
-	 * Get the Cell command bar automation
- 	 * @param application
-	 * @return
-	 */
-	private OleAutomation getCellCommandBar(OleAutomation application) {
-		
-		int[] commandBarsPropertyIds = application.getIDsOfNames(new String[]{"CommandBars"});
-		if (commandBarsPropertyIds == null) {
-			System.out.println("Property \"CommandBars\" of \"Application\" OLE Object is null!");
-			return null;
-		}
-		
-		Variant commandBarsVariant =  application.getProperty(commandBarsPropertyIds[0]);	
-		if(commandBarsVariant == null){
-			System.out.println("\"CommandBars\" variant is null!");
-			return null;		
-		}
-		OleAutomation commandBarsAutomation = commandBarsVariant.getAutomation();
-		commandBarsVariant.dispose();
+		String[] captions = new String[]{"Table","Metadata","Header","Attributes","Data"};
+		Variant[] mySubControlVariant = new Variant[captions.length];
+		OleAutomation mySubControl;
+		for (int i = 0; i < captions.length; i++) {
+			mySubControlVariant[i] = mySubContolsAutomation.invoke(addMethodIds[0],args,Arrays.copyOfRange(addMethodIds, 1, addMethodIds.length));		
 			
-		int[] itemPropertyIds = commandBarsAutomation.getIDsOfNames(new String[]{"Item"});
-		if(itemPropertyIds == null){
-			System.out.println("Property \"Item\" of \"CommandBars\" OLE object not found!");
-			return null;
+			mySubControl= mySubControlVariant[i].getAutomation(); 
+			int[] ids = mySubControl.getIDsOfNames(new String[]{"Caption"});
+			mySubControl.setProperty(ids[0], new Variant(captions[i]));
+			
+			mySubControlVariant[i].dispose();
+			mySubControl.dispose();
 		}
-
-		Variant[] parameters = new Variant[1];
-		parameters[0] = new Variant("cell");
-		Variant cellCommandBar = commandBarsAutomation.getProperty(itemPropertyIds[0],parameters);
-		parameters[0].dispose();
-		
-		if(cellCommandBar==null){
-			System.out.println("There is no CommandBar named \"cell\"");
-			return null;
+		contolsAutomation.dispose();
+		mySubContolsAutomation.dispose();
+		for (Variant arg : args) {
+			arg.dispose();
 		}
-		OleAutomation cellCBAutomation = cellCommandBar.getAutomation();
-		cellCommandBar.dispose();
-		
-		int[] addMethodIds = commandBarsAutomation.getIDsOfNames(new String[]{"Add"});
-		if(addMethodIds==null){
-			System.out.println("addMethodIds is null");
-		}else{
-			System.out.println(Arrays.toString(addMethodIds));
-		}
-		
-		Variant[] args = new Variant[1];
-		args[0] = new Variant();
-		Variant myControlItemVariant =  commandBarsAutomation.invoke(addMethodIds[0]);
-		if(myControlItemVariant==null){
-			System.out.println("myControlItemVariant is null");
-		}else{
-			OleAutomation myControlItem = myControlItemVariant.getAutomation();
-			myControlItemVariant.dispose();
-		}
-		
-		return cellCBAutomation;
 	}
 	
+
 	/**
 	 * Disable the menu that is displayed when right click on workbook tabs 
  	 * @param application
