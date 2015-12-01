@@ -3,13 +3,8 @@
  */
 package de.tudresden.annotator.main;
 
-import java.awt.Container;
 import java.io.File;
 import java.util.Arrays;
-
-import javax.swing.JComponent;
-import javax.swing.LayoutStyle;
-import javax.swing.LayoutStyle.ComponentPlacement;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
@@ -28,7 +23,6 @@ import org.eclipse.swt.ole.win32.OleListener;
 import org.eclipse.swt.ole.win32.Variant;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
@@ -46,6 +40,8 @@ public class GUIWindow {
 	static final String IID_AppEvents = "{00024413-0000-0000-C000-000000000046}";
 	// Event ID
 	static final int SheetSelectionChange   = 0x00000616;
+	static final int SheetBeforeRightClick  = 0x00000618;
+	final static int onclick = 0x80011778;
 	
 	OleFrame oleFrame;
 	OleControlSite controlSite;
@@ -194,12 +190,15 @@ public class GUIWindow {
 		
 		if(controlSite==null)
 			return;
-			
+		
+
 		//get application automation
 	    OleAutomation application = getApplicationAutomation(controlSite);
 		
 	    //Create custom Cell commandbar	
-	    createCustomCellCommandBar(application);
+	    //createCustomCellCommandBar(application);
+	    
+	    undoChangesToCellCommandBar(application);
 	    controlSite.doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
 	    
 		//add sheet selection event listener 
@@ -211,17 +210,20 @@ public class GUIWindow {
 	    hideRibbon(application);	
 	    
 	    //disable menu on right click of user at a worksheet tab
-	    disableTabsCommandBar(application);
-	   	    
+//	    CommandBarsHelper.setEnabledForCommandBar(application, "Ply", true);
+	    CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
+
+	    //disable floating menu on right click of user one a cell
+//	    CommandBarsHelper.setShowMenuFloaties(application, true);
+	    
 	    //protect the structure of the active workbook
-	    if(!protectActiveWorkbook(application))
-	    	System.out.println("\nERROR: Unable to protect active workbook!");
+//	    if(!protectActiveWorkbook(application))
+//	    	System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    //protect all individual worksheets
-	    if(!protectAllWorksheets(application))
-	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
+//	    if(!protectAllWorksheets(application))
+//	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
-//	    testMacro(application);
 	    //TODO: DisplayDocumentInformationPanel (Application)
 	    
 	    //TODO: DisplayFormulas, Vertical and Horizontal scroll bars, height, width (Window)
@@ -279,7 +281,7 @@ public class GUIWindow {
 				
 	        	int[] addressIds = rangeAutomation.getIDsOfNames(new String[]{"Address"}); 
 				Variant addressVariant = rangeAutomation.getProperty(addressIds[0]);	
-				System.out.print("The selection has changed to: {"+addressVariant.getString()+"}. ");
+				//System.out.print("The selection has changed to: {"+addressVariant.getString()+"}. ");
 				currentSelection =  addressVariant.getString().split(",");
 				addressVariant.dispose();
 				
@@ -290,7 +292,7 @@ public class GUIWindow {
 				
 				int[] countId = areasAutomation.getIDsOfNames(new String[]{"Count"});									
 				Variant  countVariant = areasAutomation.getProperty(countId[0]);
-				System.out.println("It includes "+countVariant.getString()+" area/s.");
+				//System.out.println("It includes "+countVariant.getString()+" area/s.");
 				countVariant.dispose();
 				
 				args[0].dispose();
@@ -303,13 +305,13 @@ public class GUIWindow {
 				
 				int[] nameIds = worksheetAutomation.getIDsOfNames(new String[]{"Name"}); 
 				Variant nameVariant = worksheetAutomation.getProperty(nameIds[0]);	
-				System.out.print("Selection has occured at worksheet \""+nameVariant.getString()+"\", ");
+				//System.out.print("Selection has occured at worksheet \""+nameVariant.getString()+"\", ");
 				activeWorksheetName=nameVariant.getString();
 				nameVariant.dispose();
 				
 				int[] indexIds = worksheetAutomation.getIDsOfNames(new String[]{"Index"}); 
 				Variant indexVariant = worksheetAutomation.getProperty(indexIds[0]);	
-				System.out.println("which has indexNo "+indexVariant.getString()+".\n");
+				//System.out.println("which has indexNo "+indexVariant.getString()+".\n");
 				activeWorksheetIndex=indexVariant.getLong();
 				indexVariant.dispose();
 				
@@ -319,33 +321,7 @@ public class GUIWindow {
 	    };	       
 	    return listener;
 	}
-	
-	
-	private boolean testMacro(OleAutomation application) {
-		
-		int[] ee4mIds = application.getIDsOfNames(new String[]{"ExecuteExcel4Macro"});
-				
-		Variant[] parameters = new Variant[1];
-	    parameters[0] = new Variant("Dim ContextMenu As CommandBar\n"+
-		   "Dim MySubMenu As CommandBarControl\n"+
-		   "Call DeleteFromCellMenu\n"+
-		   "Set ContextMenu = Application.CommandBars(\"Cell\")\n"+
-		   "ContextMenu.Controls.Add Type:=msoControlButton, ID:=3, before:=1");
-	    
-	    Variant result = application.invoke(ee4mIds[0],parameters);
-	    parameters[0].dispose();
-	    
-	    boolean isSuccess = false;
-	    if(result!=null){
-	    	isSuccess = true;
-	    	result.dispose();	
-	    }
-	   
-	    System.out.println("Test Macro "+isSuccess+" \n");
-	    
-	    return isSuccess;
-	}
-	
+
 	
 	/**
 	 * Hide Ribbon from Excel UI
@@ -372,18 +348,35 @@ public class GUIWindow {
 	    return isSuccess;
 	}
 	
-	
-	private void createCustomCellCommandBar(OleAutomation application){
-		// Get the "Cell" command bar automation
-		OleAutomation cellCBAutomation = OleActionHelper.getCommandBarByName(application,"cell");		
+	private void undoChangesToCellCommandBar(OleAutomation application){
+		
+	    // Get the "Cell" command bar automation
+		OleAutomation cellCBAutomation = CommandBarsHelper.getCommandBarByName(application,"cell");		
 		if(cellCBAutomation==null)
 			return;
 		
 		// Get CommandBarsControls object automation.
-		OleAutomation contolsAutomation = OleActionHelper.getControls(cellCBAutomation);
+		OleAutomation contolsAutomation = CommandBarsHelper.getCommandBarControls(cellCBAutomation);
+		cellCBAutomation.dispose();
+		
+		// Show (Make visible) all the control (menu) items in the "Cell" command bar
+		CommandBarsHelper.setVisibilityOfControls(contolsAutomation, true);
+		// Delete custom controls, created during the current session of the application 
+		CommandBarsHelper.deleteCustomControls(contolsAutomation,"annotation_controls");		
+	}
+	
+	private void createCustomCellCommandBar(OleAutomation application){
+		
+		// Get the "Cell" command bar automation
+		OleAutomation cellCBAutomation = CommandBarsHelper.getCommandBarByName(application,"cell");		
+		if(cellCBAutomation==null)
+			return;
+		
+		// Get CommandBarsControls object automation.
+		OleAutomation contolsAutomation = CommandBarsHelper.getCommandBarControls(cellCBAutomation);
 		cellCBAutomation.dispose();
 		// Hide all the control (menu) items in the "Cell" command bar
-		OleActionHelper.hideAllControls(contolsAutomation);
+		CommandBarsHelper.deleteControlsTemporary(contolsAutomation);
 		
 		// Add new CommandBarPopup control
 		int[] addMethodIds = contolsAutomation.getIDsOfNames(new String[]{"Add", "Type", "Before"});
@@ -406,7 +399,7 @@ public class GUIWindow {
 		myPopUpControl.setProperty(tagProperyIds[0], new Variant("annotation_controls"));
 		
 		// Add sub-controls (sub-menus) 
-		OleAutomation mySubContolsAutomation = OleActionHelper.getControls(myPopUpControl);
+		OleAutomation mySubContolsAutomation = CommandBarsHelper.getCommandBarControls(myPopUpControl);
 		addMethodIds = contolsAutomation.getIDsOfNames(new String[]{"Add", "Type"});
 		args = new Variant[addMethodIds.length-1];
 		args[0] = new Variant(1);
@@ -418,8 +411,11 @@ public class GUIWindow {
 			mySubControlVariant[i] = mySubContolsAutomation.invoke(addMethodIds[0],args,Arrays.copyOfRange(addMethodIds, 1, addMethodIds.length));		
 			
 			mySubControl= mySubControlVariant[i].getAutomation(); 
-			int[] ids = mySubControl.getIDsOfNames(new String[]{"Caption"});
-			mySubControl.setProperty(ids[0], new Variant(captions[i]));
+			int[] captionPropetyIds = mySubControl.getIDsOfNames(new String[]{"Caption"});
+			mySubControl.setProperty(captionPropetyIds[0], new Variant(captions[i]));
+			
+			int[] onActionPropertyIds = mySubControl.getIDsOfNames(new String[]{"OnAction"});
+			mySubControl.setProperty(onActionPropertyIds[0], new Variant("MsgBox \"You annotated as ...\""));
 			
 			mySubControlVariant[i].dispose();
 			mySubControl.dispose();
@@ -429,56 +425,8 @@ public class GUIWindow {
 		for (Variant arg : args) {
 			arg.dispose();
 		}
-	}
-	
-
-	/**
-	 * Disable the menu that is displayed when right click on workbook tabs 
- 	 * @param application
-	 * @return
-	 */
-	private boolean disableTabsCommandBar(OleAutomation application) {
 		
-		int[] commandBarsPropertyIds = application.getIDsOfNames(new String[]{"CommandBars"});
-		if (commandBarsPropertyIds == null) {
-			System.out.println("Property \"CommandBars\" of \"Application\" OLE Object is null!");
-			return false;
-		}
 		
-		Variant commandBarsVariant =  application.getProperty(commandBarsPropertyIds[0]);	
-		if(commandBarsVariant == null){
-			System.out.println("\"CommandBars\" variant is null!");
-			return false;		
-		}
-		OleAutomation commandBarsAutomation = commandBarsVariant.getAutomation();
-		commandBarsVariant.dispose();
-			
-		int[] itemPropertyIds = commandBarsAutomation.getIDsOfNames(new String[]{"Item"});
-		if(itemPropertyIds == null){
-			System.out.println("Property \"Item\" of \"CommandBars\" OLE object not found!");
-			return false;
-		}
-
-		Variant[] parameters = new Variant[1];
-		parameters[0] = new Variant("Ply");
-		Variant tabsCBVariant = commandBarsAutomation.getProperty(itemPropertyIds[0],parameters);
-		parameters[0].dispose();
-		
-		if(tabsCBVariant==null){
-			System.out.println("There is no CommandBar named \"Workbook tabs\"");
-			return false;
-		}
-		OleAutomation tabsCBAutomation = tabsCBVariant.getAutomation();
-		tabsCBVariant.dispose();
-		
-		int[] enabledPropertyIds = tabsCBAutomation.getIDsOfNames(new String[]{"Enabled"});
-		if(enabledPropertyIds == null){
-			System.out.println("Property \"Enabled\" of \"CommandBars\" OLE object not found!");
-			return false;
-		}
-		
-		boolean isSuccess = tabsCBAutomation.setProperty(enabledPropertyIds[0], new Variant(false));
-		return isSuccess;
 	}
 	
 	
@@ -688,12 +636,6 @@ public class GUIWindow {
 	 */
 	void disposeControlSite() {
 		if (controlSite != null){
-		
-			OleAutomation application=  getApplicationAutomation(controlSite);
-			if(!unprotectActiveWorkbook(application)){
-				System.out.println("\nERROR: Failed to unprotect active workbook!");
-			}
-			application.dispose();
 			controlSite.dispose();
 		}
 		controlSite = null;
