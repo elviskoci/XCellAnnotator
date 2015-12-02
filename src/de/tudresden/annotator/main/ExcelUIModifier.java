@@ -13,63 +13,8 @@ import org.eclipse.swt.ole.win32.Variant;
  * @author Elvis
  *
  */
-public class OleInterfaceModifier {
+public class ExcelUIModifier {
 		
-	/**
-	 * Get Excel application as an OLE object automation
-	 * @param controlSite
-	 * @return
-	 */
-	public static OleAutomation getApplicationAutomation(OleControlSite controlSite){
-		
-	    OleAutomation excelClient = new OleAutomation(controlSite);
-		int[] dispIDs = excelClient.getIDsOfNames(new String[] {"Application"});
-		
-		if(dispIDs==null){	
-			System.out.println("\"Application\" object not found!");
-			return null;
-		}
-		
-		Variant pVarResult = excelClient.getProperty(dispIDs[0]);
-		if(pVarResult==null){	
-			System.out.println("\"Application\" object is null!");
-			return null;
-		}
-		
-		OleAutomation application = pVarResult.getAutomation();
-		
-		pVarResult.dispose();
-		excelClient.dispose();
-		
-		return application;
-	}
-	
-	
-	/**
-	 * Get OLE automation for the active workbook 
-	 * 
-	 * @param application
-	 * @return
-	 */
-	public static OleAutomation getActiveWorkbook(OleAutomation application){
-		
-		int[] workbookIds = application.getIDsOfNames(new String[]{"ActiveWorkbook"});	
-		if (workbookIds == null){			
-			System.out.println("\"ActiveWorkbook\" property not found for \"Application\" object!");
-			return null;
-		}		
-		Variant workbookVariant = application.getProperty(workbookIds[0]);
-		if (workbookVariant == null) {
-			System.out.println("Workbook variant is null!");
-			return null;
-		}		
-		OleAutomation workbookAutomation =  workbookVariant.getAutomation();
-		workbookVariant.dispose();
-		
-		return workbookAutomation;
-	}
-	
-	
 	/**
 	 * Protect the structure of the active workbook 
 	 * @param application
@@ -105,12 +50,12 @@ public class OleInterfaceModifier {
 	}
 	
 	
-	/**
+   /**
 	 * Unprotect the structure of the active workbook
 	 * @param application
 	 * @return
 	 */
-	public static boolean unprotectActiveWorkbook(OleAutomation workbookAutomation){
+	public static boolean unprotectWorkbook(OleAutomation workbookAutomation){
 		
 		if (workbookAutomation==null)
 			return false;
@@ -144,60 +89,20 @@ public class OleInterfaceModifier {
 	 */
 	public static boolean protectAllWorksheets(OleAutomation workbookAutomation){
 		
-		// mark each worksheet as protected 
-		int[] worksheetsObjectIds = workbookAutomation.getIDsOfNames(new String[]{"Worksheets"});
-		if (worksheetsObjectIds == null) {
-			System.out.println("Property \"Worksheets\" of \"Workbook\" OLE Object is null!");
-			return false;
-		}
-		
-		Variant worksheetsVariant =  workbookAutomation.getProperty(worksheetsObjectIds[0]);	
-		if(worksheetsVariant == null){
-			System.out.println("\"Worksheets\" variant is null!");
-			return false;		
-		}
-		OleAutomation worksheetsAutomation = worksheetsVariant.getAutomation();
-		worksheetsVariant.dispose();
-		
-		int[] countProperyIds = worksheetsAutomation.getIDsOfNames(new String[]{"Count"});
-		if(countProperyIds == null){
-			System.out.println("Property \"Count\" of \"Worksheets\" OLE object is null!");
-			return false;
-		}
-				
-		Variant countPropertyVariant =  worksheetsAutomation.getProperty(countProperyIds[0]);
-		if(countPropertyVariant == null){
-			System.out.println("\"Count\" variant is null!");
-			return false;
-		}				
-				
-		int count = countPropertyVariant.getInt();
-		countPropertyVariant.dispose();
-		
-		int[] itemPropertyIds = worksheetsAutomation.getIDsOfNames(new String[]{"Item"});
-		if(itemPropertyIds == null){
-			System.out.println("Property \"Item\" of \"Worksheets\" OLE object not found!");
-			return false;
-		}
+		OleAutomation worksheetsAutomation = AutomationUtils.getWorksheetsAutomation(workbookAutomation);
+
+		int count = AutomationUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
 		
 		int i; 
 		boolean isSuccess=true; 
 		for (i = 1; i <= count; i++) {
-			Variant[] args = new Variant[1];
-			args[0] = new Variant(i);		
-			
-			Variant nextWorkbookVariant = worksheetsAutomation.getProperty(itemPropertyIds[0],args);	
-			OleAutomation nextWorkbookAutomation = nextWorkbookVariant.getAutomation();	
+		
+			OleAutomation nextWorkbookAutomation = AutomationUtils.getItem(worksheetsAutomation, i);					
 			if(!protectWorksheet(nextWorkbookAutomation)){
 				System.out.println("ERROR: Could not protect one of the workbooks!");
-				isSuccess=false;
-				
-			}
-			
-			nextWorkbookVariant.dispose();
-			nextWorkbookAutomation.dispose();
-			args[0].dispose();
-			
+				isSuccess=false;			
+			}	
+			nextWorkbookAutomation.dispose();	
 			if(!isSuccess){
 				break;
 			}
@@ -205,20 +110,15 @@ public class OleInterfaceModifier {
 		
 		if(!isSuccess){
 			for(int j=1; j<i;j++){
-				Variant[] args = new Variant[1];
-				args[0] = new Variant(j);		
-				
-				Variant nextWorkbookVariant = worksheetsAutomation.getProperty(itemPropertyIds[0],args);
-				OleAutomation nextWorkbookAutomation = nextWorkbookVariant.getAutomation();
+				OleAutomation nextWorkbookAutomation =  AutomationUtils.getItem(worksheetsAutomation, j);
 				unprotectWorksheet(nextWorkbookAutomation);
-				
-				nextWorkbookVariant.dispose();
 				nextWorkbookAutomation.dispose();
-				args[0].dispose();
 			}
+			worksheetsAutomation.dispose();
 			return false;
 		}
 		
+		worksheetsAutomation.dispose();
 		return true;
 	}
 	
@@ -415,4 +315,15 @@ public class OleInterfaceModifier {
 		// delete custom controls, created during the current session of the application 
 		CommandBarsHelper.deleteCustomControlsByTag(contolsAutomation,"annotation_controls");		
 	}
+	
+
+//	public static boolean annotateSelectedRanges(){
+//		
+//		long index = MainWindow.getInstance().getActiveWorksheetIndex();
+//				
+//		getWorksheetAutomationByIndex("",index);
+//		
+//		
+//		return true;
+//	}
 }

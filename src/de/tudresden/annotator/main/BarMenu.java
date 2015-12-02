@@ -184,7 +184,7 @@ public class BarMenu {
 		menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//TODO: Add the range(area) that represents the Table region  
+				 
 			}
 		});
 		

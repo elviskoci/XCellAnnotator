@@ -27,9 +27,10 @@ import org.eclipse.swt.widgets.Shell;
 public class MainWindow {
 	
 	// GUID Event Sink
-	private static final String IID_AppEvents = "{00024413-0000-0000-C000-000000000046}";
-	// Event ID
-	private static final int SheetSelectionChange   = 0x00000616;
+	private final String IID_AppEvents = "{00024413-0000-0000-C000-000000000046}";
+	// Event IDs
+	private final int SheetSelectionChange = 0x00000616;
+	private final int SheetActivate        = 0x00000619;
 		
 	private final Display display = new Display();;
 	private final Shell shell = new Shell(display);
@@ -37,6 +38,8 @@ public class MainWindow {
 	private OleControlSite controlSite;
 	
 	private String currentSelection[];
+	private String embeddedWorkbookName;
+	private String embeddedWorkbookPath;
 	private String activeWorksheetName;
 	private long activeWorksheetIndex;
 	
@@ -62,13 +65,13 @@ public class MainWindow {
 	    shell.setLayout(new FillLayout());
 	    shell.setSize(1200, 600);
 		
-	    oleFrame = new OleFrame(shell, SWT.NONE);
+	    setOleFrame(new OleFrame(shell, SWT.NONE));
 	    
-	    BarMenu  oleFrameMenuBar = new BarMenu(oleFrame.getShell());
-	    oleFrame.setFileMenus(oleFrameMenuBar.getMenuItems());
+	    BarMenu  oleFrameMenuBar = new BarMenu(getOleFrame().getShell());
+	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());
 	}
 	
-	private void adjustSpreadsheetDisplay(OleAutomation application){
+	private void adjustWorkbookDisplay(OleAutomation application){
 		
 		if(controlSite==null)
 			return;
@@ -81,7 +84,7 @@ public class MainWindow {
 	    
 		// minimize ribbon	
 		// TODO: Individual CommandBars
-	    OleInterfaceModifier.hideRibbon(application);	
+	    ExcelUIModifier.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
 //	    CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
@@ -92,16 +95,19 @@ public class MainWindow {
 	    CommandBarsHelper.setEnabledForCommandBar(application, "Cell", false);
 	    
 	    // get active workbook, the one that is loaded by this application
-	    OleAutomation activeWorkbook =  OleInterfaceModifier.getActiveWorkbook(application);	    
+//	    OleAutomation embeddedWorkbook =  AutomationUtils.getEmbeddedWorkbookAutomation(application);	    
+	    OleAutomation embeddedWorkbook =  AutomationUtils.getActiveWorkbookAutomation(application);	    
+	    System.out.println(AutomationUtils.getWorkbookName(embeddedWorkbook));
+	    
 	    // protect the structure of the active workbook
-	    if(!OleInterfaceModifier.protectWorkbook(activeWorkbook))
+	    if(!ExcelUIModifier.protectWorkbook(embeddedWorkbook))
 	    	System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    // protect all individual worksheets
-	    if(!OleInterfaceModifier.protectAllWorksheets(activeWorkbook))
+	    if(!ExcelUIModifier.protectAllWorksheets(embeddedWorkbook))
 	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	   
-	    activeWorkbook.dispose();
+	    embeddedWorkbook.dispose();
 	}
 
 	/**
@@ -126,24 +132,30 @@ public class MainWindow {
 				String fileExtension = fileName.substring(index + 1);
 				if (fileExtension.equalsIgnoreCase("xls") || fileExtension.equalsIgnoreCase("xlsx")) {	
 					
-					// create a new control site to open the file with Excel
 					try {		    	
 				        
-						// create new OLE control site using the specified excel file
 						File excelFile = new File(fileName);
-				        setControlSite(new OleControlSite(oleFrame, SWT.NONE, excelFile));
+						setEmbeddedWorkbookName(excelFile.getName());
+						setEmbeddedWorkbookPath(fileName);
+						
+						// create new OLE control site to open the specified excel file
+				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
 				        
-				        // add sheet selection event listener 
-					    OleAutomation application = OleInterfaceModifier.getApplicationAutomation(getControlSite());
-				        OleListener listener = createSheetSelectionEventListener(application);
-				        getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, listener);
-				       
+				        // get excel application as OLE automation object
+					    OleAutomation application = AutomationUtils.getApplicationAutomation(getControlSite());
+				        
+					    // add event listeners
+					    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
+				        getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
+				        
+				        OleListener sheetActivationlistener = createSheetActivationEventListener(application);
+				        getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
 				        
 				        // activate and display excel workbook
 				        getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
 				        
 				        // adjust the excel application user interface for the annotation task
-				        adjustSpreadsheetDisplay(application);
+				        adjustWorkbookDisplay(application);
 				        application.dispose();
 				        
 				    } catch (SWTError e) {
@@ -199,29 +211,52 @@ public class MainWindow {
 				rangeAutomation.dispose();
 							
 				/*
-				 * the second argument is a Worksheet object. get the name and index of the worksheet 	
+				 * the second argument is a Worksheet object. It is not consider here. See SheetActivate event listener.   
 				 */
-				OleAutomation worksheetAutomation = args[1].getAutomation();
+				args[1].dispose();
+	        }
+	    };	       
+	    return listener;
+	}
+	
+	
+	/**
+	 * Create a SheetActivate event listener
+	 * @param application
+	 * @return
+	 */
+	private OleListener createSheetActivationEventListener(OleAutomation application){
+		
+		OleListener listener = new OleListener() {
+	        public void handleEvent (OleEvent e) {
+	        	
+	        	Variant[] args = e.arguments;
+	        	
+	        	/*
+	             * This event returns only one argument, a Worksheet. Get the name and index of the activated worksheet.
+	             */
+	        	OleAutomation worksheetAutomation = args[0].getAutomation();
 				
 				int[] nameIds = worksheetAutomation.getIDsOfNames(new String[]{"Name"}); 
 				Variant nameVariant = worksheetAutomation.getProperty(nameIds[0]);	
-//					System.out.print("Selection has occured at worksheet \""+nameVariant.getString()+"\", ");
+//				System.out.print("Selection has occured at worksheet \""+nameVariant.getString()+"\", ");
 				setActiveWorksheetName(nameVariant.getString());
 				nameVariant.dispose();
 				
 				int[] indexIds = worksheetAutomation.getIDsOfNames(new String[]{"Index"}); 
 				Variant indexVariant = worksheetAutomation.getProperty(indexIds[0]);	
-//					System.out.println("which has indexNo "+indexVariant.getString()+".\n");
+//				System.out.println("which has indexNo "+indexVariant.getString()+".\n");
 				setActiveWorksheetIndex(indexVariant.getLong());
 				indexVariant.dispose();
 				
-				args[1].dispose();
+				args[0].dispose();
 				worksheetAutomation.dispose();
 	        }
 	    };	       
 	    return listener;
 	}
 	 
+	
     /**
 	 * Create message box using the "main" window (this class) shell 
 	 * @param style 
@@ -324,6 +359,34 @@ public class MainWindow {
 	 */
 	protected void setActiveWorksheetIndex(long activeWorksheetIndex) {
 		this.activeWorksheetIndex = activeWorksheetIndex;
+	}
+
+	/**
+	 * @return the activeWorkbookName
+	 */
+	public String getEmbeddedWorkbookName() {
+		return embeddedWorkbookName;
+	}
+	
+	/**
+	 * @param activeWorkbookName the activeWorkbookName to set
+	 */
+	protected void setEmbeddedWorkbookName(String activeWorkbookName) {
+		this.embeddedWorkbookName = activeWorkbookName;
+	}
+	
+	/**
+	 * @return the embeddedWorkbookPath
+	 */
+	public String getEmbeddedWorkbookPath() {
+		return embeddedWorkbookPath;
+	}
+
+	/**
+	 * @param embeddedWorkbookPath the embeddedWorkbookPath to set
+	 */
+	protected void setEmbeddedWorkbookPath(String embeddedWorkbookPath) {
+		this.embeddedWorkbookPath = embeddedWorkbookPath;
 	}
 
 	/**
