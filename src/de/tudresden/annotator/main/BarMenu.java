@@ -52,6 +52,7 @@ public class BarMenu {
 				//TODO: Open the next Excel file from the current folder.   
 			}
 		});
+		menuFileOpenPrevious.setEnabled(false);
 		
 		MenuItem menuFileOpenNext = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileOpenNext.setText("Open Next");
@@ -61,6 +62,7 @@ public class BarMenu {
 				//TODO: Open the next Excel file from the current folder.   
 			}
 		});
+		menuFileOpenNext.setEnabled(false);
 		
 		MenuItem menuFileClose = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileClose.setText("Close");
@@ -80,7 +82,7 @@ public class BarMenu {
 				//TODO: Create methods to save the file together with the annotations  
 			}
 		});
-		//menuFileSave.setEnabled(false);
+		menuFileSave.setEnabled(false);
 		
 		
 		MenuItem menuFileExit = new MenuItem(menuFile, SWT.CASCADE);
@@ -107,6 +109,8 @@ public class BarMenu {
 		editMenu.setText("&Edit");
 		Menu menuEdit = new Menu(editMenu);
 		editMenu.setMenu(menuEdit);
+				
+		addAnnotateMenu(menuEdit);
 		
 		MenuItem menuEditAnnotations = new MenuItem(menuEdit, SWT.CASCADE);
 		menuEditAnnotations.setText("Annotations");
@@ -118,7 +122,14 @@ public class BarMenu {
 			}
 		});
 		
-		addAnnotateMenu(menuEdit);
+		MenuItem menuEditShowFormulas = new MenuItem(menuEdit, SWT.CASCADE);
+		menuEditShowFormulas.setText("Show Formulas");
+		menuEditShowFormulas.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				//TODO: Implement as cascade menu having options such as Clear->All , Clear->Specific Annotation
+			}
+		});
 		
 		MenuItem menuEditClear = new MenuItem(menuEdit, SWT.CASCADE);
 		menuEditClear.setText("Clear");
@@ -129,7 +140,7 @@ public class BarMenu {
 			}
 		});
 		
-		
+
 		return editMenu;
 	}
 	

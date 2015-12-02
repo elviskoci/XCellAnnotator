@@ -228,7 +228,7 @@ public class CommandBarsHelper {
 	 * @param tag
 	 * @return
 	 */
-	protected static boolean deleteCustomControls(OleAutomation commandBarContols, String tag){
+	protected static boolean deleteCustomControlsByTag(OleAutomation commandBarContols, String tag){
 
 		int[] itemPropertyIds = commandBarContols.getIDsOfNames(new String[]{"Item"});
 	
