@@ -1,5 +1,7 @@
 package de.tudresden.annotator.main;
 
+import java.util.Arrays;
+
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleControlSite;
 import org.eclipse.swt.ole.win32.Variant;
@@ -35,6 +37,27 @@ public class AutomationUtils {
 		return application;
 	}
 	
+	/**
+	 * Quit Excel application
+	 * @param application
+	 */
+	public static void quitExcelApplication(OleAutomation application){
+		
+		if(application==null){
+			System.out.println("ERROR: Application is null!!!");
+			return;
+		}
+			
+		int[] quitMethodIds = application.getIDsOfNames(new String[]{"Quit"});
+		if (quitMethodIds == null){			
+			System.out.println("\"Quit\" method not found for \"Application\" object!");
+			return;
+		}	
+		
+		Variant result = application.invoke(quitMethodIds[0]);
+		System.out.println(result);
+	}
+	
 	
 	/**
 	 * Get the Worksheets automation
@@ -65,8 +88,10 @@ public class AutomationUtils {
 	
 
 	/**
-	 * @deprecated 
-	 * Get OLE automation for the active workbook. Excel application considers the workbook which has the focus to the "active" one. 
+	 *
+	 * Get OleAutomation for the active workbook using the "ActiveWorkbook" property. 
+	 * Excel application considers the workbook which has the focus to be the "active" one.
+	 *  
 	 * @param application
 	 * @return
 	 */
@@ -112,15 +137,45 @@ public class AutomationUtils {
 		OleAutomation workbooksAutomation = workbooksVariant.getAutomation();
 		workbooksVariant.dispose();
 			
-		String workbookName = "Worksheet in main" ; //MainWindow.getInstance().getEmbeddedWorkbookPath();
-		
+		String workbookName = MainWindow.getInstance().getEmbeddedWorkbookName();
 		OleAutomation embeddedWorkbook = getItem(workbooksAutomation, workbookName);
 		workbooksAutomation.dispose();
 		
-		return embeddedWorkbook;
+		return embeddedWorkbook;	
 	}
 	
 	
+	/**
+	 * Get the workbook OleAutomation using the "ThisWorkbook" property  
+	 * @param application
+	 * @return
+	 */
+	public static OleAutomation getThisWorkbookAutomation(OleAutomation application){
+		
+		int[] thisWorkbookIds = application.getIDsOfNames(new String[]{"ThisWorkbook"});	
+		if (thisWorkbookIds == null){			
+			System.out.println("\"ThisWorkbook\" property not found for \"Application\" object!");
+			return null;
+		}		
+		
+		Variant thisWorkbookVariant = application.getProperty(thisWorkbookIds[0]);
+		if (thisWorkbookVariant == null) {
+			System.out.println("ThisWorkbook variant is null!");
+			return null;
+		}
+		
+		OleAutomation workbookAutomation = thisWorkbookVariant.getAutomation();
+		thisWorkbookVariant.dispose();
+		
+		return workbookAutomation;
+	}
+	
+	
+	/**
+	 * Get the name of the given workbook
+	 * @param workbookAutomation
+	 * @return
+	 */
 	public static String getWorkbookName(OleAutomation workbookAutomation){
 		
 		int[] namePropertyIds = workbookAutomation.getIDsOfNames(new String[]{"Name"});	
@@ -140,6 +195,34 @@ public class AutomationUtils {
 		
 		return workbookName;
 	}
+	
+	/**
+	 * Close the embedded workbook 
+	 * 
+	 * @param workbookAutomation
+	 * @param saveChanges
+	 */
+	public static void closeEmbeddedWorksheet(OleAutomation workbookAutomation, boolean saveChanges){
+		
+		if(workbookAutomation==null){
+			System.out.println("ERROR: Workbook is null!!!");
+			return;
+		}		
+		
+		int[] closeMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Close","SaveChanges"}); //"Filename"	
+		if (closeMethodIds == null){			
+			System.out.println("\"Close\" method not found for \"Workbook\" object!");
+			return;
+		}	
+		
+		Variant[] args = new Variant[1]; 
+		args[0] = new Variant(saveChanges);
+		//args[1] = new Variant(MainWindow.getInstance().getEmbeddedWorkbookName());
+		
+		int[] argumentIds = Arrays.copyOfRange(closeMethodIds, 1, closeMethodIds.length); 
+		workbookAutomation.invoke(closeMethodIds[0], args, argumentIds);
+	}
+	
 	
 	/**
 	 * Get the worksheet automation from the embedded workbook based on the given index  
@@ -183,8 +266,6 @@ public class AutomationUtils {
 		
 		Variant args[] = new Variant[1];
 		args[0] =  new Variant(itemName);
-		
-		System.out.println(itemName);
 		
 		Variant itemVariant = automation.getProperty(itemPropertyIds[0],args);
 		OleAutomation itemAutomation = itemVariant.getAutomation();

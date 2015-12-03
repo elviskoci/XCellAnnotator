@@ -3,11 +3,18 @@
  */
 package de.tudresden.annotator.main;
 
+
 import java.io.File;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
+import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleControlSite;
@@ -15,8 +22,13 @@ import org.eclipse.swt.ole.win32.OleEvent;
 import org.eclipse.swt.ole.win32.OleFrame;
 import org.eclipse.swt.ole.win32.OleListener;
 import org.eclipse.swt.ole.win32.Variant;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
@@ -44,10 +56,7 @@ public class MainWindow {
 	private long activeWorksheetIndex;
 	
 	private static MainWindow instance = null;
-	private MainWindow() {
-		//display = new Display();
-		//shell = new Shell(display);
-    }
+	private MainWindow(){}
   
 	public static MainWindow getInstance() {
 		if(instance == null) {
@@ -61,14 +70,76 @@ public class MainWindow {
 	 * @param shell
 	 */
 	private void buildGUIWindow(Shell shell){
+		Color white = new Color (Display.getCurrent(), 255, 255, 255);
+		Color black = new Color (Display.getCurrent(), 0, 0, 0);
+		Color lightGreyShade = new Color (Display.getCurrent(), 249, 249, 249);
+		Color lightBlue = new Color(Display.getCurrent(),229, 248, 255); 
+		
+		// Shell properties
 		shell.setText("Annotator");
 	    shell.setLayout(new FillLayout());
 	    shell.setSize(1200, 600);
-		
-	    setOleFrame(new OleFrame(shell, SWT.NONE));
 	    
+	    shell.addListener(SWT.Close, new Listener()
+	    {
+	        public void handleEvent(Event event)
+	        {
+	            int style = SWT.APPLICATION_MODAL | SWT.YES | SWT.NO;
+	            MessageBox messageBox = new MessageBox(shell, style);
+	            messageBox.setText("Information");
+	            messageBox.setMessage("Close the aplication?");
+	            if(messageBox.open() == SWT.YES){
+	            	MainWindow.getInstance().disposeControlSite();
+	            	MainWindow.getInstance().disposeShell();
+	            	event.doit = true;
+	            }
+	        }
+	    });
+	    
+	    // Split shell in two horizontal panels 
+	    SashForm mainSash = new SashForm(shell, SWT.HORIZONTAL);
+		mainSash.setLayout(new FillLayout());
+		//mainSash.setBackground(greyShade);
+	
+		// the left panel will contain the folder explorer. That is a tree structure of files and folders.
+		Composite leftPanel = new Composite(mainSash, SWT.BORDER );
+		leftPanel.setLayout(new FillLayout());
+	
+		Label leftPanelLabel = new Label(leftPanel, SWT.NONE);
+		leftPanelLabel.setText("Folder Explorer");
+		leftPanelLabel.setBackground(white);
+		
+		// the right panel will be subdivided into two more panels
+		Composite rightPanel = new Composite(mainSash, SWT.BORDER);
+		rightPanel.setLayout(new FillLayout());
+		
+		mainSash.setWeights(new int[] {10,90});
+			
+		// Sub split the right panel 
+	    SashForm rightSash = new SashForm(rightPanel, SWT.VERTICAL);
+		rightSash.setLayout(new FillLayout());
+		
+		// Create the panel that will embed the excel application
+		Composite excelPanel =  new Composite(rightSash, SWT.BORDER );
+		excelPanel.setLayout(new FillLayout());
+		
+		setOleFrame(new OleFrame(excelPanel, SWT.NONE));
+		getOleFrame().setBackground(lightGreyShade);
+		
+		// Create the panel that will display the applied annotations for the current file
+		Composite annotationsPanel =  new Composite(rightSash, SWT.BORDER );
+		annotationsPanel.setLayout(new FillLayout());
+		
+		Label bottomPanelLabel = new Label(annotationsPanel, SWT.NONE);
+		bottomPanelLabel.setText("Annotations Panel");
+		bottomPanelLabel.setBackground(white);
+		
+		rightSash.setWeights(new int[] {80,20});
+		
+		// add a bar menu
 	    BarMenu  oleFrameMenuBar = new BarMenu(getOleFrame().getShell());
-	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());
+	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());		
+	    
 	}
 	
 	private void adjustWorkbookDisplay(OleAutomation application){
@@ -77,27 +148,25 @@ public class MainWindow {
 			return;
 		 
 	    // Create custom Cell commandbar	
-//		OleInterfaceModifier.createCustomCellCommandBar(application);
+		//OleInterfaceModifier.createCustomCellCommandBar(application);
 	    
 	    // undoChangesToCellCommandBar(application);
-//	    controlSite.doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
+	    //controlSite.doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
 	    
 		// minimize ribbon	
 		// TODO: Individual CommandBars
 	    ExcelUIModifier.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
-//	    CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
+	    //CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
 	    CommandBarsHelper.setEnabledForCommandBar(application, "Ply", false);
 	    
 	    // hide menu on right click of user on a cell
-//	    CommandBarsHelper.setVisibilityForCommandBar(application, "Cell", false);
+	    //CommandBarsHelper.setVisibilityForCommandBar(application, "Cell", false);
 	    CommandBarsHelper.setEnabledForCommandBar(application, "Cell", false);
 	    
-	    // get active workbook, the one that is loaded by this application
-//	    OleAutomation embeddedWorkbook =  AutomationUtils.getEmbeddedWorkbookAutomation(application);	    
-	    OleAutomation embeddedWorkbook =  AutomationUtils.getActiveWorkbookAutomation(application);	    
-	    System.out.println(AutomationUtils.getWorkbookName(embeddedWorkbook));
+	    // get active workbook, the one that is loaded by this application   
+	    OleAutomation embeddedWorkbook =  AutomationUtils.getActiveWorkbookAutomation(application);
 	    
 	    // protect the structure of the active workbook
 	    if(!ExcelUIModifier.protectWorkbook(embeddedWorkbook))
@@ -106,7 +175,12 @@ public class MainWindow {
 	    // protect all individual worksheets
 	    if(!ExcelUIModifier.protectAllWorksheets(embeddedWorkbook))
 	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
-	   
+	    
+	    //get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
+	    String name = AutomationUtils.getWorkbookName(embeddedWorkbook);
+	    setEmbeddedWorkbookName(name);
+	    System.out.println(name);
+	    
 	    embeddedWorkbook.dispose();
 	}
 
@@ -135,8 +209,7 @@ public class MainWindow {
 					try {		    	
 				        
 						File excelFile = new File(fileName);
-						setEmbeddedWorkbookName(excelFile.getName());
-						setEmbeddedWorkbookPath(fileName);
+						setEmbeddedWorkbookPath(excelFile.getPath());
 						
 						// create new OLE control site to open the specified excel file
 				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
@@ -193,7 +266,7 @@ public class MainWindow {
 				
 	        	int[] addressIds = rangeAutomation.getIDsOfNames(new String[]{"Address"}); 
 				Variant addressVariant = rangeAutomation.getProperty(addressIds[0]);	
-//					System.out.print("The selection has changed to: {"+addressVariant.getString()+"}. ");
+//				System.out.print("The selection has changed to: {"+addressVariant.getString()+"}. ");
 				setCurrentSelection(addressVariant.getString().split(","));
 				addressVariant.dispose();
 				
@@ -271,6 +344,14 @@ public class MainWindow {
 	 */
 	public void disposeControlSite() {
 		if (controlSite != null){
+			
+			OleAutomation application = AutomationUtils.getApplicationAutomation(controlSite);
+			OleAutomation embeddedWorkbook = AutomationUtils.getEmbeddedWorkbookAutomation(application);	
+			AutomationUtils.closeEmbeddedWorksheet(embeddedWorkbook, false);
+			//AutomationUtils.quitExcelApplication(application);
+			application.dispose();
+			embeddedWorkbook.dispose();
+			
 			controlSite.dispose();
 		}
 		controlSite = null;
@@ -408,16 +489,16 @@ public class MainWindow {
 	 */
 	public static void main(String[] args) {
 
-		MainWindow GUI = MainWindow.getInstance(); 
+		MainWindow main = MainWindow.getInstance(); 
 		
-	    GUI.buildGUIWindow(GUI.getShell());
+	    main.buildGUIWindow(main.getShell());
 
-  		GUI.getShell().open();
+  		main.getShell().open();
   		
-  	    while (!GUI.getShell().isDisposed ()) {
-  	        if (!GUI.getDisplay().readAndDispatch ()) GUI.getDisplay().sleep();
+  	    while (!main.getShell().isDisposed ()) {
+  	        if (!main.getDisplay().readAndDispatch ()) main.getDisplay().sleep();
   	    }
   	    
-	    GUI.getDisplay().dispose();
+	    main.getDisplay().dispose();
 	}		
 }

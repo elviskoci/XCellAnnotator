@@ -317,13 +317,51 @@ public class ExcelUIModifier {
 	}
 	
 
-//	public static boolean annotateSelectedRanges(){
-//		
-//		long index = MainWindow.getInstance().getActiveWorksheetIndex();
-//				
-//		getWorksheetAutomationByIndex("",index);
-//		
-//		
-//		return true;
-//	}
+	public static boolean annotateSelectedRanges(int color){
+		
+		String name = MainWindow.getInstance().getActiveWorksheetName();
+		String[] selectedRanges =  MainWindow.getInstance().getCurrentSelection();
+		
+		// get the OleAutomation object for the active worksheet 
+		OleAutomation worksheetAutomation = AutomationUtils.getWorksheetAutomationByIndex(name);
+		
+		// unprotect the worksheet in order to change the border for the range 
+		unprotectWorksheet(worksheetAutomation);
+		
+		// get the OleAutomation object for the selected range 
+		int[] rangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Range"});
+		String[] cells = selectedRanges[0].split(":");	
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(cells[0]);
+		args[1] = new Variant(cells[1]);
+		
+		Variant rangeVariant = worksheetAutomation.getProperty(rangePropertyIds[0],args);
+		OleAutomation rangeAutomation = rangeVariant.getAutomation();
+		args[0].dispose();
+		args[1].dispose();
+		rangeVariant.dispose();
+		
+		//  set the border around the selected range 
+		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround","LineStyle", "Weight", "ColorIndex"}); // "Color"
+		Variant methodParams[] = new Variant[3];
+		methodParams[0] = new Variant(1); // Continuous line 
+		methodParams[1] = new Variant(4); // Thick (widest border) 
+		methodParams[2] = new Variant(color); 
+	
+		int[] paramIds = Arrays.copyOfRange(borderAroundMethodIds, 1, borderAroundMethodIds.length);
+		Variant result = rangeAutomation.invoke(borderAroundMethodIds[0],methodParams,paramIds);
+		
+		if(result!=null)
+			result.dispose();
+		for (Variant v : methodParams) {
+			v.dispose();
+		}
+		rangeAutomation.dispose();
+		
+		// protect the workbook to prevent the user from modifying the content of the sheet
+		protectWorksheet(worksheetAutomation);
+		worksheetAutomation.dispose();
+		
+		return true;
+	}
 }

@@ -184,7 +184,12 @@ public class BarMenu {
 		menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 
+				 ExcelUIModifier.annotateSelectedRanges(1);
+				 MenuItem mi = (MenuItem) e.widget;
+				 Menu parent = mi.getParent();
+				 for (MenuItem menuItem : parent.getItems()) {
+					 menuItem.setEnabled(true);	 
+				 }
 			}
 		});
 		
@@ -193,37 +198,40 @@ public class BarMenu {
 		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//TODO: Add the range(area) that represents the Metadata region 
+				 ExcelUIModifier.annotateSelectedRanges(3);
 			}
 		});
+		menuAnnotateMetadata.setEnabled(false);
 		
 		MenuItem menuAnnotateHeader = new MenuItem(menuAnnotate, SWT.CASCADE);
 		menuAnnotateHeader.setText("Header");
 		menuAnnotateHeader.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//TODO: Add the range(area) that represents the Header region
+				ExcelUIModifier.annotateSelectedRanges(4);
 			}
 		});
+		menuAnnotateHeader.setEnabled(false);
 		
 		MenuItem menuAnnotateAttributes = new MenuItem(menuAnnotate, SWT.CASCADE);
 		menuAnnotateAttributes.setText("Attributes");
 		menuAnnotateAttributes.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//TODO: Add the range(area) that represents the Attributes region
+				ExcelUIModifier.annotateSelectedRanges(5);
 			}
 		});
+		menuAnnotateAttributes.setEnabled(false);
 		
 		MenuItem menuAnnotateData = new MenuItem(menuAnnotate, SWT.CASCADE);
 		menuAnnotateData.setText("Data");
 		menuAnnotateData.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//TODO: Add the range(area) that represents the Data region 
+				ExcelUIModifier.annotateSelectedRanges(6);
 			}
 		});
-		
+		menuAnnotateData.setEnabled(false);
 		
 		return annotateMenu;
 	}
