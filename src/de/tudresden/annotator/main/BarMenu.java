@@ -184,7 +184,7 @@ public class BarMenu {
 		menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 ExcelUIModifier.annotateSelectedRanges(1);
+				 ExcelUIModifier.annotateByBorderingSelectedRanges(1);
 				 MenuItem mi = (MenuItem) e.widget;
 				 Menu parent = mi.getParent();
 				 for (MenuItem menuItem : parent.getItems()) {
@@ -198,7 +198,7 @@ public class BarMenu {
 		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 ExcelUIModifier.annotateSelectedRanges(3);
+				 ExcelUIModifier.annotateByBorderingSelectedRanges(3);
 			}
 		});
 		menuAnnotateMetadata.setEnabled(false);
@@ -208,7 +208,7 @@ public class BarMenu {
 		menuAnnotateHeader.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateSelectedRanges(4);
+				ExcelUIModifier.annotateByBorderingSelectedRanges(4);
 			}
 		});
 		menuAnnotateHeader.setEnabled(false);
@@ -218,7 +218,7 @@ public class BarMenu {
 		menuAnnotateAttributes.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateSelectedRanges(5);
+				ExcelUIModifier.annotateByBorderingSelectedRanges(5);
 			}
 		});
 		menuAnnotateAttributes.setEnabled(false);
@@ -228,7 +228,7 @@ public class BarMenu {
 		menuAnnotateData.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateSelectedRanges(6);
+				ExcelUIModifier.annotateByBorderingSelectedRanges(6);
 			}
 		});
 		menuAnnotateData.setEnabled(false);

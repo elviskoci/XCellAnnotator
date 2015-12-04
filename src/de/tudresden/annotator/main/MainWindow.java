@@ -70,9 +70,10 @@ public class MainWindow {
 	 * @param shell
 	 */
 	private void buildGUIWindow(Shell shell){
+		
 		Color white = new Color (Display.getCurrent(), 255, 255, 255);
 		Color black = new Color (Display.getCurrent(), 0, 0, 0);
-		Color lightGreyShade = new Color (Display.getCurrent(), 249, 249, 249);
+		Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
 		Color lightBlue = new Color(Display.getCurrent(),229, 248, 255); 
 		
 		// Shell properties
@@ -142,27 +143,38 @@ public class MainWindow {
 	    
 	}
 	
-	private void adjustWorkbookDisplay(OleAutomation application){
+	private void setUpWorkbookDisplay(){
 		
-		if(controlSite==null)
+		if(getControlSite()==null)
 			return;
-		 
-	    // Create custom Cell commandbar	
-		//OleInterfaceModifier.createCustomCellCommandBar(application);
+		
+		// get excel application as OLE automation object
+	    OleAutomation application = AutomationUtils.getApplicationAutomation(getControlSite());
+        
+	    // add event listeners
+	    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
+        getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
+        
+        OleListener sheetActivationlistener = createSheetActivationEventListener(application);
+        getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
+        
+        
+	    // create custom Cell commandbar	
+		// OleInterfaceModifier.createCustomCellCommandBar(application);
 	    
 	    // undoChangesToCellCommandBar(application);
-	    //controlSite.doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
+	    // controlSite.doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
 	    
-		// minimize ribbon	
-		// TODO: Individual CommandBars
+        
+		// minimize ribbon.	TODO: Try hiding individual CommandBars
 	    ExcelUIModifier.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
-	    //CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
+	    // CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
 	    CommandBarsHelper.setEnabledForCommandBar(application, "Ply", false);
 	    
 	    // hide menu on right click of user on a cell
-	    //CommandBarsHelper.setVisibilityForCommandBar(application, "Cell", false);
+	    // CommandBarsHelper.setVisibilityForCommandBar(application, "Cell", false);
 	    CommandBarsHelper.setEnabledForCommandBar(application, "Cell", false);
 	    
 	    // get active workbook, the one that is loaded by this application   
@@ -176,12 +188,20 @@ public class MainWindow {
 	    if(!ExcelUIModifier.protectAllWorksheets(embeddedWorkbook))
 	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
-	    //get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
-	    String name = AutomationUtils.getWorkbookName(embeddedWorkbook);
-	    setEmbeddedWorkbookName(name);
-	    System.out.println(name);
+	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
+	    String workbookName = AutomationUtils.getWorkbookName(embeddedWorkbook);
+	    setEmbeddedWorkbookName(workbookName);
 	    
+	    // get and store the name and index for the worksheet that is "active" (e.i., has the focus).  
+	    OleAutomation activeWorksheet = AutomationUtils.getActiveWorksheetAutomation(embeddedWorkbook);  
+	    String sheetName = AutomationUtils.getWorksheetName(activeWorksheet);
+	    setActiveWorksheetName(sheetName);
+	    long sheetIndex = AutomationUtils.getWorksheetIndex(activeWorksheet);
+	    setActiveWorksheetIndex(sheetIndex);
+
+	    activeWorksheet.dispose();
 	    embeddedWorkbook.dispose();
+	    application.dispose();
 	}
 
 	/**
@@ -203,8 +223,8 @@ public class MainWindow {
 	    if (getControlSite() == null) {
 			int index = fileName.lastIndexOf('.');
 			if (index != -1) {
-				String fileExtension = fileName.substring(index + 1);
-				if (fileExtension.equalsIgnoreCase("xls") || fileExtension.equalsIgnoreCase("xlsx")) {	
+				String fileExtension = fileName.substring(index + 1); 
+				if (fileExtension.equalsIgnoreCase("xls") || fileExtension.equalsIgnoreCase("xlsx") || fileExtension.equalsIgnoreCase("xlsm")) { // including macro enabled ?	
 					
 					try {		    	
 				        
@@ -214,22 +234,11 @@ public class MainWindow {
 						// create new OLE control site to open the specified excel file
 				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
 				        
-				        // get excel application as OLE automation object
-					    OleAutomation application = AutomationUtils.getApplicationAutomation(getControlSite());
-				        
-					    // add event listeners
-					    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
-				        getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
-				        
-				        OleListener sheetActivationlistener = createSheetActivationEventListener(application);
-				        getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
-				        
 				        // activate and display excel workbook
 				        getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
 				        
-				        // adjust the excel application user interface for the annotation task
-				        adjustWorkbookDisplay(application);
-				        application.dispose();
+				        // set up the excel application user interface for the annotation task
+				        setUpWorkbookDisplay();
 				        
 				    } catch (SWTError e) {
 				        e.printStackTrace();
@@ -347,7 +356,7 @@ public class MainWindow {
 			
 			OleAutomation application = AutomationUtils.getApplicationAutomation(controlSite);
 			OleAutomation embeddedWorkbook = AutomationUtils.getEmbeddedWorkbookAutomation(application);	
-			AutomationUtils.closeEmbeddedWorksheet(embeddedWorkbook, false);
+			AutomationUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 			//AutomationUtils.quitExcelApplication(application);
 			application.dispose();
 			embeddedWorkbook.dispose();

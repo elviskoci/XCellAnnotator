@@ -186,7 +186,7 @@ public class AutomationUtils {
 		
 		Variant nameVariant = workbookAutomation.getProperty(namePropertyIds[0]);
 		if (nameVariant == null) {
-			System.out.println("Workbooks variant is null!");
+			System.out.println("\"Name\" variant is null!");
 			return null;
 		}
 		
@@ -202,7 +202,7 @@ public class AutomationUtils {
 	 * @param workbookAutomation
 	 * @param saveChanges
 	 */
-	public static void closeEmbeddedWorksheet(OleAutomation workbookAutomation, boolean saveChanges){
+	public static void closeEmbeddedWorkbook(OleAutomation workbookAutomation, boolean saveChanges){
 		
 		if(workbookAutomation==null){
 			System.out.println("ERROR: Workbook is null!!!");
@@ -225,12 +225,88 @@ public class AutomationUtils {
 	
 	
 	/**
-	 * Get the worksheet automation from the embedded workbook based on the given index  
-	 * @param workbookName
-	 * @param index
+	 *
+	 * Get the active worksheet automation using the "ActiveSheet" property. 
+	 * @param application an OleAutomation  object that has the "ActiveSheet" property.
 	 * @return
 	 */
-	public static OleAutomation getWorksheetAutomationByIndex(String index){
+	public static OleAutomation getActiveWorksheetAutomation(OleAutomation automation){
+		
+		int[] worksheetIds = automation.getIDsOfNames(new String[]{"ActiveSheet"});	
+		if (worksheetIds == null){			
+			System.out.println("\"ActiveSheet\" property not found for the given OleAutomation object!");
+			return null;
+		}		
+		Variant worksheetVariant = automation.getProperty(worksheetIds[0]);
+		if (worksheetVariant == null) {
+			System.out.println("Workbook variant is null!");
+			return null;
+		}		
+		OleAutomation worksheetAutomation = worksheetVariant.getAutomation();
+		worksheetVariant.dispose();
+		
+		return worksheetAutomation;
+	}
+	
+	
+	/**
+	 * Get the name of the given worksheet
+	 * @param worksheetAutomation an OleAutomation for accessing the worksheet object
+	 * @return
+	 */
+	public static String getWorksheetName(OleAutomation worksheetAutomation){
+		
+		int[] namePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Name"});	
+		if (namePropertyIds == null){			
+			System.out.println("\"Name\" property not found for \"Worksheet\" object!");
+			return null;
+		}		
+		
+		Variant nameVariant = worksheetAutomation.getProperty(namePropertyIds[0]);
+		if (nameVariant == null) {
+			System.out.println("\"Name\" variant is null!");
+			return null;
+		}
+		
+		String worksheetName = nameVariant.getString();
+		nameVariant.dispose();
+		
+		return worksheetName;
+	}
+	
+	
+	/**
+	 * Get the index of the given worksheet
+	 * @param worksheetAutomation an OleAutomation for accessing the worksheet object
+	 * @return
+	 */
+	public static long getWorksheetIndex(OleAutomation worksheetAutomation){
+		
+		int[] indexPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Index"});	
+		if (indexPropertyIds == null){			
+			System.out.println("\"Index\" property not found for \"Worksheet\" object!");
+			return 0;
+		}		
+		
+		Variant indexVariant = worksheetAutomation.getProperty(indexPropertyIds[0]);
+		if (indexVariant == null) {
+			System.out.println("\"Index\" variant is null!");
+			return 0;
+		}
+		
+		long worksheetIndex = indexVariant.getLong();
+		indexVariant.dispose();
+		
+		return worksheetIndex;
+	}
+	
+	
+	/**
+	 * Get the worksheet automation from the embedded workbook based on the given name  
+	 * @param sheetName
+	 * @return
+	 */
+	public static OleAutomation getWorksheetAutomationByName(String sheetName){
 		
 		OleAutomation application = getApplicationAutomation(MainWindow.getInstance().getControlSite());		
 		OleAutomation embeddedWorkbook = getEmbeddedWorkbookAutomation(application);
@@ -241,13 +317,47 @@ public class AutomationUtils {
 			return null;
 		}
 		
-		OleAutomation sheetAutomation = getItem(worksheetsAutomation, index);	
+		OleAutomation sheetAutomation = getItem(worksheetsAutomation, sheetName);	
 		worksheetsAutomation.dispose();
 		embeddedWorkbook.dispose();
 		application.dispose();
 
 		return sheetAutomation;
 	}
+	
+	/**
+	 * Get the specified range automation. The address of the top left cell and down right cell have to be provided.
+	 * The OleAutomation object that is used to retrieve the range has to have the "Range" property. 
+	 * @param automation an OleAutomation object that has the "Range" property
+	 * @param topLeftCell address of top left cell (e.g., "A1" or "$A$1" )
+	 * @param downRightCell address of down right cell (e.g., "C3" or "$C$3" )
+	 * @return
+	 */
+	public static OleAutomation getRangeAutomation(OleAutomation automation, String topLeftCell, String downRightCell){
+		
+		// get the OleAutomation object for the selected range 
+		int[] rangePropertyIds = automation.getIDsOfNames(new String[]{"Range"});
+		
+		Variant[] args;
+		if(downRightCell!=null && downRightCell.compareTo("")!=0){
+			args = new Variant[2];
+			args[0] = new Variant(topLeftCell);
+			args[1] = new Variant(downRightCell);
+		}else{
+			args = new Variant[1];
+			args[0] = new Variant(topLeftCell);
+		}
+		
+		Variant rangeVariant = automation.getProperty(rangePropertyIds[0],args);
+		OleAutomation rangeAutomation = rangeVariant.getAutomation();
+		for (Variant arg : args) {
+			arg.dispose();
+		}
+		rangeVariant.dispose();
+		
+		return rangeAutomation;
+	}
+	
 	
 	/**
 	 * Get the item having the specified index from a OleAutomation object. The latter is a collection of OLE Objects. 
