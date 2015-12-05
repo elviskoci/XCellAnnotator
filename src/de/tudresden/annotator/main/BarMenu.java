@@ -198,8 +198,12 @@ public class BarMenu {
 		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 ExcelUIModifier.annotateSelectedAreasWithTextboxes();
-				 //ExcelUIModifier.annotateByBorderingSelectedAreas(3);
+				int red = 189;
+				int green = 215; 
+				int blue = 238;
+				long color = getRGBColorAsLong(red, green, blue);
+				String label = "Metadata";
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
 			}
 		});
 		menuAnnotateMetadata.setEnabled(false);
@@ -208,9 +212,13 @@ public class BarMenu {
 		menuAnnotateHeader.setText("Header");
 		menuAnnotateHeader.addSelectionListener(new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes();
-				//ExcelUIModifier.annotateByBorderingSelectedAreas(4);
+			public void widgetSelected(SelectionEvent e) {	
+				int red = 247;
+				int green = 192; 
+				int blue = 175;
+				long color = getRGBColorAsLong(red, green, blue);
+				String label = "Header";
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
 			}
 		});
 		menuAnnotateHeader.setEnabled(false);
@@ -220,8 +228,12 @@ public class BarMenu {
 		menuAnnotateAttributes.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes();
-				//ExcelUIModifier.annotateByBorderingSelectedAreas(5);
+				int red = 255;
+				int green = 230; 
+				int blue = 153;
+				long color = getRGBColorAsLong(red, green, blue);
+				String label = "Attributes";
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
 			}
 		});
 		menuAnnotateAttributes.setEnabled(false);
@@ -231,8 +243,12 @@ public class BarMenu {
 		menuAnnotateData.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes();
-				//ExcelUIModifier.annotateByBorderingSelectedAreas(6);
+				int red = 198;
+				int green = 224; 
+				int blue = 180;
+				long color = getRGBColorAsLong(red, green, blue);
+				String label = "Data";
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
 			}
 		});
 		menuAnnotateData.setEnabled(false);
@@ -271,4 +287,10 @@ public class BarMenu {
 	public MenuItem[] getMenuItems() {
 		return menuItems;
 	}
+	
+	private long getRGBColorAsLong(int red, int green, int blue){
+		
+		return blue * 65536 + green * 256 + red;
+	}
+	
 }

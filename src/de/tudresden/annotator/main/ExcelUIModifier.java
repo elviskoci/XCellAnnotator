@@ -366,9 +366,11 @@ public class ExcelUIModifier {
 
 	/**
 	 * Annotate the selected areas by drawing textbox on top of each one of them.
-	 * The color of the textbox depends on the Annotation Class. 
+	 * The color of the textbox depends on the Annotation Class.
+	 * 
+	 * @param color a long that represents a RGB color. Is calculated as B * 65536 + G * 256 + R
 	 */
-	public static void annotateSelectedAreasWithTextboxes(){
+	public static void annotateSelectedAreasWithTextboxes(long color, String label){
 		
 		String name = MainWindow.getInstance().getActiveWorksheetName();
 		String[] selectedAreas =  MainWindow.getInstance().getCurrentSelection();
@@ -376,10 +378,10 @@ public class ExcelUIModifier {
 		// get the OleAutomation object for the active worksheet using its name
 		OleAutomation worksheetAutomation = AutomationUtils.getWorksheetAutomationByName(name);
 	
-		// unprotect the worksheet in order to change the border for the range 
+		// unprotect the worksheet in order to apply changes
 		unprotectWorksheet(worksheetAutomation);
 		
-		// for each area in the range draw a border
+		// for each area in the range draw a textbox
 		for (String area : selectedAreas) {
 			String[] subStrings = area.split(":");
 			
@@ -395,12 +397,32 @@ public class ExcelUIModifier {
 			double width = AutomationUtils.getRangeWidth(rangeAutomation);
 			double height = AutomationUtils.getRangeHeight(rangeAutomation);
 			
-			drawTextBox(worksheetAutomation, left, top, width, height); 
+			OleAutomation textboxAutomation = drawTextBox(worksheetAutomation, left, top, width, height); 
+			OleAutomation fillFormatAutomation = getFillFormatAutomation(textboxAutomation);
+			OleAutomation textFrameAutomation = getTextFrameAutomation(textboxAutomation);
+			OleAutomation charactersAutomation = getCharactersAutomation(textFrameAutomation);
+			OleAutomation fontAutomation = getFontAutomation(charactersAutomation);
+			
+			setShapeBackgroundColor(fillFormatAutomation, color);
+			setShapeFillTransparency(fillFormatAutomation, 0.60);		
+			setText(charactersAutomation, label);
+			setHorizontalAlignment(textFrameAutomation, -4108); // align center 
+			setVerticalAlignment(textFrameAutomation, -4108); // align center
+			
+			long whiteColor = 255 * 65536 + 255 * 256 + 255;
+			setFontColor(fontAutomation, whiteColor);
+			setBoldFont(fontAutomation, true); 
+			setFontSize(fontAutomation, 11); // TODO: should be relative to the size of the range 
 			
 			rangeAutomation.dispose();
+			fillFormatAutomation.dispose();
+			fontAutomation.dispose();
+			charactersAutomation.dispose();
+			textFrameAutomation.dispose();
+			textboxAutomation.dispose();
 		}
 		
-		// protect the workbook to prevent the user from modifying the content of the sheet
+		// protect the workbook to prevent the user from modifying it
 		protectWorksheet(worksheetAutomation);
 		worksheetAutomation.dispose();
 	}
@@ -431,8 +453,16 @@ public class ExcelUIModifier {
 		}		
 	}
 	
-	
-	public static void drawTextBox(OleAutomation sheetAutomation, double left, double top, double width, double height){
+	/**
+	 * Draw textbox at the specified location in the worksheet 
+	 * @param sheetAutomation
+	 * @param left
+	 * @param top
+	 * @param width
+	 * @param height
+	 * @return
+	 */
+	public static OleAutomation drawTextBox(OleAutomation sheetAutomation, double left, double top, double width, double height){
 		
 		OleAutomation shapesAutomation = AutomationUtils.getWorksheetShapes(sheetAutomation);
 		
@@ -457,33 +487,173 @@ public class ExcelUIModifier {
 			textboxAutomation = textboxVariant.getAutomation();
 			textboxVariant.dispose();
 		}else{
-			System.out.println("ERROR: Failed to create textbox annotation!!!");
+			System.out.println("ERROR: Failed to draw textbox annotation!!!");
 			System.exit(1);
 		}
 		
-		System.out.println(setShapeBackgroundColor(textboxAutomation));
-		textboxAutomation.dispose();
+		return textboxAutomation;
 	}
 	
-	public static boolean setShapeBackgroundColor(OleAutomation textboxAutomation){
+
+	/**
+	 * Get FillFormat OleAutomation. This object can be used to change the format of the shape fill 
+	 * @param shapeAutomation
+	 * @return
+	 */
+	public static OleAutomation getFillFormatAutomation(OleAutomation shapeAutomation){
 		
-		int[] fillPropertyIds = textboxAutomation.getIDsOfNames(new String[]{"Fill"}); 
-		Variant fillFormatVariant = textboxAutomation.getProperty(fillPropertyIds[0]);
-		OleAutomation fillFormatAutomation =fillFormatVariant.getAutomation();
+		int[] fillPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Fill"}); 
+		Variant fillFormatVariant = shapeAutomation.getProperty(fillPropertyIds[0]);
+		OleAutomation fillFormatAutomation = fillFormatVariant.getAutomation();
 		fillFormatVariant.dispose();
 		
-		int[] backColorPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"BackColor"}); 
-		Variant backColorVariant = fillFormatAutomation.getProperty(backColorPropertyIds[0]);
-		OleAutomation backColorAutomation = backColorVariant.getAutomation();
+		return fillFormatAutomation;
+	}
+		
+	/**
+	 * Set the color of the shape fill 
+	 * @param fillFormatAutomation
+	 * @param color
+	 * @return
+	 */
+	public static boolean setShapeBackgroundColor(OleAutomation fillFormatAutomation, long color){
+	
+		int[] foreColorPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"ForeColor"}); // BackColor does not work
+		Variant foreColorVariant = fillFormatAutomation.getProperty(foreColorPropertyIds[0]);
+		OleAutomation foreColorAutomation = foreColorVariant.getAutomation();
 
-		int color = 170 * 65536 + 170 * 256 + 170;
+		int[] rgbPropertyIds = foreColorAutomation.getIDsOfNames(new String[]{"RGB"}); //alternative "SchemeColor" 
+		foreColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
+	
+		boolean isSuccess = fillFormatAutomation.setProperty(foreColorPropertyIds[0], foreColorVariant);			
+		foreColorVariant.dispose();
+		foreColorAutomation.dispose();
 		
-		int[] rgbPropertyIds = backColorAutomation.getIDsOfNames(new String[]{"RGB"}); 
-		System.out.println(backColorAutomation.getProperty(rgbPropertyIds[0]));
-		System.out.println(backColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)));
-		System.out.println(backColorAutomation.getProperty(rgbPropertyIds[0]));
-		
-		return fillFormatAutomation.setProperty(backColorPropertyIds[0], backColorVariant);	
+		return isSuccess;
 	}
 	
+	/**
+	 * Set the transparency of the shape fill
+	 * @param fillFormatAutomation
+	 * @param transparency
+	 * @return
+	 */
+	public static boolean setShapeFillTransparency(OleAutomation fillFormatAutomation, double transparency){
+		int[] transparencyPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Transparency"}); 
+		return fillFormatAutomation.setProperty(transparencyPropertyIds[0], new Variant(transparency));	
+	}
+	
+	/**
+	 * Get the TextFrame OleAutomation. This object can be used to manage text in a shape.
+	 * @param shapeAutomation
+	 * @return
+	 */
+	public static OleAutomation getTextFrameAutomation(OleAutomation shapeAutomation){
+		
+		int[] textFramePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"TextFrame"}); 
+		Variant textFrameVariant = shapeAutomation.getProperty(textFramePropertyIds[0]);
+		OleAutomation textFrameAutomation = textFrameVariant.getAutomation();
+		textFrameVariant.dispose();
+		
+		return textFrameAutomation;
+	}
+	
+	/**
+	 * Set text horizontal alignment in the shape TextFrame  
+	 * @param textFrameAutomation
+	 * @param alignment
+	 * @return
+	 */
+	public static boolean setVerticalAlignment(OleAutomation textFrameAutomation, int alignment){
+		
+		int[] verticalAlignmentPropertyIds = textFrameAutomation.getIDsOfNames(new String[]{"VerticalAlignment"});
+		return textFrameAutomation.setProperty(verticalAlignmentPropertyIds[0], new Variant(alignment));
+	}
+	
+	/**
+	 * Set text vertical alignment in the shape TextFrame
+	 * @param textFrameAutomation
+	 * @param alignment
+	 * @return
+	 */
+	public static boolean setHorizontalAlignment(OleAutomation textFrameAutomation, int alignment){
+		
+		int[] horizontalAlignmentPropertyIds = textFrameAutomation.getIDsOfNames(new String[]{"HorizontalAlignment"});
+		return textFrameAutomation.setProperty(horizontalAlignmentPropertyIds[0], new Variant(alignment));
+	}
+
+	/**
+	 * Get Characters OleAutomation. Use this object to set text and handle its format 
+	 * @param textFrameAutomation
+	 * @return
+	 */
+	public static OleAutomation getCharactersAutomation(OleAutomation textFrameAutomation){
+		
+		int[] charactersPropertyIds = textFrameAutomation.getIDsOfNames(new String[]{"Characters"});
+		Variant charactersVariant = textFrameAutomation.invoke(charactersPropertyIds[0]);
+		OleAutomation charactersAutomation = charactersVariant.getAutomation();
+		charactersVariant.dispose();
+		
+		return charactersAutomation;
+	}
+	
+	/**
+	 * Set Text using an Characters OleAutomation
+	 * @param charactersAutomation
+	 * @param text
+	 * @return
+	 */
+	public static boolean setText(OleAutomation charactersAutomation, String text){
+		
+		int[] textPropertyIds = charactersAutomation.getIDsOfNames(new String[]{"Text"}); 
+		return charactersAutomation.setProperty(textPropertyIds[0], new Variant(text));
+	}
+	
+	/**
+	 * Get Font OleObject. This object can be used to change text font attributes
+	 * @param charactersAutomation
+	 * @return
+	 */
+	public static OleAutomation getFontAutomation(OleAutomation charactersAutomation){
+		
+		int[] fontPropertyIds = charactersAutomation.getIDsOfNames(new String[]{"Font"});
+		Variant fontVariant = charactersAutomation.getProperty(fontPropertyIds[0]);
+		OleAutomation fontAutomation = fontVariant.getAutomation();
+		fontVariant.dispose();
+		
+		return fontAutomation;
+	}
+	
+	/**
+	 * Set text font size
+	 * @param fontAutomation
+	 * @param size
+	 * @return
+	 */
+	public static boolean setFontSize(OleAutomation fontAutomation, int size){		
+		int[] sizePropertyIds = fontAutomation.getIDsOfNames(new String[]{"Size"}); 
+		return fontAutomation.setProperty(sizePropertyIds[0], new Variant(size));
+	}
+	
+	/**
+	 * Make text bold 
+	 * @param fontAutomation
+	 * @param bold
+	 * @return
+	 */
+	public static boolean setBoldFont(OleAutomation fontAutomation, boolean bold){		
+		int[] boldPropertyIds = fontAutomation.getIDsOfNames(new String[]{"Bold"}); 
+		return fontAutomation.setProperty(boldPropertyIds[0], new Variant(bold));
+	}
+	
+	/**
+	 * Set font color for the text
+	 * @param fontAutomation
+	 * @param color
+	 * @return
+	 */
+	public static boolean setFontColor(OleAutomation fontAutomation, long color){		
+		int[] longPropertyIds = fontAutomation.getIDsOfNames(new String[]{"Color"}); 
+		return fontAutomation.setProperty(longPropertyIds[0], new Variant(color));
+	}
 }
