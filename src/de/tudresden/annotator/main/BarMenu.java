@@ -184,7 +184,7 @@ public class BarMenu {
 		menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 ExcelUIModifier.annotateByBorderingSelectedRanges(1);
+				 ExcelUIModifier.annotateByBorderingSelectedAreas(1);
 				 MenuItem mi = (MenuItem) e.widget;
 				 Menu parent = mi.getParent();
 				 for (MenuItem menuItem : parent.getItems()) {
@@ -198,7 +198,8 @@ public class BarMenu {
 		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 ExcelUIModifier.annotateByBorderingSelectedRanges(3);
+				 ExcelUIModifier.annotateSelectedAreasWithTextboxes();
+				 //ExcelUIModifier.annotateByBorderingSelectedAreas(3);
 			}
 		});
 		menuAnnotateMetadata.setEnabled(false);
@@ -208,7 +209,8 @@ public class BarMenu {
 		menuAnnotateHeader.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateByBorderingSelectedRanges(4);
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes();
+				//ExcelUIModifier.annotateByBorderingSelectedAreas(4);
 			}
 		});
 		menuAnnotateHeader.setEnabled(false);
@@ -218,7 +220,8 @@ public class BarMenu {
 		menuAnnotateAttributes.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateByBorderingSelectedRanges(5);
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes();
+				//ExcelUIModifier.annotateByBorderingSelectedAreas(5);
 			}
 		});
 		menuAnnotateAttributes.setEnabled(false);
@@ -228,7 +231,8 @@ public class BarMenu {
 		menuAnnotateData.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ExcelUIModifier.annotateByBorderingSelectedRanges(6);
+				ExcelUIModifier.annotateSelectedAreasWithTextboxes();
+				//ExcelUIModifier.annotateByBorderingSelectedAreas(6);
 			}
 		});
 		menuAnnotateData.setEnabled(false);

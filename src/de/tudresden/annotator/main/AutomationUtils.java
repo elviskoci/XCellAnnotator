@@ -250,6 +250,30 @@ public class AutomationUtils {
 	
 	
 	/**
+	 * Get the worksheet automation from the embedded workbook based on the given name  
+	 * @param sheetName
+	 * @return
+	 */
+	public static OleAutomation getWorksheetAutomationByName(String sheetName){
+		
+		OleAutomation application = getApplicationAutomation(MainWindow.getInstance().getControlSite());		
+		OleAutomation embeddedWorkbook = getEmbeddedWorkbookAutomation(application);
+		OleAutomation worksheetsAutomation = getWorksheetsAutomation(embeddedWorkbook);
+		
+		if(worksheetsAutomation==null){
+			System.out.println("ERROR: Could not receive Worksheets automation!!!");
+			return null;
+		}
+		
+		OleAutomation sheetAutomation = getItem(worksheetsAutomation, sheetName);	
+		worksheetsAutomation.dispose();
+		embeddedWorkbook.dispose();
+		application.dispose();
+
+		return sheetAutomation;
+	}
+	
+	/**
 	 * Get the name of the given worksheet
 	 * @param worksheetAutomation an OleAutomation for accessing the worksheet object
 	 * @return
@@ -300,30 +324,32 @@ public class AutomationUtils {
 		return worksheetIndex;
 	}
 	
-	
 	/**
-	 * Get the worksheet automation from the embedded workbook based on the given name  
-	 * @param sheetName
+	 * Get the OleAutomation object for the "Shapes" property of the given worksheet  
+	 * @param worksheetAutomation
 	 * @return
 	 */
-	public static OleAutomation getWorksheetAutomationByName(String sheetName){
+	public static OleAutomation getWorksheetShapes(OleAutomation worksheetAutomation){
 		
-		OleAutomation application = getApplicationAutomation(MainWindow.getInstance().getControlSite());		
-		OleAutomation embeddedWorkbook = getEmbeddedWorkbookAutomation(application);
-		OleAutomation worksheetsAutomation = getWorksheetsAutomation(embeddedWorkbook);
+		int[] shapesPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Shapes"});	
+		if (shapesPropertyIds == null){			
+			System.out.println("\"Shapes\" property not found for \"Worksheet\" object!");
+			return null;
+		}		
 		
-		if(worksheetsAutomation==null){
-			System.out.println("ERROR: Could not receive Worksheets automation!!!");
+		Variant shapesVariant = worksheetAutomation.getProperty(shapesPropertyIds[0]);
+		if (shapesVariant == null) {
+			System.out.println("\"Shapes\" variant is null!");
 			return null;
 		}
 		
-		OleAutomation sheetAutomation = getItem(worksheetsAutomation, sheetName);	
-		worksheetsAutomation.dispose();
-		embeddedWorkbook.dispose();
-		application.dispose();
-
-		return sheetAutomation;
+		OleAutomation worksheetShapes = shapesVariant.getAutomation();
+		shapesVariant.dispose();
+		
+		return worksheetShapes;
+			
 	}
+	
 	
 	/**
 	 * Get the specified range automation. The address of the top left cell and down right cell have to be provided.
@@ -358,6 +384,66 @@ public class AutomationUtils {
 		return rangeAutomation;
 	}
 	
+	/**
+	 * Get the distance, in points, from the left edge of column A to the left edge of the range.
+	 * @param rangeAutomation
+	 * @return
+	 */
+	public static double getRangeLeftPosition(OleAutomation rangeAutomation){
+
+		int[] leftPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Left"});
+		Variant leftVariant=rangeAutomation.getProperty(leftPropertyIds[0]);
+		double left = leftVariant.getDouble();
+		leftVariant.dispose();
+		return left;
+	}
+	
+	/**
+	 * Get the distance, in points, from the top edge of row 1 to the top edge of the range
+	 * @param rangeAutomation
+	 * @return
+	 */
+	public static double getRangeTopPosition(OleAutomation rangeAutomation){
+		
+		int[] topPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Top"});
+		Variant topVariant=rangeAutomation.getProperty(topPropertyIds[0]);
+		double top = topVariant.getDouble();
+		topVariant.dispose();
+		
+		return top;
+	}
+	
+	/**
+	 * Get the height, in units, of the range.
+	 * @param rangeAutomation
+	 * @return
+	 */
+	public static double getRangeHeight(OleAutomation rangeAutomation){
+		
+		int[] heightPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Height"});
+		Variant heightVariant=rangeAutomation.getProperty(heightPropertyIds[0]);
+		double height = heightVariant.getDouble();
+		heightVariant.dispose();
+		
+		return height;
+	}
+	
+	
+	/**
+	 * Get the width, in units, of the range.
+	 * @param rangeAutomation
+	 * @return
+	 */
+	public static double getRangeWidth(OleAutomation rangeAutomation){
+		
+		int[] widthPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Width"});
+		Variant widthVariant=rangeAutomation.getProperty(widthPropertyIds[0]);
+		double width = widthVariant.getDouble();
+		widthVariant.dispose();
+		
+		return width;
+	}
+
 	
 	/**
 	 * Get the item having the specified index from a OleAutomation object. The latter is a collection of OLE Objects. 

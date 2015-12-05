@@ -268,7 +268,7 @@ public class ExcelUIModifier {
 		Variant[] mySubControlVariant = new Variant[captions.length];
 		OleAutomation mySubControl;
 		for (int i = 0; i < captions.length; i++) {
-			mySubControlVariant[i] = mySubContolsAutomation.invoke(addMethodIds[0],args,Arrays.copyOfRange(addMethodIds, 1, addMethodIds.length));		
+			mySubControlVariant[i] = mySubContolsAutomation.invoke(addMethodIds[0], args, Arrays.copyOfRange(addMethodIds, 1, addMethodIds.length));		
 			
 			mySubControl= mySubControlVariant[i].getAutomation(); 
 			int[] captionPropetyIds = mySubControl.getIDsOfNames(new String[]{"Caption"});
@@ -318,22 +318,23 @@ public class ExcelUIModifier {
 	
 	
 	/** 
-	 * Annotate the selected ranges by setting a border having the specified characteristics. 
+	 * Annotate the selected areas by drawing a border around each one of them 
 	 * @param colorIndex
 	 */
-	public static void annotateByBorderingSelectedRanges(int colorIndex){
-		
+	public static void annotateByBorderingSelectedAreas(int colorIndex){
+		 
 		String name = MainWindow.getInstance().getActiveWorksheetName();
-		String[] selectedRanges =  MainWindow.getInstance().getCurrentSelection();
+		String[] selectedAreas =  MainWindow.getInstance().getCurrentSelection();
 		
-		// get the OleAutomation object for the active worksheet 
+		// get the OleAutomation object for the active worksheet using its name
 		OleAutomation worksheetAutomation = AutomationUtils.getWorksheetAutomationByName(name);
 	
 		// unprotect the worksheet in order to change the border for the range 
 		unprotectWorksheet(worksheetAutomation);
 		
-		for (String range : selectedRanges) {
-			String[] subStrings = range.split(":");
+		// for each area in the range draw a border
+		for (String area : selectedAreas) {
+			String[] subStrings = area.split(":");
 			
 			String topRightCell = subStrings[0];
 			String downLeftCell = null; 
@@ -342,7 +343,60 @@ public class ExcelUIModifier {
 			
 			OleAutomation rangeAutomation = AutomationUtils.getRangeAutomation(worksheetAutomation, topRightCell, downLeftCell);
 			
-			setBorderToRange(rangeAutomation,1,4,colorIndex);
+			drawBorderAroundRange(rangeAutomation,1,4,colorIndex);
+			rangeAutomation.dispose();
+		}
+		
+		// protect the workbook to prevent the user from modifying the content of the sheet
+		protectWorksheet(worksheetAutomation);
+		worksheetAutomation.dispose();
+	
+		
+		// unprotect the worksheet in order to change the border for the range 
+		// unprotectWorksheet( MainWindow.getInstance().getActiveWorksheetAutomation() );
+		
+		// set the specified border around the selected areas
+		// setBorderToRange( MainWindow.getInstance().getSelectedRangeAutomation(), 1, 4, colorIndex );
+		
+		// protect the workbook to prevent the user from modifying the content of the sheet
+		// protectWorksheet( MainWindow.getInstance().getActiveWorksheetAutomation() );
+	
+	}
+	
+
+	/**
+	 * Annotate the selected areas by drawing textbox on top of each one of them.
+	 * The color of the textbox depends on the Annotation Class. 
+	 */
+	public static void annotateSelectedAreasWithTextboxes(){
+		
+		String name = MainWindow.getInstance().getActiveWorksheetName();
+		String[] selectedAreas =  MainWindow.getInstance().getCurrentSelection();
+		
+		// get the OleAutomation object for the active worksheet using its name
+		OleAutomation worksheetAutomation = AutomationUtils.getWorksheetAutomationByName(name);
+	
+		// unprotect the worksheet in order to change the border for the range 
+		unprotectWorksheet(worksheetAutomation);
+		
+		// for each area in the range draw a border
+		for (String area : selectedAreas) {
+			String[] subStrings = area.split(":");
+			
+			String topRightCell = subStrings[0];
+			String downLeftCell = null; 
+			if(subStrings.length==2)
+				downLeftCell = subStrings[1];
+			
+			OleAutomation rangeAutomation = AutomationUtils.getRangeAutomation(worksheetAutomation, topRightCell, downLeftCell);
+			
+			double left = AutomationUtils.getRangeLeftPosition(rangeAutomation);
+			double top = AutomationUtils.getRangeTopPosition(rangeAutomation);
+			double width = AutomationUtils.getRangeWidth(rangeAutomation);
+			double height = AutomationUtils.getRangeHeight(rangeAutomation);
+			
+			drawTextBox(worksheetAutomation, left, top, width, height); 
+			
 			rangeAutomation.dispose();
 		}
 		
@@ -350,6 +404,7 @@ public class ExcelUIModifier {
 		protectWorksheet(worksheetAutomation);
 		worksheetAutomation.dispose();
 	}
+	
 	
 	/**
 	 * Create a border around the range with the specified characteristics
@@ -359,28 +414,76 @@ public class ExcelUIModifier {
 	 * @param weight
 	 * @param colorIndex
 	 */
-	public static void  setBorderToRange(OleAutomation rangeAutomation, int lineStyle, int weight, int colorIndex){
+	public static void  drawBorderAroundRange(OleAutomation rangeAutomation, int lineStyle, int weight, int colorIndex){
 		
-		//  set the border around the selected range 
-		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround","LineStyle", "Weight", "ColorIndex"}); // "Color" //"ColorIndex"
+		//  set border around the selected range 
+		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround","LineStyle", "Weight", "ColorIndex"}); // "Color"
 		Variant methodParams[] = new Variant[3];
-		methodParams[0] = new Variant(lineStyle); // Continuous line 
-		methodParams[1] = new Variant(weight); // Thick (widest border) 
-		methodParams[2] = new Variant(colorIndex); 
+		methodParams[0] = new Variant(lineStyle); // line style (e.g., continuous, dashed ) 
+		methodParams[1] = new Variant(weight); // border weight  (e.g., thick )
+		methodParams[2] = new Variant(colorIndex); // Index into the current color
 	
 		int[] paramIds = Arrays.copyOfRange(borderAroundMethodIds, 1, borderAroundMethodIds.length);
-		Variant result = rangeAutomation.invoke(borderAroundMethodIds[0],methodParams,paramIds);
+		rangeAutomation.invoke(borderAroundMethodIds[0], methodParams, paramIds);
 		
-		if(result!=null)
-			result.dispose();
 		for (Variant v : methodParams) {
 			v.dispose();
 		}		
 	}
 	
-	public static void annotateSelectedRangesWithTextbox(int colorIndex){
+	
+	public static void drawTextBox(OleAutomation sheetAutomation, double left, double top, double width, double height){
 		
+		OleAutomation shapesAutomation = AutomationUtils.getWorksheetShapes(sheetAutomation);
 		
+		//  set border around the selected range 
+		int[] addTextboxMethodIds = shapesAutomation.getIDsOfNames(new String[]{"AddTextbox", "Orientation", "Left", "Top", "Width", "Height"}); 
+		Variant methodParams[] = new Variant[5];
+		methodParams[0] = new Variant(1);
+		methodParams[1] = new Variant(left+0.5); 
+		methodParams[2] = new Variant(top+0.5); 
+		methodParams[3] = new Variant(width-1); 
+		methodParams[4] = new Variant(height-1);	
+		
+		Variant textboxVariant = shapesAutomation.invoke(addTextboxMethodIds[0],methodParams);
+		
+		shapesAutomation.dispose();
+		for (Variant v : methodParams) {
+			v.dispose();
+		}
+		
+		OleAutomation textboxAutomation = null;
+		if(textboxVariant!=null){
+			textboxAutomation = textboxVariant.getAutomation();
+			textboxVariant.dispose();
+		}else{
+			System.out.println("ERROR: Failed to create textbox annotation!!!");
+			System.exit(1);
+		}
+		
+		System.out.println(setShapeBackgroundColor(textboxAutomation));
+		textboxAutomation.dispose();
+	}
+	
+	public static boolean setShapeBackgroundColor(OleAutomation textboxAutomation){
+		
+		int[] fillPropertyIds = textboxAutomation.getIDsOfNames(new String[]{"Fill"}); 
+		Variant fillFormatVariant = textboxAutomation.getProperty(fillPropertyIds[0]);
+		OleAutomation fillFormatAutomation =fillFormatVariant.getAutomation();
+		fillFormatVariant.dispose();
+		
+		int[] backColorPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"BackColor"}); 
+		Variant backColorVariant = fillFormatAutomation.getProperty(backColorPropertyIds[0]);
+		OleAutomation backColorAutomation = backColorVariant.getAutomation();
+
+		int color = 170 * 65536 + 170 * 256 + 170;
+		
+		int[] rgbPropertyIds = backColorAutomation.getIDsOfNames(new String[]{"RGB"}); 
+		System.out.println(backColorAutomation.getProperty(rgbPropertyIds[0]));
+		System.out.println(backColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)));
+		System.out.println(backColorAutomation.getProperty(rgbPropertyIds[0]));
+		
+		return fillFormatAutomation.setProperty(backColorPropertyIds[0], backColorVariant);	
 	}
 	
 }
