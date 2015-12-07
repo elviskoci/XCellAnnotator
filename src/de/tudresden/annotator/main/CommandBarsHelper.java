@@ -290,6 +290,8 @@ public class CommandBarsHelper {
 		
 		int[] enabledPropertyIds = tabsCBAutomation.getIDsOfNames(new String[]{"Enabled"});		
 		boolean isSuccess = tabsCBAutomation.setProperty(enabledPropertyIds[0], new Variant(enabled));
+		
+		tabsCBAutomation.dispose();
 		return isSuccess;
 	}
 	

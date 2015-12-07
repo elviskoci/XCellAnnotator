@@ -9,12 +9,8 @@ import java.io.File;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleControlSite;
@@ -22,7 +18,6 @@ import org.eclipse.swt.ole.win32.OleEvent;
 import org.eclipse.swt.ole.win32.OleFrame;
 import org.eclipse.swt.ole.win32.OleListener;
 import org.eclipse.swt.ole.win32.Variant;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -49,9 +44,9 @@ public class MainWindow {
 	private OleFrame oleFrame;
 	private OleControlSite controlSite;
 	
-	private String currentSelection[];
-	private OleAutomation selectedRangeAutomation;
+	private OleAutomation excelApplication;
 	
+	private OleAutomation embeddedWorkbook;
 	private String embeddedWorkbookName;
 	private String embeddedWorkbookPath;
 	
@@ -59,9 +54,12 @@ public class MainWindow {
 	private String activeWorksheetName;
 	private long activeWorksheetIndex;
 	
+	private OleAutomation selectedRangeAutomation;
+	private String currentSelection[];
+		
 	private static MainWindow instance = null;
 	private MainWindow(){}
-  
+	
 	public static MainWindow getInstance() {
 		if(instance == null) {
 			instance = new MainWindow();
@@ -94,8 +92,6 @@ public class MainWindow {
 	            messageBox.setText("Information");
 	            messageBox.setMessage("Close the aplication?");
 	            if(messageBox.open() == SWT.YES){
-	            	// MainWindow.getInstance().getActiveWorksheetAutomation().dispose();
-	            	// MainWindow.getInstance().getSelectedRangeAutomation().dispose();
 	            	MainWindow.getInstance().disposeControlSite();
 	            	MainWindow.getInstance().disposeShell();
 	            	event.doit = true;
@@ -164,14 +160,6 @@ public class MainWindow {
         OleListener sheetActivationlistener = createSheetActivationEventListener(application);
         getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
         
-        
-	    // create custom Cell commandbar	
-		// OleInterfaceModifier.createCustomCellCommandBar(application);
-	    
-	    // undoChangesToCellCommandBar(application);
-	    // controlSite.doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
-	    
-        
 		// minimize ribbon.	TODO: Try hiding individual CommandBars
 	    ExcelUIModifier.hideRibbon(application);	
 	    
@@ -184,29 +172,29 @@ public class MainWindow {
 	    CommandBarsHelper.setEnabledForCommandBar(application, "Cell", false);
 	    
 	    // get active workbook, the one that is loaded by this application   
-	    OleAutomation embeddedWorkbook =  AutomationUtils.getActiveWorkbookAutomation(application);
+	    setEmbeddedWorkbook( AutomationUtils.getActiveWorkbookAutomation(application) );
 	    
 	    // protect the structure of the active workbook
-	    if(!ExcelUIModifier.protectWorkbook(embeddedWorkbook))
+	    if(!ExcelUIModifier.protectWorkbook( getEmbeddedWorkbook() ))
 	    	System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    // protect all individual worksheets
-	    if(!ExcelUIModifier.protectAllWorksheets(embeddedWorkbook))
+	    if(!ExcelUIModifier.protectAllWorksheets( getEmbeddedWorkbook() ))
 	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
-	    String workbookName = AutomationUtils.getWorkbookName(embeddedWorkbook);
+	    String workbookName = AutomationUtils.getWorkbookName( getEmbeddedWorkbook() );
 	    setEmbeddedWorkbookName(workbookName);
-	    
+    
 	    // get and store the name and index for the worksheet that is "active" (e.i., has the focus).  
-	    setActiveWorksheetAutomation( AutomationUtils.getActiveWorksheetAutomation(embeddedWorkbook) );  
+	    setActiveWorksheetAutomation( AutomationUtils.getActiveWorksheetAutomation( getEmbeddedWorkbook() ));  
 	    String sheetName = AutomationUtils.getWorksheetName( getActiveWorksheetAutomation() );
 	    setActiveWorksheetName(sheetName);
 	    long sheetIndex = AutomationUtils.getWorksheetIndex( getActiveWorksheetAutomation() );
 	    setActiveWorksheetIndex(sheetIndex);
 
-	    embeddedWorkbook.dispose();
-	    application.dispose();
+	    //embeddedWorkbook.dispose();
+	    //application.dispose();
 	}
 
 	/**
@@ -237,7 +225,7 @@ public class MainWindow {
 						setEmbeddedWorkbookPath(excelFile.getPath());
 						
 						// create new OLE control site to open the specified excel file
-				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
+				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, "Excel.Sheet" ,excelFile));
 				        
 				        // activate and display excel workbook
 				        getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
@@ -281,7 +269,8 @@ public class MainWindow {
 	        		System.exit(1);
 	        	}
 				
-	        	setSelectedRangeAutomation(args[0].getAutomation());
+	        	OleAutomation rangeAutomation = args[0].getAutomation();
+	        	setSelectedRangeAutomation(rangeAutomation);
 	        	
 	        	int[] addressIds = getSelectedRangeAutomation().getIDsOfNames(new String[]{"Address"}); 
 				Variant addressVariant = getSelectedRangeAutomation().getProperty(addressIds[0]);	
@@ -289,15 +278,15 @@ public class MainWindow {
 				setCurrentSelection(addressVariant.getString().split(","));
 				addressVariant.dispose();
 				
-				int[] areasIds = getSelectedRangeAutomation().getIDsOfNames(new String[]{"Areas"}); 
-				Variant areasVariant = getSelectedRangeAutomation().getProperty(areasIds[0]);								
-				OleAutomation areasAutomation = areasVariant.getAutomation();
-				areasVariant.dispose();
+//				int[] areasIds = getSelectedRangeAutomation().getIDsOfNames(new String[]{"Areas"}); 
+//				Variant areasVariant = getSelectedRangeAutomation().getProperty(areasIds[0]);								
+//				OleAutomation areasAutomation = areasVariant.getAutomation();
+//				areasVariant.dispose();
 				
-				int[] countId = areasAutomation.getIDsOfNames(new String[]{"Count"});									
-				Variant  countVariant = areasAutomation.getProperty(countId[0]);
-//					System.out.println("It includes "+countVariant.getString()+" area/s.");
-				countVariant.dispose();
+//				int[] countId = areasAutomation.getIDsOfNames(new String[]{"Count"});									
+//				Variant  countVariant = areasAutomation.getProperty(countId[0]);
+////				System.out.println("It includes "+countVariant.getString()+" area/s.");
+//				countVariant.dispose();
 				
 				args[0].dispose();
 							
@@ -330,8 +319,9 @@ public class MainWindow {
 					System.out.println("ERROR: SheetActivate event, worksheet automation is null!!!");
 					System.exit(1);
 				}
-					
-	        	setActiveWorksheetAutomation(args[0].getAutomation());
+				
+				OleAutomation worksheetAutomation = args[0].getAutomation();
+	        	setActiveWorksheetAutomation(worksheetAutomation);
 	        	
 				int[] nameIds = getActiveWorksheetAutomation().getIDsOfNames(new String[]{"Name"}); 
 				Variant nameVariant = getActiveWorksheetAutomation().getProperty(nameIds[0]);	
@@ -367,12 +357,8 @@ public class MainWindow {
 	protected void disposeControlSite() {
 		if (controlSite != null){
 			
-			OleAutomation application = AutomationUtils.getApplicationAutomation(controlSite);
-			OleAutomation embeddedWorkbook = AutomationUtils.getEmbeddedWorkbookAutomation(application);	
 			AutomationUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-			//AutomationUtils.quitExcelApplication(application);
-			application.dispose();
-			embeddedWorkbook.dispose();
+			//embeddedWorkbook.dispose();
 			
 			controlSite.dispose();
 		}
@@ -388,6 +374,20 @@ public class MainWindow {
 		}
 	}
 	
+	/**
+	 * @return the display
+	 */
+	protected Display getDisplay() {
+		return display;
+	}
+
+	/**
+	 * @return the shell
+	 */
+	protected Shell getShell() {
+		return shell;
+	}
+
 	/**
 	 * Get OleFrame
 	 * @return
@@ -423,19 +423,62 @@ public class MainWindow {
 	}
 	
 	/**
-	 * @return the currentSelection
+	 * @return the excelApplication
 	 */
-	protected String[] getCurrentSelection() {
-		return currentSelection;
+	protected OleAutomation getExcelApplication() {
+		return excelApplication;
 	}
 
 	/**
-	 * @param currentSelection the currentSelection to set
+	 * @param excelApplication the excelApplication to set
 	 */
-	protected void setCurrentSelection(String[] currentSelection) {
-		this.currentSelection = currentSelection;
+	protected void setExcelApplication(OleAutomation excelApplication) {
+		this.excelApplication = excelApplication;
 	}
 
+	/**
+	 * @return the embeddedWorkbook
+	 */
+	protected OleAutomation getEmbeddedWorkbook() {
+		return embeddedWorkbook;
+	}
+
+	/**
+	 * @param embeddedWorkbook the embeddedWorkbook to set
+	 */
+	protected void setEmbeddedWorkbook(OleAutomation embeddedWorkbook) {
+		this.embeddedWorkbook = embeddedWorkbook;
+	}
+	
+	/**
+	 * @return the activeWorkbookName
+	 */
+	protected String getEmbeddedWorkbookName() {
+		return embeddedWorkbookName;
+	}
+	
+	/**
+	 * @param activeWorkbookName the activeWorkbookName to set
+	 */
+	protected void setEmbeddedWorkbookName(String activeWorkbookName) {
+		this.embeddedWorkbookName = activeWorkbookName;
+	}
+	
+	/**
+	 * @return the embeddedWorkbookPath
+	 */
+	public String getEmbeddedWorkbookPath() {
+		return embeddedWorkbookPath;
+	}
+
+	/**
+	 * @param embeddedWorkbookPath the embeddedWorkbookPath to set
+	 */
+	protected void setEmbeddedWorkbookPath(String embeddedWorkbookPath) {
+		this.embeddedWorkbookPath = embeddedWorkbookPath;
+	}
+	
+	
 	/**
 	 * @return the activeWorksheetAutomation
 	 */
@@ -481,34 +524,6 @@ public class MainWindow {
 	protected void setActiveWorksheetIndex(long activeWorksheetIndex) {
 		this.activeWorksheetIndex = activeWorksheetIndex;
 	}
-
-	/**
-	 * @return the activeWorkbookName
-	 */
-	protected String getEmbeddedWorkbookName() {
-		return embeddedWorkbookName;
-	}
-	
-	/**
-	 * @param activeWorkbookName the activeWorkbookName to set
-	 */
-	protected void setEmbeddedWorkbookName(String activeWorkbookName) {
-		this.embeddedWorkbookName = activeWorkbookName;
-	}
-	
-	/**
-	 * @return the embeddedWorkbookPath
-	 */
-	public String getEmbeddedWorkbookPath() {
-		return embeddedWorkbookPath;
-	}
-
-	/**
-	 * @param embeddedWorkbookPath the embeddedWorkbookPath to set
-	 */
-	protected void setEmbeddedWorkbookPath(String embeddedWorkbookPath) {
-		this.embeddedWorkbookPath = embeddedWorkbookPath;
-	}
 	
 	/**
 	 * @return the rangeAutomation
@@ -527,19 +542,19 @@ public class MainWindow {
 		
 		this.selectedRangeAutomation = rangeAutomation;
 	}
-
+	
 	/**
-	 * @return the display
+	 * @return the currentSelection
 	 */
-	protected Display getDisplay() {
-		return display;
+	protected String[] getCurrentSelection() {
+		return currentSelection;
 	}
 
 	/**
-	 * @return the shell
+	 * @param currentSelection the currentSelection to set
 	 */
-	protected Shell getShell() {
-		return shell;
+	protected void setCurrentSelection(String[] currentSelection) {
+		this.currentSelection = currentSelection;
 	}
 
 	/**

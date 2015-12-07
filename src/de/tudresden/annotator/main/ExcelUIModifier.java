@@ -6,7 +6,6 @@ package de.tudresden.annotator.main;
 import java.util.Arrays;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
-import org.eclipse.swt.ole.win32.OleControlSite;
 import org.eclipse.swt.ole.win32.Variant;
 
 /**
@@ -36,7 +35,8 @@ public class ExcelUIModifier {
 			args[1] = new Variant(false);
 			
 			Variant result = workbookAutomation.invoke(protectMethodIds[0],args,Arrays.copyOfRange(protectMethodIds, 1, protectMethodIds.length));	
-//			System.out.println("Result of Workbook.Protect(): "+result);
+			// System.out.println("Result of Workbook.Protect(): "+result);
+			
 			if(result==null)
 				return false;
 			
@@ -97,12 +97,12 @@ public class ExcelUIModifier {
 		boolean isSuccess=true; 
 		for (i = 1; i <= count; i++) {
 		
-			OleAutomation nextWorkbookAutomation = AutomationUtils.getItem(worksheetsAutomation, i);					
-			if(!protectWorksheet(nextWorkbookAutomation)){
+			OleAutomation nextWorksheetAutomation = AutomationUtils.getItem(worksheetsAutomation, i);					
+			if(!protectWorksheet(nextWorksheetAutomation)){
 				System.out.println("ERROR: Could not protect one of the workbooks!");
 				isSuccess=false;			
 			}	
-			nextWorkbookAutomation.dispose();	
+			nextWorksheetAutomation.dispose();	
 			if(!isSuccess){
 				break;
 			}
@@ -110,9 +110,9 @@ public class ExcelUIModifier {
 		
 		if(!isSuccess){
 			for(int j=1; j<i;j++){
-				OleAutomation nextWorkbookAutomation =  AutomationUtils.getItem(worksheetsAutomation, j);
-				unprotectWorksheet(nextWorkbookAutomation);
-				nextWorkbookAutomation.dispose();
+				OleAutomation nextWorksheetAutomation =  AutomationUtils.getItem(worksheetsAutomation, j);
+				unprotectWorksheet(nextWorksheetAutomation);
+				nextWorksheetAutomation.dispose();
 			}
 			worksheetsAutomation.dispose();
 			return false;
@@ -145,8 +145,8 @@ public class ExcelUIModifier {
 			args[1] = new Variant(true);
 			args[2] = new Variant(true);
 			args[3] = new Variant(false);
-			args[4] = new Variant(false);
-			args[5] = new Variant(false);
+			args[4] = new Variant(true);
+			args[5] = new Variant(true);
 			args[6] = new Variant(false);
 			args[7] = new Variant(false);
 			args[8] = new Variant(false);
@@ -207,7 +207,7 @@ public class ExcelUIModifier {
 	    parameters[0] = new Variant("SHOW.TOOLBAR(\"Ribbon\",False)");
 	    
 	    Variant result = application.invoke(ee4mIds[0],parameters);
-//	    System.out.println("\nThe result of ExecuteExcel4Macro method invocation: "+result);
+	    // System.out.println("\nThe result of ExecuteExcel4Macro method invocation: "+result);
 	   
 	    boolean isSuccess = false;
 	    if(result!=null)
@@ -347,20 +347,9 @@ public class ExcelUIModifier {
 			rangeAutomation.dispose();
 		}
 		
-		// protect the workbook to prevent the user from modifying the content of the sheet
+		// protect the worksheet to prevent the user from modifying the content of the sheet
 		protectWorksheet(worksheetAutomation);
 		worksheetAutomation.dispose();
-	
-		
-		// unprotect the worksheet in order to change the border for the range 
-		// unprotectWorksheet( MainWindow.getInstance().getActiveWorksheetAutomation() );
-		
-		// set the specified border around the selected areas
-		// setBorderToRange( MainWindow.getInstance().getSelectedRangeAutomation(), 1, 4, colorIndex );
-		
-		// protect the workbook to prevent the user from modifying the content of the sheet
-		// protectWorksheet( MainWindow.getInstance().getActiveWorksheetAutomation() );
-	
 	}
 	
 
@@ -422,7 +411,7 @@ public class ExcelUIModifier {
 			textboxAutomation.dispose();
 		}
 		
-		// protect the workbook to prevent the user from modifying it
+		// protect the worksheet to prevent the user from modifying it
 		protectWorksheet(worksheetAutomation);
 		worksheetAutomation.dispose();
 	}
