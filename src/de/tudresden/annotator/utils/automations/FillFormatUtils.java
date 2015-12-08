@@ -11,25 +11,20 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class FillFormatUtils {
 	
+	
 	/**
-	 * Set the color of the shape fill 
+	 * Show or hide the fill of the shape.
 	 * @param fillFormatAutomation an OleAutomation that provides access to the FillFormat OLE Object
-	 * @param color a long that represents a RGB color. Is calculated as B * 65536 + G * 256 + R
+	 * @param visible true to show the fill, false to hide it
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean setBackgroundColor(OleAutomation fillFormatAutomation, long color){
-	
-		int[] foreColorPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"ForeColor"}); // BackColor didn't work
-		Variant foreColorVariant = fillFormatAutomation.getProperty(foreColorPropertyIds[0]);
-		OleAutomation foreColorAutomation = foreColorVariant.getAutomation();
-
-		int[] rgbPropertyIds = foreColorAutomation.getIDsOfNames(new String[]{"RGB"}); //alternatively use "SchemeColor" 
-		foreColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
-	
-		boolean isSuccess = fillFormatAutomation.setProperty(foreColorPropertyIds[0], foreColorVariant);			
-		foreColorVariant.dispose();
-		foreColorAutomation.dispose();
+	public static boolean setVisible(OleAutomation fillFormatAutomation, boolean visible){
 		
+		int[] visiblePropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Visible"}); 
+		Variant visiblePropertyVariant = new Variant(visible); 
+		boolean isSuccess = fillFormatAutomation.setProperty(visiblePropertyIds[0], visiblePropertyVariant);
+		visiblePropertyVariant.dispose();
+	
 		return isSuccess;
 	}
 	

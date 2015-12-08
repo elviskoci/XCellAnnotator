@@ -175,7 +175,7 @@ public class MainWindow {
 	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", false);
 	    
 	    // hide menu on right click of user on a cell
-	    CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
+	    // CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
 	    
 	    // get active workbook, the one that is embedded in this application
 	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
@@ -186,8 +186,8 @@ public class MainWindow {
 	    	System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    // protect all individual worksheets
-	    if(!WorkbookUtils.protectAllWorksheets(workbook))
-	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
+	    // if(!WorkbookUtils.protectAllWorksheets(workbook))
+	    	// System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
 	    String workbookName = WorkbookUtils.getWorkbookName(workbook);

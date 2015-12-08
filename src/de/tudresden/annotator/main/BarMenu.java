@@ -176,6 +176,7 @@ public class BarMenu {
 
 	
 	private MenuItem addAnnotateMenu(Menu menuBar){
+		
 		MenuItem annotateMenu = new MenuItem(menuBar, SWT.CASCADE);
 		annotateMenu.setText("&Mark As");
 		Menu menuAnnotate = new Menu(annotateMenu);
@@ -190,8 +191,9 @@ public class BarMenu {
 				 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
 				 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-				 
-				 AnnotationUtils.annotateByBorderingSelectedAreas(workbookAutomation, sheetName, currentSelection, 1);
+
+				 //AnnotationUtils.annotateByBorderingSelectedAreas(workbookAutomation, sheetName, currentSelection, 1);				 
+				 AnnotationUtils.annotateSelectedAreasWithRectangle(workbookAutomation, sheetName, currentSelection);
 				 
 				 MenuItem mi = (MenuItem) e.widget;
 				 Menu parent = mi.getParent();
@@ -206,10 +208,10 @@ public class BarMenu {
 		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				int red = 237; //255;
+				int green = 125; //230; 
+				int blue = 49; //153;
 				
-				int red = 189;
-				int green = 215; 
-				int blue = 238;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Metadata";
 				
@@ -228,9 +230,9 @@ public class BarMenu {
 			@Override
 			public void widgetSelected(SelectionEvent e) {	
 				
-				int red = 247;
-				int green = 192; 
-				int blue = 175;
+				int red =  91; //247;
+				int green = 155; //192; 
+				int blue = 213; //175;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Header";
 				
@@ -249,9 +251,9 @@ public class BarMenu {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				
-				int red = 255;
-				int green = 230; 
-				int blue = 153;
+				int red = 255; //165;  //189;
+				int green = 255;  //165;  //215; 
+				int blue = 0; // 165; //238;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Attributes";
 				
@@ -270,9 +272,9 @@ public class BarMenu {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				
-				int red = 198;
-				int green = 224; 
-				int blue = 180;
+				int red = 112; //198;
+				int green = 173;  //224; 
+				int blue = 71; //180;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Data";
 				
@@ -320,8 +322,7 @@ public class BarMenu {
 		return menuItems;
 	}
 	
-	private long getRGBColorAsLong(int red, int green, int blue){
-		
+	private long getRGBColorAsLong(int red, int green, int blue){	
 		return blue * 65536 + green * 256 + red;
 	}
 	
