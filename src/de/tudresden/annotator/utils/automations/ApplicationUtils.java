@@ -251,7 +251,7 @@ public class ApplicationUtils {
 		}	
 		
 		Variant result = application.invoke(quitMethodIds[0]);
-		if(result==null){ // || result.getType() == OLE.VT_EMPTY)
+		if(result==null){ 
 			return false;
 		}
 		

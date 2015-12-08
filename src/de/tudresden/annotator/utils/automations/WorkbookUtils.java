@@ -8,8 +8,6 @@ import java.util.Arrays;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
 
-import de.tudresden.annotator.main.AutomationUtils;
-
 /**
  * @author Elvis Koci
  */
@@ -194,46 +192,16 @@ public class WorkbookUtils {
 		}
 		return true;
 	}
-	
 
+	
 	/**
 	 * Protect all worksheets that are part of the given workbook
 	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean protectAllWorksheets(OleAutomation workbookAutomation){
-		
-		OleAutomation worksheetsAutomation = AutomationUtils.getWorksheetsAutomation(workbookAutomation);
-
-		int count = AutomationUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
-		
-		int i; 
-		boolean isSuccess=true; 
-		for (i = 1; i <= count; i++) {
-		
-			OleAutomation nextWorksheetAutomation = AutomationUtils.getItem(worksheetsAutomation, i);					
-			if(!WorksheetUtils.protectWorksheet(nextWorksheetAutomation)){
-				System.out.println("ERROR: Could not protect one of the workbooks!");
-				isSuccess=false;			
-			}	
-			nextWorksheetAutomation.dispose();	
-			if(!isSuccess){
-				break;
-			}
-		}	
-		
-		if(!isSuccess){
-			for(int j=1; j<i;j++){
-				OleAutomation nextWorksheetAutomation =  AutomationUtils.getItem(worksheetsAutomation, j);
-				WorksheetUtils.unprotectWorksheet(nextWorksheetAutomation);
-				nextWorksheetAutomation.dispose();
-			}
-			worksheetsAutomation.dispose();
-			return false;
-		}
-		
-		worksheetsAutomation.dispose();
-		return true;
+	public static boolean protectAllWorksheets(OleAutomation workbookAutomation){	
+		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
+		return WorksheetUtils.protectWorksheets(worksheetsAutomation);
 	}
 	
 	

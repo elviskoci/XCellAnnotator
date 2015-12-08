@@ -9,7 +9,7 @@ import org.eclipse.swt.ole.win32.Variant;
 /**
  * @author Elvis Koci
  */
-public class ShapesUtils {
+public class ShapeUtils {
 	
 	
 	/**

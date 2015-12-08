@@ -17,13 +17,13 @@ public class FillFormatUtils {
 	 * @param color a long that represents a RGB color. Is calculated as B * 65536 + G * 256 + R
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean setShapeBackgroundColor(OleAutomation fillFormatAutomation, long color){
+	public static boolean setBackgroundColor(OleAutomation fillFormatAutomation, long color){
 	
-		int[] foreColorPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"ForeColor"}); // BackColor does not work
+		int[] foreColorPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"ForeColor"}); // BackColor didn't work
 		Variant foreColorVariant = fillFormatAutomation.getProperty(foreColorPropertyIds[0]);
 		OleAutomation foreColorAutomation = foreColorVariant.getAutomation();
 
-		int[] rgbPropertyIds = foreColorAutomation.getIDsOfNames(new String[]{"RGB"}); //alternative "SchemeColor" 
+		int[] rgbPropertyIds = foreColorAutomation.getIDsOfNames(new String[]{"RGB"}); //alternatively use "SchemeColor" 
 		foreColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
 	
 		boolean isSuccess = fillFormatAutomation.setProperty(foreColorPropertyIds[0], foreColorVariant);			
@@ -40,7 +40,7 @@ public class FillFormatUtils {
 	 * @param transparency as a double. The expected values are between 0 and 1.
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean setShapeFillTransparency(OleAutomation fillFormatAutomation, double transparency){
+	public static boolean setFillTransparency(OleAutomation fillFormatAutomation, double transparency){
 		int[] transparencyPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Transparency"}); 
 		return fillFormatAutomation.setProperty(transparencyPropertyIds[0], new Variant(transparency));	
 	}

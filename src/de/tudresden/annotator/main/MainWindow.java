@@ -27,6 +27,11 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
+import de.tudresden.annotator.utils.automations.ApplicationUtils;
+import de.tudresden.annotator.utils.automations.CommandBarUtils;
+import de.tudresden.annotator.utils.automations.WorkbookUtils;
+import de.tudresden.annotator.utils.automations.WorksheetUtils;
+
 /**
  * @author Elvis
  *
@@ -147,12 +152,15 @@ public class MainWindow {
 	
 	private void setUpWorkbookDisplay(){
 		
-		if(getControlSite()==null)
-			return;
-		
+		if(getControlSite()==null){
+			System.out.println("Control Site is null! Cannot proceed with the display set up.");
+			System.exit(1);
+		}
+	
 		// get excel application as OLE automation object
-	    OleAutomation application = AutomationUtils.getApplicationAutomation(getControlSite());
-        
+	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
+        setExcelApplication(application);
+	    
 	    // add event listeners
 	    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
@@ -161,40 +169,39 @@ public class MainWindow {
         getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
         
 		// minimize ribbon.	TODO: Try hiding individual CommandBars
-	    ExcelUIModifier.hideRibbon(application);	
+	    ApplicationUtils.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
-	    // CommandBarsHelper.setVisibilityForCommandBar(application, "Ply", false);
-	    CommandBarsHelper.setEnabledForCommandBar(application, "Ply", false);
+	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", false);
 	    
 	    // hide menu on right click of user on a cell
-	    // CommandBarsHelper.setVisibilityForCommandBar(application, "Cell", false);
-	    CommandBarsHelper.setEnabledForCommandBar(application, "Cell", false);
+	    CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
 	    
-	    // get active workbook, the one that is loaded by this application   
-	    setEmbeddedWorkbook( AutomationUtils.getActiveWorkbookAutomation(application) );
+	    // get active workbook, the one that is embedded in this application
+	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
+	    setEmbeddedWorkbook(workbook);
 	    
 	    // protect the structure of the active workbook
-	    if(!ExcelUIModifier.protectWorkbook( getEmbeddedWorkbook() ))
+	    if(!WorkbookUtils.protectWorkbook(workbook, true, false))
 	    	System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    // protect all individual worksheets
-	    if(!ExcelUIModifier.protectAllWorksheets( getEmbeddedWorkbook() ))
+	    if(!WorkbookUtils.protectAllWorksheets(workbook))
 	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
-	    String workbookName = AutomationUtils.getWorkbookName( getEmbeddedWorkbook() );
+	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
 	    setEmbeddedWorkbookName(workbookName);
     
-	    // get and store the name and index for the worksheet that is "active" (e.i., has the focus).  
-	    setActiveWorksheetAutomation( AutomationUtils.getActiveWorksheetAutomation( getEmbeddedWorkbook() ));  
-	    String sheetName = AutomationUtils.getWorksheetName( getActiveWorksheetAutomation() );
+	    // get the active worksheet automation, i.e. the one that is on top of the other worksheet
+	    OleAutomation worksheet = WorkbookUtils.getActiveWorksheetAutomation(workbook);
+	    setActiveWorksheetAutomation(worksheet);  
+	    
+	    // get and store the name and index for the worksheet that is "active"
+	    String sheetName = WorksheetUtils.getWorksheetName(getActiveWorksheetAutomation());
 	    setActiveWorksheetName(sheetName);
-	    long sheetIndex = AutomationUtils.getWorksheetIndex( getActiveWorksheetAutomation() );
+	    long sheetIndex = WorksheetUtils.getWorksheetIndex(getActiveWorksheetAutomation());
 	    setActiveWorksheetIndex(sheetIndex);
-
-	    //embeddedWorkbook.dispose();
-	    //application.dispose();
 	}
 
 	/**
@@ -357,7 +364,7 @@ public class MainWindow {
 	protected void disposeControlSite() {
 		if (controlSite != null){
 			
-			AutomationUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+			WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 			//embeddedWorkbook.dispose();
 			
 			controlSite.dispose();

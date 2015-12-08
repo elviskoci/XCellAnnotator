@@ -3,10 +3,13 @@ package de.tudresden.annotator.main;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+
+import de.tudresden.annotator.utils.automations.AnnotationUtils;
 
 public class BarMenu {
 	
@@ -183,7 +186,13 @@ public class BarMenu {
 		menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				 ExcelUIModifier.annotateByBorderingSelectedAreas(1);
+				 
+				 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
+				 
+				 AnnotationUtils.annotateByBorderingSelectedAreas(workbookAutomation, sheetName, currentSelection, 1);
+				 
 				 MenuItem mi = (MenuItem) e.widget;
 				 Menu parent = mi.getParent();
 				 for (MenuItem menuItem : parent.getItems()) {
@@ -197,12 +206,18 @@ public class BarMenu {
 		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
 				int red = 189;
 				int green = 215; 
 				int blue = 238;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Metadata";
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
+				
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
+				
+				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
 			}
 		});
 		menuAnnotateMetadata.setEnabled(false);
@@ -212,12 +227,18 @@ public class BarMenu {
 		menuAnnotateHeader.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {	
+				
 				int red = 247;
 				int green = 192; 
 				int blue = 175;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Header";
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
+				
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
+				
+				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
 			}
 		});
 		menuAnnotateHeader.setEnabled(false);
@@ -227,12 +248,18 @@ public class BarMenu {
 		menuAnnotateAttributes.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
 				int red = 255;
 				int green = 230; 
 				int blue = 153;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Attributes";
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
+				
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
+				
+				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
 			}
 		});
 		menuAnnotateAttributes.setEnabled(false);
@@ -242,12 +269,18 @@ public class BarMenu {
 		menuAnnotateData.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
 				int red = 198;
 				int green = 224; 
 				int blue = 180;
 				long color = getRGBColorAsLong(red, green, blue);
 				String label = "Data";
-				ExcelUIModifier.annotateSelectedAreasWithTextboxes(color, label);
+				
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
+				
+				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
 			}
 		});
 		menuAnnotateData.setEnabled(false);

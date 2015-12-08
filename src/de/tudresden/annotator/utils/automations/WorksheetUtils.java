@@ -65,6 +65,30 @@ public class WorksheetUtils {
 	}
 	
 	/**
+	 * Get the worksheet automation from the embedded workbook based on the given name  
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities  of the Worksheets OLE object.
+	 * @param sheetName the name of the worksheet
+	 * @return
+	 */
+	public static OleAutomation getWorksheetAutomationByName(OleAutomation worksheetsAutomation, String sheetName){
+		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName);
+		return worksheetAutomation;
+	}	
+	
+	
+	/**
+	 * Get the worksheet automation from the embedded workbook based on the index number  
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the Worksheets OLE object.
+	 * @param index an integer that represents the index of the worksheet in the collection of worksheets.
+	 * @return an OleAutomation to access worksheet object functionalities
+	 */
+	public static OleAutomation getWorksheetAutomationByIndex(OleAutomation worksheetsAutomation, int index){	
+		OleAutomation worksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, index);
+		return worksheetAutomation;
+	}	
+	
+	
+	/**
 	 * Get the specified range automation. The address of the top left cell and down right cell have to be provided.
 	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
 	 * @param topLeftCell address of top left cell (e.g., "A1" or "$A$1" )
@@ -121,6 +145,45 @@ public class WorksheetUtils {
 		return worksheetShapes;		
 	}
 	
+	
+	/**
+	 * Protect all worksheets that are part of the embedded workbook
+	 * @param worksheetsAutomation an OleAutomation for accessing the Worksheets OLE object (Represents a collection of worksheets in a workbook)
+	 * @return true if operation succeeded, false otherwise
+	 */
+	public static boolean protectWorksheets(OleAutomation worksheetsAutomation){
+		
+		int count = CollectionsUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
+		
+		int i; 
+		boolean isSuccess=true; 
+		for (i = 1; i <= count; i++) {
+		
+			OleAutomation nextWorksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, i);					
+			if(!protectWorksheet(nextWorksheetAutomation)){
+				System.out.println("ERROR: Could not protect one of the workbooks!");
+				isSuccess=false;			
+			}	
+			nextWorksheetAutomation.dispose();	
+			if(!isSuccess){
+				break;
+			}
+		}	
+		
+		if(!isSuccess){
+			for(int j=1; j<i;j++){
+				OleAutomation nextWorksheetAutomation =  CollectionsUtils.getItemByIndex(worksheetsAutomation, j);
+				unprotectWorksheet(nextWorksheetAutomation);
+				nextWorksheetAutomation.dispose();
+			}
+			worksheetsAutomation.dispose();
+			return false;
+		}
+		
+		worksheetsAutomation.dispose();
+		return true;
+	}
+	
 	/**
 	 * Protect the data, formating, and structure of the specified worksheet
 	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
@@ -144,8 +207,8 @@ public class WorksheetUtils {
 			args[1] = new Variant(true);
 			args[2] = new Variant(true);
 			args[3] = new Variant(false);
-			args[4] = new Variant(false);
-			args[5] = new Variant(false);
+			args[4] = new Variant(true); // allow user to resize columns
+			args[5] = new Variant(true); // allow user to resize rows
 			args[6] = new Variant(false);
 			args[7] = new Variant(false);
 			args[8] = new Variant(false);

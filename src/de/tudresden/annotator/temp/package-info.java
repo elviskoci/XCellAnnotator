@@ -4,4 +4,4 @@
 /**
  * @author Elvis Koci
  */
-package de.tudresden.annotator.utils.ui;
+package de.tudresden.annotator.temp;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.main;
+package de.tudresden.annotator.utils.automations;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
@@ -10,7 +10,7 @@ import org.eclipse.swt.ole.win32.Variant;
  * @author Elvis
  *
  */
-public class CommandBarsHelper {
+public class CommandBarUtils {
 	
 	/**
 	 * Get the specific command bar automation by its name
@@ -18,7 +18,7 @@ public class CommandBarsHelper {
  	 * @param application
 	 * @return
 	 */
-	protected static OleAutomation getCommandBarByName(OleAutomation application, String commandBarName) {
+	public static OleAutomation getCommandBarByName(OleAutomation application, String commandBarName) {
 		
 		int[] commandBarsPropertyIds = application.getIDsOfNames(new String[]{"CommandBars"});
 		if (commandBarsPropertyIds == null) {
@@ -62,7 +62,7 @@ public class CommandBarsHelper {
 	 * @param excelApplication
 	 * @return
 	 */
-	protected static boolean printListOfCommandBars(OleAutomation excelApplication) {
+	public static boolean printListOfCommandBars(OleAutomation excelApplication) {
 		
 		int[] commandBarsObjectIds = excelApplication.getIDsOfNames(new String[]{"CommandBars"});
 		if (commandBarsObjectIds == null) {
@@ -122,7 +122,7 @@ public class CommandBarsHelper {
 	 * @param commandBarAutomation
 	 * @return
 	 */
-	protected static String getCommandBarName(OleAutomation commandBarAutomation){
+	public static String getCommandBarName(OleAutomation commandBarAutomation){
 		
 		int[] namePropertyIds = commandBarAutomation.getIDsOfNames(new String[]{"Name"});
 		if(namePropertyIds == null){
@@ -146,7 +146,7 @@ public class CommandBarsHelper {
 	 * @param commandBarAutomation
 	 * @return
 	 */
-	protected static OleAutomation getCommandBarControls(OleAutomation commandBarAutomation){
+	public static OleAutomation getCommandBarControls(OleAutomation commandBarAutomation){
 		
 		int[] controlsPropertyIds = commandBarAutomation.getIDsOfNames(new String[]{"Controls"});
 		Variant controlsVariant = commandBarAutomation.getProperty(controlsPropertyIds[0]);
@@ -164,7 +164,7 @@ public class CommandBarsHelper {
 	 * @param visible
 	 * @return
 	 */
-	protected static boolean setVisibilityOfControls(OleAutomation commandBarControls, boolean visible){
+	public static boolean setVisibilityOfControls(OleAutomation commandBarControls, boolean visible){
 
 		int[] itemPropertyIds = commandBarControls.getIDsOfNames(new String[]{"Item"});
 	
@@ -192,7 +192,7 @@ public class CommandBarsHelper {
 	 * @param commandBarContols
 	 * @return
 	 */
-	protected static boolean deleteControlsTemporary(OleAutomation commandBarContols){
+	public static boolean deleteControlsTemporary(OleAutomation commandBarContols){
 
 		int[] itemPropertyIds = commandBarContols.getIDsOfNames(new String[]{"Item"});
 	
@@ -228,7 +228,7 @@ public class CommandBarsHelper {
 	 * @param tag
 	 * @return
 	 */
-	protected static boolean deleteCustomControlsByTag(OleAutomation commandBarContols, String tag){
+	public static boolean deleteCustomControlsByTag(OleAutomation commandBarContols, String tag){
 
 		int[] itemPropertyIds = commandBarContols.getIDsOfNames(new String[]{"Item"});
 	
@@ -264,7 +264,7 @@ public class CommandBarsHelper {
  	 * @param application
 	 * @return
 	 */
-	protected static boolean setVisibilityForCommandBar(OleAutomation application, String commandBarName, boolean visible) {
+	public static boolean setVisibilityForCommandBar(OleAutomation application, String commandBarName, boolean visible) {
 		
 		OleAutomation tabsCBAutomation = getCommandBarByName(application, commandBarName); 
 		
@@ -281,7 +281,7 @@ public class CommandBarsHelper {
  	 * @param application
 	 * @return
 	 */
-	protected static boolean setEnabledForCommandBar(OleAutomation application, String commandBarName, boolean enabled) {
+	public static boolean setEnabledForCommandBar(OleAutomation application, String commandBarName, boolean enabled) {
 		
 		OleAutomation tabsCBAutomation = getCommandBarByName(application, commandBarName);
 		
@@ -301,7 +301,7 @@ public class CommandBarsHelper {
 	 * @param excelApplication
 	 * @return
 	 */
-	protected static boolean hideFormulaBar(OleAutomation excelApplication){
+	public static boolean hideFormulaBar(OleAutomation excelApplication){
 			
 		int[] displayFormulaBarIds = excelApplication.getIDsOfNames(new String[]{"DisplayFormulaBar"});
 		Boolean isUpdated = excelApplication.setProperty(displayFormulaBarIds[0],new Variant(false));
@@ -316,7 +316,7 @@ public class CommandBarsHelper {
 	 * @param excelApplication
 	 * @return
 	 */
-	protected static boolean setShowMenuFloaties(OleAutomation excelApplication, boolean option){
+	public static boolean setShowMenuFloaties(OleAutomation excelApplication, boolean option){
 		
 		int[] showMenuFloatiesIds = excelApplication.getIDsOfNames(new String[]{"ShowMenuFloaties"});	
 		if (showMenuFloatiesIds == null){			
