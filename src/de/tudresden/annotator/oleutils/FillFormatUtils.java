@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.utils.automations;
+package de.tudresden.annotator.oleutils;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
@@ -18,7 +18,7 @@ public class FillFormatUtils {
 	 * @param visible true to show the fill, false to hide it
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean setVisible(OleAutomation fillFormatAutomation, boolean visible){
+	public static boolean setFillVisibility(OleAutomation fillFormatAutomation, boolean visible){
 		
 		int[] visiblePropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Visible"}); 
 		Variant visiblePropertyVariant = new Variant(visible); 

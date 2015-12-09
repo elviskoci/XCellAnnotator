@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.utils.automations;
+package de.tudresden.annotator.oleutils;
 
 import java.util.Arrays;
 

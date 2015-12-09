@@ -9,7 +9,9 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
-import de.tudresden.annotator.utils.automations.AnnotationUtils;
+import de.tudresden.annotator.classes.AnnotationClass;
+import de.tudresden.annotator.classes.ClassGenerator;
+import de.tudresden.annotator.oleutils.AnnotationUtils;
 
 public class BarMenu {
 	
@@ -182,110 +184,24 @@ public class BarMenu {
 		Menu menuAnnotate = new Menu(annotateMenu);
 		annotateMenu.setMenu(menuAnnotate);
 		
-		MenuItem menuAnnotateTable = new MenuItem(menuAnnotate, SWT.CASCADE);
-		menuAnnotateTable.setText("Table");
-		menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				 
-				 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
+		AnnotationClass[] classes = ClassGenerator.createAnnotationClasses();
+		
+		for (AnnotationClass annotationClass : classes) {
+			
+			MenuItem menuAnnotateTable = new MenuItem(menuAnnotate, SWT.CASCADE);
+			menuAnnotateTable.setText(annotationClass.getLabel());
+			menuAnnotateTable.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					 
+					 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+					 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+					 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
 
-				 //AnnotationUtils.annotateByBorderingSelectedAreas(workbookAutomation, sheetName, currentSelection, 1);				 
-				 AnnotationUtils.annotateSelectedAreasWithRectangle(workbookAutomation, sheetName, currentSelection);
-				 
-				 MenuItem mi = (MenuItem) e.widget;
-				 Menu parent = mi.getParent();
-				 for (MenuItem menuItem : parent.getItems()) {
-					 menuItem.setEnabled(true);	 
-				 }
-			}
-		});
-		
-		MenuItem menuAnnotateMetadata = new MenuItem(menuAnnotate, SWT.CASCADE);
-		menuAnnotateMetadata.setText("Metadata");
-		menuAnnotateMetadata.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				int red = 237; //255;
-				int green = 125; //230; 
-				int blue = 49; //153;
-				
-				long color = getRGBColorAsLong(red, green, blue);
-				String label = "Metadata";
-				
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-				
-				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
-			}
-		});
-		menuAnnotateMetadata.setEnabled(false);
-		
-		MenuItem menuAnnotateHeader = new MenuItem(menuAnnotate, SWT.CASCADE);
-		menuAnnotateHeader.setText("Header");
-		menuAnnotateHeader.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {	
-				
-				int red =  91; //247;
-				int green = 155; //192; 
-				int blue = 213; //175;
-				long color = getRGBColorAsLong(red, green, blue);
-				String label = "Header";
-				
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-				
-				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
-			}
-		});
-		menuAnnotateHeader.setEnabled(false);
-		
-		MenuItem menuAnnotateAttributes = new MenuItem(menuAnnotate, SWT.CASCADE);
-		menuAnnotateAttributes.setText("Attributes");
-		menuAnnotateAttributes.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				int red = 255; //165;  //189;
-				int green = 255;  //165;  //215; 
-				int blue = 0; // 165; //238;
-				long color = getRGBColorAsLong(red, green, blue);
-				String label = "Attributes";
-				
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-				
-				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
-			}
-		});
-		menuAnnotateAttributes.setEnabled(false);
-		
-		MenuItem menuAnnotateData = new MenuItem(menuAnnotate, SWT.CASCADE);
-		menuAnnotateData.setText("Data");
-		menuAnnotateData.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				int red = 112; //198;
-				int green = 173;  //224; 
-				int blue = 71; //180;
-				long color = getRGBColorAsLong(red, green, blue);
-				String label = "Data";
-				
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-				
-				AnnotationUtils.annotateSelectedAreasWithTextboxes(workbookAutomation, sheetName, currentSelection, color, label);
-			}
-		});
-		menuAnnotateData.setEnabled(false);
+					 AnnotationUtils.callAnnotationMethod(workbookAutomation, sheetName, currentSelection, annotationClass);
+				}
+			});		
+		}
 		
 		return annotateMenu;
 	}

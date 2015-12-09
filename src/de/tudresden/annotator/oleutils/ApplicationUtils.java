@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.utils.automations;
+package de.tudresden.annotator.oleutils;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleControlSite;

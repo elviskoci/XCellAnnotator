@@ -27,10 +27,10 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
-import de.tudresden.annotator.utils.automations.ApplicationUtils;
-import de.tudresden.annotator.utils.automations.CommandBarUtils;
-import de.tudresden.annotator.utils.automations.WorkbookUtils;
-import de.tudresden.annotator.utils.automations.WorksheetUtils;
+import de.tudresden.annotator.oleutils.ApplicationUtils;
+import de.tudresden.annotator.oleutils.CommandBarUtils;
+import de.tudresden.annotator.oleutils.WorkbookUtils;
+import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 /**
  * @author Elvis

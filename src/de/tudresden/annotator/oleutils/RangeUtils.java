@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.utils.automations;
+package de.tudresden.annotator.oleutils;
 
 import java.util.Arrays;
 
@@ -85,13 +85,13 @@ public class RangeUtils {
 	 * @param colorIndex the border color, as an index into the current color palette or as an XlColorIndex constant.
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean  drawBorderAroundRange(OleAutomation rangeAutomation, int lineStyle, int weight, int colorIndex){
+	public static boolean  drawBorderAroundRange(OleAutomation rangeAutomation, int lineStyle, double weight, long color){
 		
-		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround","LineStyle", "Weight", "ColorIndex"}); // "Color"
+		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround","LineStyle", "Weight", "Color"}); // "ColorIndex" 
 		Variant methodParams[] = new Variant[3];
 		methodParams[0] = new Variant(lineStyle); // line style (e.g., continuous, dashed ) 
 		methodParams[1] = new Variant(weight); // border weight  (e.g., thick, thin )
-		methodParams[2] = new Variant(colorIndex); // index into the current color palette
+		methodParams[2] = new Variant(color); // index into the current color palette
 	
 		int[] paramIds = Arrays.copyOfRange(borderAroundMethodIds, 1, borderAroundMethodIds.length);
 		Variant result = rangeAutomation.invoke(borderAroundMethodIds[0], methodParams, paramIds);
