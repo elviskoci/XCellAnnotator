@@ -102,16 +102,15 @@ public class WorkbookUtils {
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
 		if(worksheetsAutomation==null){
 			System.out.println("ERROR: Could not retrieve Worksheets automation!!!");
-			return null;
+			System.exit(1);
 		}	
 		
-		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName);
+		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName, false);
 		worksheetsAutomation.dispose();
 		
 		return worksheetAutomation;
 	}	
-	
-	
+		
 	/**
 	 * Get the worksheet automation from the embedded workbook based on the index number  
 	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
@@ -123,14 +122,46 @@ public class WorkbookUtils {
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
 		if(worksheetsAutomation==null){
 			System.out.println("ERROR: Could not retrieve Worksheets automation!!!");
-			return null;
+			System.exit(1);
 		}	
 		
-		OleAutomation worksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, index);
+		OleAutomation worksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, index, false);
 		worksheetsAutomation.dispose();
 		
 		return worksheetAutomation;
 	}	
+	
+	
+	/**
+	 * Add a new worksheet to the given workbook
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @return an OleAutomation for the new worksheet 
+	 */
+	public static OleAutomation addWorksheetAsLast(OleAutomation workbookAutomation){
+		
+		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
+		if(worksheetsAutomation==null){
+			System.out.println("ERROR: Could not retrieve Worksheets automation!!!");
+			System.exit(1);
+		}	
+		
+		int count = CollectionsUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
+		OleAutomation lastSheet = getWorksheetAutomationByIndex(workbookAutomation, count); 
+		
+		int[] addMethodIds = worksheetsAutomation.getIDsOfNames(new String[]{"Add", "After"});	
+		Variant[] params = new Variant[1];
+		params[0] = new Variant(lastSheet);
+		int paramsIds[] = Arrays.copyOfRange(addMethodIds, 1, addMethodIds.length);
+		Variant result = worksheetsAutomation.invoke(addMethodIds[0], params, paramsIds);
+		
+		OleAutomation newWorksheet = result.getAutomation();
+		for (Variant v : params) {
+			v.dispose();
+		}
+		result.dispose();
+		
+		return newWorksheet;
+	}
 	
 	
 	/**
@@ -178,16 +209,12 @@ public class WorkbookUtils {
 		if (unprotectMethodIds == null) {
 			System.out.println("Method \"Unprotect\" not found for \"Workbook\" object!");
 			return false;
-		}else{
-			Variant[] args = new Variant[1];
-			args[0] = new Variant();
-			
-			Variant result = workbookAutomation.invoke(unprotectMethodIds[0],args);	
+		}else{			
+			Variant result = workbookAutomation.invoke(unprotectMethodIds[0]);	
 			
 			if(result==null)
 				return false;
-			
-			args[0].dispose();
+		
 			result.dispose();
 		}
 		return true;
@@ -201,7 +228,36 @@ public class WorkbookUtils {
 	 */
 	public static boolean protectAllWorksheets(OleAutomation workbookAutomation){	
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
-		return WorksheetUtils.protectWorksheets(worksheetsAutomation);
+		
+		int count = CollectionsUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
+		
+		int i; 
+		boolean isSuccess=true; 
+		for (i = 1; i <= count; i++) {
+		
+			OleAutomation nextWorksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, i, false);					
+			if(!WorksheetUtils.protectWorksheet(nextWorksheetAutomation)){
+				System.out.println("ERROR: Could not protect one of the workbooks!");
+				isSuccess=false;			
+			}	
+			nextWorksheetAutomation.dispose();	
+			if(!isSuccess){
+				break;
+			}
+		}	
+		
+		if(!isSuccess){
+			for(int j=1; j<i;j++){
+				OleAutomation nextWorksheetAutomation =  CollectionsUtils.getItemByIndex(worksheetsAutomation, j, false);
+				WorksheetUtils.unprotectWorksheet(nextWorksheetAutomation);
+				nextWorksheetAutomation.dispose();
+			}
+			worksheetsAutomation.dispose();
+			return false;
+		}
+		
+		worksheetsAutomation.dispose();
+		return true;
 	}
 	
 	

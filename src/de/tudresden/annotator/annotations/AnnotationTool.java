@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.classes;
+package de.tudresden.annotator.annotations;
 
 /**
  * @author Elvis Koci

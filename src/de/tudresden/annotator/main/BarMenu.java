@@ -9,8 +9,8 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
-import de.tudresden.annotator.classes.AnnotationClass;
-import de.tudresden.annotator.classes.ClassGenerator;
+import de.tudresden.annotator.annotations.AnnotationClass;
+import de.tudresden.annotator.annotations.ClassGenerator;
 import de.tudresden.annotator.oleutils.AnnotationUtils;
 
 public class BarMenu {
@@ -84,10 +84,13 @@ public class BarMenu {
 		menuFileSave.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//TODO: Create methods to save the file together with the annotations  
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String directoryPath = MainWindow.getInstance().getDirectoryPath();
+				String fileName = MainWindow.getInstance().getFileName();				
+				AnnotationUtils.exportAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
 			}
 		});
-		menuFileSave.setEnabled(false);
+		//menuFileSave.setEnabled(false);
 		
 		
 		MenuItem menuFileExit = new MenuItem(menuFile, SWT.CASCADE);
@@ -137,10 +140,16 @@ public class BarMenu {
 		});
 		
 		MenuItem menuEditClear = new MenuItem(menuEdit, SWT.CASCADE);
-		menuEditClear.setText("Clear");
+		menuEditClear.setText("Clear ");
 		menuEditClear.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				
+				AnnotationUtils.clearShapeAnnotationsFromActiveSheet(workbookAutomation, sheetName);
+				//AnnotationUtils.clearAnnotationDataForActiveSheet(workbookAutomation, sheetName);
 				//TODO: Implement as cascade menu having options such as Clear->All , Clear->Specific Annotation
 			}
 		});
@@ -196,9 +205,10 @@ public class BarMenu {
 					 
 					 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 					 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+					 int sheetIndex = MainWindow.getInstance().getActiveWorksheetIndex();
 					 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
 
-					 AnnotationUtils.callAnnotationMethod(workbookAutomation, sheetName, currentSelection, annotationClass);
+					 AnnotationUtils.callAnnotationMethod(workbookAutomation, sheetName, sheetIndex, currentSelection, annotationClass);
 				}
 			});		
 		}

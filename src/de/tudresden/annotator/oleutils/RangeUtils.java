@@ -13,6 +13,53 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class RangeUtils {
 	
+	/**
+	 * Get the address of the range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return a string that represents the address of the given range. 
+	 */
+	public static String getRangeAddress(OleAutomation rangeAutomation){
+		
+		int[] addressIds = rangeAutomation.getIDsOfNames(new String[]{"Address"}); 
+		Variant addressVariant = rangeAutomation.getProperty(addressIds[0]);	
+		String address = addressVariant.getString();
+		addressVariant.dispose();
+		
+		return address;
+	}
+	
+	
+	/**
+	 * Get the number of the first column in the first area in the specified range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return the number of the first column in the first area in the specified range
+	 */
+	public static String getRangeColumn(OleAutomation rangeAutomation){
+		
+		int[] columnPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Column"}); 
+		Variant columnPropertyVariant = rangeAutomation.getProperty(columnPropertyIds[0]);	
+		String column = columnPropertyVariant.getString();
+		columnPropertyVariant.dispose();
+		
+		return column;
+	}
+	
+	
+	/**
+	 * Get the number of the first row in the first area in the specified range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return the number of the first row in the first area in the specified range
+	 */
+	public static String getRangeRow(OleAutomation rangeAutomation){
+		
+		int[] rowPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Row"}); 
+		Variant rowPropertyVariant = rangeAutomation.getProperty(rowPropertyIds[0]);	
+		String row = rowPropertyVariant.getString();
+		rowPropertyVariant.dispose();
+		
+		return row;
+	}
+	
 	
 	/**
 	 * Get the distance, in points, from the left edge of column A to the left edge of the range.
@@ -69,11 +116,101 @@ public class RangeUtils {
 	public static double getRangeWidth(OleAutomation rangeAutomation){
 		
 		int[] widthPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Width"});
+		
 		Variant widthVariant=rangeAutomation.getProperty(widthPropertyIds[0]);
 		double width = widthVariant.getDouble();
 		widthVariant.dispose();
 		
 		return width;
+	}
+	
+	
+	/**
+	 * Set value to the range 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @param value the string to set as value 
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean setValue(OleAutomation rangeAutomation, String value){
+		
+		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
+		
+		Variant valueVariant = new Variant(value);
+		boolean isSuccess = rangeAutomation.setProperty(valuePropertyIds[0], valueVariant);
+		valueVariant.dispose();
+		
+		return isSuccess;
+	}
+	
+	
+	/**
+	 * Get range value 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return a string that represents the value of the range
+	 */
+	public static String getValue(OleAutomation rangeAutomation){
+		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
+		
+		Variant valueVariant =  rangeAutomation.getProperty(valuePropertyIds[0]);
+		String value =  valueVariant.getString();
+		valueVariant.dispose();
+		
+		return value;
+	}
+	
+	/**
+	 * Get special cells from the given range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @param type an integer that represents the type of special cells to get. For more info see XlCellType enumeration. 
+	 * @return an OleAutomation to access the range of special cells
+	 */
+	public static OleAutomation getSpecialCells(OleAutomation rangeAutomation, int type){
+		
+		int[] specialCellsMethodIds = rangeAutomation.getIDsOfNames(new String[]{"SpecialCells", "Type"});
+		
+		Variant[] args = new Variant[1];
+		args[0] = new Variant(type);
+		int argsIds[] = Arrays.copyOfRange(specialCellsMethodIds, 1, specialCellsMethodIds.length);
+		
+		Variant result = rangeAutomation.invoke(specialCellsMethodIds[0], args, argsIds);
+		for (Variant arg : args)
+			arg.dispose();
+		
+		if(result==null)
+			return null; 
+		
+		OleAutomation specialCells = result.getAutomation();
+		result.dispose();
+		
+		return specialCells;
+	}
+	
+	
+	/**
+	 * Filter range based on the given criteria 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return true if the operation succeeded, false otherwise
+	 */
+	public static boolean filterRange(OleAutomation rangeAutomation, int field, String criteria1){
+		
+		int[] autoFilterMethodIds = rangeAutomation.getIDsOfNames(new String[]{"AutoFilter", "Field", "Criteria1"});
+		
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(field);
+		args[1] = new Variant(criteria1);
+		int argsIds[] = Arrays.copyOfRange(autoFilterMethodIds, 1, autoFilterMethodIds.length);
+		
+		Variant result = rangeAutomation.invoke(autoFilterMethodIds[0], args, argsIds);
+		for (Variant arg : args) {
+			arg.dispose();
+		}
+		
+		if(result == null){
+			return false;
+		}
+		
+		result.dispose();
+		return true;
 	}
 	
 	
@@ -108,6 +245,7 @@ public class RangeUtils {
 		return true;
 	}
 	
+	
 	/**
 	 * Erase border around the range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
@@ -115,7 +253,7 @@ public class RangeUtils {
 	 */
 	public static boolean eraseBorderAroundRange(OleAutomation rangeAutomation){
 		 
-		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround","LineStyle"});
+		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround", "LineStyle"});
 		Variant methodParams[] = new Variant[1];
 		
 		int xlLineStyleNone = -4142; // no line
@@ -129,6 +267,25 @@ public class RangeUtils {
 		}	
 		
 		if(result==null){
+			return false;
+		}
+		
+		result.dispose();
+		return true;
+	}
+	
+	
+	/**
+	 * Delete the given  range of cells 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return true if the operation succeeded, false otherwise
+	 */
+	public static boolean deleteRange(OleAutomation rangeAutomation){
+		
+		int[] deleteMethodIds = rangeAutomation.getIDsOfNames(new String[]{"Delete"});		
+		Variant result = rangeAutomation.invoke(deleteMethodIds[0]);
+		
+		if(result == null){
 			return false;
 		}
 		

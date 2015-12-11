@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
+import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
@@ -46,6 +47,7 @@ public class MainWindow {
 		
 	private final Display display = new Display();;
 	private final Shell shell = new Shell(display);
+	
 	private OleFrame oleFrame;
 	private OleControlSite controlSite;
 	
@@ -53,13 +55,12 @@ public class MainWindow {
 	
 	private OleAutomation embeddedWorkbook;
 	private String embeddedWorkbookName;
-	private String embeddedWorkbookPath;
+	private String directoryPath;
+	private String fileName;
 	
-	private OleAutomation activeWorksheetAutomation;
 	private String activeWorksheetName;
-	private long activeWorksheetIndex;
+	private int activeWorksheetIndex;
 	
-	private OleAutomation selectedRangeAutomation;
 	private String currentSelection[];
 		
 	private static MainWindow instance = null;
@@ -172,10 +173,10 @@ public class MainWindow {
 	    ApplicationUtils.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
-	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", false);
+	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", true);
 	    
 	    // hide menu on right click of user on a cell
-	    // CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
+	    CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
 	    
 	    // get active workbook, the one that is embedded in this application
 	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
@@ -186,8 +187,8 @@ public class MainWindow {
 	    	System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    // protect all individual worksheets
-	    // if(!WorkbookUtils.protectAllWorksheets(workbook))
-	    	// System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
+	    if(!WorkbookUtils.protectAllWorksheets(workbook))
+	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
 	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
@@ -195,13 +196,14 @@ public class MainWindow {
     
 	    // get the active worksheet automation, i.e. the one that is on top of the other worksheet
 	    OleAutomation worksheet = WorkbookUtils.getActiveWorksheetAutomation(workbook);
-	    setActiveWorksheetAutomation(worksheet);  
 	    
 	    // get and store the name and index for the worksheet that is "active"
-	    String sheetName = WorksheetUtils.getWorksheetName(getActiveWorksheetAutomation());
+	    String sheetName = WorksheetUtils.getWorksheetName(worksheet);
 	    setActiveWorksheetName(sheetName);
-	    long sheetIndex = WorksheetUtils.getWorksheetIndex(getActiveWorksheetAutomation());
+	    int sheetIndex = WorksheetUtils.getWorksheetIndex(worksheet);
 	    setActiveWorksheetIndex(sheetIndex);
+	    
+	    worksheet.dispose();
 	}
 
 	/**
@@ -229,7 +231,8 @@ public class MainWindow {
 					try {		    	
 				        
 						File excelFile = new File(fileName);
-						setEmbeddedWorkbookPath(excelFile.getPath());
+						setDirectoryPath(excelFile.getParent());
+						setFileName(excelFile.getName());
 						
 						// create new OLE control site to open the specified excel file
 				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, "Excel.Sheet" ,excelFile));
@@ -271,36 +274,17 @@ public class MainWindow {
 	            /*
 	             * the first argument is a Range object. get the number and range of selected areas 
 	             */	        	
-	        	if(args[0].getAutomation()==null){
-	        		System.out.println("ERROR: SheetSelection event, range automation is null!!!");
-	        		System.exit(1);
-	        	}
-				
+
 	        	OleAutomation rangeAutomation = args[0].getAutomation();
-	        	setSelectedRangeAutomation(rangeAutomation);
-	        	
-	        	int[] addressIds = getSelectedRangeAutomation().getIDsOfNames(new String[]{"Address"}); 
-				Variant addressVariant = getSelectedRangeAutomation().getProperty(addressIds[0]);	
-//				System.out.print("The selection has changed to: {"+addressVariant.getString()+"}. ");
-				setCurrentSelection(addressVariant.getString().split(","));
-				addressVariant.dispose();
-				
-//				int[] areasIds = getSelectedRangeAutomation().getIDsOfNames(new String[]{"Areas"}); 
-//				Variant areasVariant = getSelectedRangeAutomation().getProperty(areasIds[0]);								
-//				OleAutomation areasAutomation = areasVariant.getAutomation();
-//				areasVariant.dispose();
-				
-//				int[] countId = areasAutomation.getIDsOfNames(new String[]{"Count"});									
-//				Variant  countVariant = areasAutomation.getProperty(countId[0]);
-////				System.out.println("It includes "+countVariant.getString()+" area/s.");
-//				countVariant.dispose();
-				
-				args[0].dispose();
+	        	setCurrentSelection(RangeUtils.getRangeAddress(rangeAutomation).split(","));
+	        	args[0].dispose();
 							
 				/*
 				 * the second argument is a Worksheet object. It is not consider here. See SheetActivate event listener.   
 				 */
 				args[1].dispose();
+				
+				rangeAutomation.dispose();
 	        }
 	    };	       
 	    return listener;
@@ -320,29 +304,15 @@ public class MainWindow {
 	        	Variant[] args = e.arguments;
 	        	
 	        	/*
-	             * This event returns only one argument, a Worksheet. Get the name and index of the activated worksheet.
-	             */ 	
-				if(args[0].getAutomation()==null){
-					System.out.println("ERROR: SheetActivate event, worksheet automation is null!!!");
-					System.exit(1);
-				}
-				
+	             * This event returns only one argument, a Worksheet object. Get the name and index of the activated worksheet.
+	             */ 					
 				OleAutomation worksheetAutomation = args[0].getAutomation();
-	        	setActiveWorksheetAutomation(worksheetAutomation);
-	        	
-				int[] nameIds = getActiveWorksheetAutomation().getIDsOfNames(new String[]{"Name"}); 
-				Variant nameVariant = getActiveWorksheetAutomation().getProperty(nameIds[0]);	
-//				System.out.print("Selection has occured at worksheet \""+nameVariant.getString()+"\", ");
-				setActiveWorksheetName(nameVariant.getString());
-				nameVariant.dispose();
-				
-				int[] indexIds = getActiveWorksheetAutomation().getIDsOfNames(new String[]{"Index"}); 
-				Variant indexVariant = getActiveWorksheetAutomation().getProperty(indexIds[0]);	
-//				System.out.println("which has indexNo "+indexVariant.getString()+".\n");
-				setActiveWorksheetIndex(indexVariant.getLong());
-				indexVariant.dispose();		
+	        
+				setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
+				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
 				
 				args[0].dispose();
+				worksheetAutomation.dispose();
 	        }
 	    };	       
 	    return listener;
@@ -470,40 +440,35 @@ public class MainWindow {
 	protected void setEmbeddedWorkbookName(String activeWorkbookName) {
 		this.embeddedWorkbookName = activeWorkbookName;
 	}
-	
+		
 	/**
-	 * @return the embeddedWorkbookPath
+	 * @return the filePath
 	 */
-	public String getEmbeddedWorkbookPath() {
-		return embeddedWorkbookPath;
+	protected String getDirectoryPath() {
+		return directoryPath;
 	}
 
 	/**
-	 * @param embeddedWorkbookPath the embeddedWorkbookPath to set
+	 * @param filePath the filePath to set
 	 */
-	protected void setEmbeddedWorkbookPath(String embeddedWorkbookPath) {
-		this.embeddedWorkbookPath = embeddedWorkbookPath;
-	}
-	
-	
-	/**
-	 * @return the activeWorksheetAutomation
-	 */
-	protected OleAutomation getActiveWorksheetAutomation() {
-		return activeWorksheetAutomation;
+	protected void setDirectoryPath(String filePath) {
+		this.directoryPath = filePath;
 	}
 
 	/**
-	 * @param worksheetAutomation the activeWorksheetAutomation to set
+	 * @return the fileName
 	 */
-	protected void setActiveWorksheetAutomation(OleAutomation worksheetAutomation) {
-		
-		if(this.activeWorksheetAutomation!=null)
-			this.activeWorksheetAutomation.dispose();
-		
-		this.activeWorksheetAutomation = worksheetAutomation;
+	protected String getFileName() {
+		return fileName;
 	}
-	
+
+	/**
+	 * @param fileName the fileName to set
+	 */
+	protected void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
 	/**
 	 * @return the activeWorksheetName
 	 */
@@ -521,33 +486,15 @@ public class MainWindow {
 	/**
 	 * @return the activeWorksheetIndex
 	 */
-	protected long getActiveWorksheetIndex() {
+	protected int getActiveWorksheetIndex() {
 		return activeWorksheetIndex;
 	}
 
 	/**
 	 * @param activeWorksheetIndex the activeWorksheetIndex to set
 	 */
-	protected void setActiveWorksheetIndex(long activeWorksheetIndex) {
+	protected void setActiveWorksheetIndex(int activeWorksheetIndex) {
 		this.activeWorksheetIndex = activeWorksheetIndex;
-	}
-	
-	/**
-	 * @return the rangeAutomation
-	 */
-	protected OleAutomation getSelectedRangeAutomation() {
-		return selectedRangeAutomation;
-	}
-
-	/**
-	 * @param rangeAutomation the rangeAutomation to set
-	 */
-	protected void setSelectedRangeAutomation(OleAutomation rangeAutomation) {
-		
-		if(this.selectedRangeAutomation!=null)
-			this.selectedRangeAutomation.dispose();
-		
-		this.selectedRangeAutomation = rangeAutomation;
 	}
 	
 	/**

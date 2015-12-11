@@ -11,7 +11,6 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class ShapeUtils {
 	
-	
 	/**
 	 * Draw a textbox at the specified location 
 	 * @param shapesAutomation an OleAutomation that provides access to the "Shapes" Ole object. It represents a collection of shapes.
@@ -89,6 +88,73 @@ public class ShapeUtils {
 		return shapeAutomation;	
 	}
 
+	
+	/**
+	 * Get the title of the given shape		
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 * @return a string the represents the title of the shape
+	 */
+	public static String getShapeTitle(OleAutomation shapeAutomation){
+		
+		int[] titlePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Title"}); 
+		Variant titleVariant = shapeAutomation.getProperty(titlePropertyIds[0]);
+		String title = titleVariant.getString();
+		titleVariant.dispose();
+
+		return title;
+	}
+	
+	
+	/**
+	 * Set title to the given shape		
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 * @param title a string that represents the title to set
+	 * @return true if operation was successful, false otherwise
+	 */
+	public static boolean setShapeTitle(OleAutomation shapeAutomation, String title){
+		
+		int[] titlePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Title"}); 
+		Variant titleVariant = new Variant(title);
+		boolean isSuccess = shapeAutomation.setProperty(titlePropertyIds[0], titleVariant);
+		titleVariant.dispose();
+
+		return isSuccess;
+	}
+	
+	
+	/**
+	 * Get the name of the given shape		
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 * @return a string the represents the name of the shape
+	 */
+	public static String getShapeName(OleAutomation shapeAutomation){
+		
+		int[] namePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Name"}); 
+		Variant nameVariant = shapeAutomation.getProperty(namePropertyIds[0]);
+		String name = nameVariant.getString();
+		nameVariant.dispose();
+
+		return name;
+	}
+	
+	
+	/**
+	 * Set a name to the given shape		
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 * @param name a string that represents the name to set
+	 * @return true if operation was successful, false otherwise
+	 */
+	public static boolean setShapeName(OleAutomation shapeAutomation, String name){
+		
+		int[] namePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Name"}); 
+		Variant nameVariant = new Variant(name);
+		boolean isSuccess = shapeAutomation.setProperty(namePropertyIds[0], nameVariant);
+		nameVariant.dispose();
+
+		return isSuccess;
+	}
+	
+	
 	/**
 	 * Get FillFormat OleAutomation. This object can be used to change the format of the shape fill 
 	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
@@ -150,4 +216,22 @@ public class ShapeUtils {
 		
 		return shadowFormatAutomation;
 	}
+	
+	/**
+	 * Delete the given shape		
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 */
+	public static boolean deleteShape(OleAutomation shapeAutomation){
+		
+		int[] deleteMethodIds = shapeAutomation.getIDsOfNames(new String[]{"Delete"}); 
+		Variant result = shapeAutomation.invoke(deleteMethodIds[0]);
+		
+		if(result==null){
+			return false;
+		}
+		
+		result.dispose();
+		return true;
+	}
+	
 }

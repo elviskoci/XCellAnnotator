@@ -40,11 +40,33 @@ public class WorksheetUtils {
 	
 	
 	/**
+	 * set the name of the given worksheet
+	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+	 * @param a string that represents the name to set for the worksheet
+	 * @return true if operation was successful, false otherwise
+	 */
+	public static boolean setWorksheetName(OleAutomation worksheetAutomation, String name){
+		
+		int[] namePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Name"});	
+		if (namePropertyIds == null){			
+			System.out.println("\"Name\" property not found for \"Worksheet\" object!");
+			return false;
+		}		
+		
+		Variant nameVariant = new Variant(name); 
+		boolean isSuccess = worksheetAutomation.setProperty(namePropertyIds[0], nameVariant);
+		nameVariant.dispose();
+		
+		return isSuccess;
+	}
+	
+	
+	/**
 	 * Get the index of the given worksheet
 	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
 	 * @return the index number of the worksheet in the collection Workbook.Worksheets 
 	 */
-	public static long getWorksheetIndex(OleAutomation worksheetAutomation){
+	public static int getWorksheetIndex(OleAutomation worksheetAutomation){
 		
 		int[] indexPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Index"});	
 		if (indexPropertyIds == null){			
@@ -58,34 +80,55 @@ public class WorksheetUtils {
 			return 0;
 		}
 		
-		long worksheetIndex = indexVariant.getLong();
+		int worksheetIndex = indexVariant.getInt();
 		indexVariant.dispose();
 		
 		return worksheetIndex;
 	}
 	
+	
 	/**
-	 * Get the worksheet automation from the embedded workbook based on the given name  
-	 * @param workbookAutomation an OleAutomation that provides access to the functionalities  of the Worksheets OLE object.
-	 * @param sheetName the name of the worksheet
-	 * @return
+	 * set worksheet visibility
+	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+	 * @param true to set worksheet visible, false to hide it
+	 * @return true if operation was successful, false otherwise
 	 */
-	public static OleAutomation getWorksheetAutomationByName(OleAutomation worksheetsAutomation, String sheetName){
-		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName);
-		return worksheetAutomation;
-	}	
+	public static boolean setWorksheetVisibility(OleAutomation worksheetAutomation, boolean visible){
+		
+		int[] visiblePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Visible"});	
+		if (visiblePropertyIds == null){			
+			System.out.println("\"Visible\" property not found for \"Worksheet\" object!");
+			return false;
+		}		
+		
+		Variant visiblePropertyVariant = new Variant(visible); 
+		boolean isSuccess = worksheetAutomation.setProperty(visiblePropertyIds[0], visiblePropertyVariant);
+		visiblePropertyVariant.dispose();
+		
+		return isSuccess;
+	}
 	
 	
 	/**
-	 * Get the worksheet automation from the embedded workbook based on the index number  
-	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the Worksheets OLE object.
-	 * @param index an integer that represents the index of the worksheet in the collection of worksheets.
-	 * @return an OleAutomation to access worksheet object functionalities
+	 * Make the given worksheet the active sheet.
+	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+	 * @return true if operation was successful, false otherwise
 	 */
-	public static OleAutomation getWorksheetAutomationByIndex(OleAutomation worksheetsAutomation, int index){	
-		OleAutomation worksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, index);
-		return worksheetAutomation;
-	}	
+	public static boolean makeWorksheetActive(OleAutomation worksheetAutomation){
+		
+		int[] activateMethodsIds = worksheetAutomation.getIDsOfNames(new String[]{"Activate"});	
+		if (activateMethodsIds == null){			
+			System.out.println("\"Activate\" property not found for \"Worksheet\" object!");
+			return false;
+		}		
+
+		Variant result = worksheetAutomation.invoke(activateMethodsIds[0]);
+		if(result==null)
+			return false;
+		
+		result.dispose();
+		return true;
+	}
 	
 	
 	/**
@@ -120,6 +163,18 @@ public class WorksheetUtils {
 		return rangeAutomation;
 	}
 	
+	public static OleAutomation getUsedRange(OleAutomation worksheetAutomation){
+		
+		int[] usedRangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"UsedRange"});
+		
+		Variant usedRangeVariant = worksheetAutomation.getProperty(usedRangePropertyIds[0]);
+		OleAutomation usedRangeAutomation = usedRangeVariant.getAutomation();
+		usedRangeVariant.dispose();
+		
+		return usedRangeAutomation;
+	}
+	
+	
 	/**
 	 * Get the OleAutomation object for the "Shapes" property of the given worksheet  
 	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
@@ -145,44 +200,6 @@ public class WorksheetUtils {
 		return worksheetShapes;		
 	}
 	
-	
-	/**
-	 * Protect all worksheets that are part of the embedded workbook
-	 * @param worksheetsAutomation an OleAutomation for accessing the Worksheets OLE object (Represents a collection of worksheets in a workbook)
-	 * @return true if operation succeeded, false otherwise
-	 */
-	public static boolean protectWorksheets(OleAutomation worksheetsAutomation){
-		
-		int count = CollectionsUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
-		
-		int i; 
-		boolean isSuccess=true; 
-		for (i = 1; i <= count; i++) {
-		
-			OleAutomation nextWorksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, i);					
-			if(!protectWorksheet(nextWorksheetAutomation)){
-				System.out.println("ERROR: Could not protect one of the workbooks!");
-				isSuccess=false;			
-			}	
-			nextWorksheetAutomation.dispose();	
-			if(!isSuccess){
-				break;
-			}
-		}	
-		
-		if(!isSuccess){
-			for(int j=1; j<i;j++){
-				OleAutomation nextWorksheetAutomation =  CollectionsUtils.getItemByIndex(worksheetsAutomation, j);
-				unprotectWorksheet(nextWorksheetAutomation);
-				nextWorksheetAutomation.dispose();
-			}
-			worksheetsAutomation.dispose();
-			return false;
-		}
-		
-		worksheetsAutomation.dispose();
-		return true;
-	}
 	
 	/**
 	 * Protect the data, formating, and structure of the specified worksheet
@@ -224,7 +241,7 @@ public class WorksheetUtils {
 				arg.dispose();
 			}
 		}				
-		worksheetAutomation.dispose();	
+
 		return true;
 	}
 	
@@ -251,6 +268,29 @@ public class WorksheetUtils {
 		}	
 		
 		result.dispose();
+		return true;
+	}
+	
+	
+	public static boolean saveAsCSV(OleAutomation worksheetAutomation, String fileName){
+		
+		int[] saveAsMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"SaveAs", "FileName", "FileFormat"});	
+		
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(fileName);
+		args[1] = new Variant(6); // xlCSV = 6 
+		
+		int argsIds[] = Arrays.copyOfRange(saveAsMethodIds, 1, saveAsMethodIds.length); 
+		Variant result = worksheetAutomation.invoke(saveAsMethodIds[0], args, argsIds);
+		
+		if(result==null)
+			return false;
+					
+		for (Variant arg : args) {
+			arg.dispose();
+		}
+		result.dispose();
+		
 		return true;
 	}
 }

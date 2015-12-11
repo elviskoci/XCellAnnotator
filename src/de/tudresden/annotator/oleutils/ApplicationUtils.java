@@ -91,7 +91,7 @@ public class ApplicationUtils {
 		OleAutomation workbooksAutomation = workbooksVariant.getAutomation();
 		workbooksVariant.dispose();
 			
-		OleAutomation embeddedWorkbook = CollectionsUtils.getItemByName(workbooksAutomation, workbookName);
+		OleAutomation embeddedWorkbook = CollectionsUtils.getItemByName(workbooksAutomation, workbookName, false);
 		workbooksAutomation.dispose();
 		
 		return embeddedWorkbook;	

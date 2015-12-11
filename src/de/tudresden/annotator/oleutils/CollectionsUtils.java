@@ -14,11 +14,12 @@ public class CollectionsUtils {
 	/**
 	 * Get the item having the specified name from a OleAutomation object. The latter is a collection of OLE Objects. 
 	 * This method will fail if the OleAutomation does not have the "Item" property.
-	 * @param automation
+	 * @param automation an OleAutomation of an OLE collection 
 	 * @param itemName a string that represents the name of the item.
+	 * @param useMethod if true use invoke method, otherwise use getProperty. For some OLE objects "Item" is a property, for others is a method. 
 	 * @return
 	 */
-	public static OleAutomation getItemByName(OleAutomation automation, String itemName){
+	public static OleAutomation getItemByName(OleAutomation automation, String itemName, boolean useMethod){
 		
 		int[] itemPropertyIds = automation.getIDsOfNames(new String[]{"Item"});
 		if(itemPropertyIds == null){
@@ -29,7 +30,17 @@ public class CollectionsUtils {
 		Variant args[] = new Variant[1];
 		args[0] =  new Variant(itemName);
 		
-		Variant itemVariant = automation.getProperty(itemPropertyIds[0],args);
+		Variant itemVariant; 
+		if(!useMethod){
+			itemVariant = automation.getProperty(itemPropertyIds[0],args);
+		}else{
+			itemVariant = automation.invoke(itemPropertyIds[0],args);
+		}
+		
+		if(itemVariant==null){
+			return null;
+		}
+		
 		OleAutomation itemAutomation = itemVariant.getAutomation();
 		
 		args[0].dispose();
@@ -42,11 +53,12 @@ public class CollectionsUtils {
 	/**
 	 * Get the item having the specified index from a OleAutomation object. The latter is a collection of OLE Objects. 
 	 * This method will fail if the OleAutomation does not have the "Item" property.
-	 * @param automation
+	 * @param automation an OleAutomation of an OLE collection 
 	 * @param index an integer that represents the index number of the item in the collection. 
+	 * @param useMethod if true use invoke method, otherwise use getProperty. For some OLE objects "Item" is a property, for others is a method. 
 	 * @return
 	 */
-	public static OleAutomation getItemByIndex(OleAutomation automation, int index){
+	public static OleAutomation getItemByIndex(OleAutomation automation, int index, boolean useMethod){
 		
 		int[] itemPropertyIds = automation.getIDsOfNames(new String[]{"Item"});
 		if(itemPropertyIds == null){
@@ -57,7 +69,17 @@ public class CollectionsUtils {
 		Variant args[] = new Variant[1];
 		args[0] =  new Variant(index);
 		
-		Variant itemVariant = automation.getProperty(itemPropertyIds[0],args);
+		Variant itemVariant;
+		if(!useMethod){
+			itemVariant = automation.getProperty(itemPropertyIds[0],args);
+		}else{
+			itemVariant = automation.invoke(itemPropertyIds[0],args);
+		}
+		
+		if(itemVariant==null){
+			return null;
+		}
+		
 		OleAutomation itemAutomation = itemVariant.getAutomation();
 		
 		args[0].dispose();
