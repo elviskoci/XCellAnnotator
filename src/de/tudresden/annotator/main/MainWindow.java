@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
+import de.tudresden.annotator.oleutils.FileUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
@@ -80,28 +81,49 @@ public class MainWindow {
 	private void buildGUIWindow(Shell shell){
 		
 		Color white = new Color (Display.getCurrent(), 255, 255, 255);
-		// Color black = new Color (Display.getCurrent(), 0, 0, 0);
 		Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
+		// Color black = new Color (Display.getCurrent(), 0, 0, 0);
 		// Color lightBlue = new Color(Display.getCurrent(),229, 248, 255); 
 		
 		// Shell properties
 		shell.setText("Annotator");
 	    shell.setLayout(new FillLayout());
-	    shell.setSize(1200, 600);
+	    shell.setSize(1500, 800);
 	    
 	    shell.addListener(SWT.Close, new Listener()
 	    {
 	        public void handleEvent(Event event)
-	        {
-	            int style = SWT.APPLICATION_MODAL | SWT.YES | SWT.NO;
-	            MessageBox messageBox = new MessageBox(shell, style);
-	            messageBox.setText("Information");
-	            messageBox.setMessage("Close the aplication?");
-	            if(messageBox.open() == SWT.YES){
-	            	MainWindow.getInstance().disposeControlSite();
-	            	MainWindow.getInstance().disposeShell();
-	            	event.doit = true;
-	            }
+	        {	
+	        	if(controlSite!=null && controlSite.isDirty()){
+	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
+	        		MessageBox messageBox = new MessageBox(shell, style);
+	 	            messageBox.setMessage("Want to save your changes?");
+	 	            
+	 	            int response = messageBox.open();	 	 	            
+	 	            if( response== SWT.YES){	
+	 	            	
+	 	            	String filePath = directoryPath+"\\"+fileName;
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	
+	 	            	if(!isSaved){
+	 	            		System.err.println("Could not save progress!");
+	 	            		event.doit = false;
+	 	            	}
+	 	            	
+	 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+	 	            	disposeControlSite();
+	 	            	disposeShell();
+	 	            	event.doit = true;
+	 	            } 
+	 	            
+	 	            if(response == SWT.NO){
+	 	            	MainWindow.getInstance().disposeControlSite();
+	 	            	MainWindow.getInstance().disposeShell();
+	 	            	event.doit = true;
+	 	            } 
+	 	            
+	 	            event.doit = false;
+	        	}
 	        }
 	    });
 	    
@@ -147,8 +169,7 @@ public class MainWindow {
 		
 		// add a bar menu
 	    BarMenu  oleFrameMenuBar = new BarMenu(getOleFrame().getShell());
-	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());		
-	    
+	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());		    
 	}
 	
 	private void setUpWorkbookDisplay(){
@@ -160,8 +181,9 @@ public class MainWindow {
 	
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
-        setExcelApplication(application);
-	    
+	    // TODO: suppress alerts
+	    // System.out.println(ApplicationUtils.setDisplayAlerts(application, false));
+        
 	    // add event listeners
 	    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
@@ -183,8 +205,8 @@ public class MainWindow {
 	    setEmbeddedWorkbook(workbook);
 	    
 	    // protect the structure of the active workbook
-	    if(!WorkbookUtils.protectWorkbook(workbook, true, false))
-	    	System.out.println("\nERROR: Unable to protect active workbook!");
+	    //if(!WorkbookUtils.protectWorkbook(workbook, true, false))
+	    	//System.out.println("\nERROR: Unable to protect active workbook!");
 	    
 	    // protect all individual worksheets
 	    if(!WorkbookUtils.protectAllWorksheets(workbook))
@@ -192,8 +214,7 @@ public class MainWindow {
 	    
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
 	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
-	    setEmbeddedWorkbookName(workbookName);
-    
+	    
 	    // get the active worksheet automation, i.e. the one that is on top of the other worksheet
 	    OleAutomation worksheet = WorkbookUtils.getActiveWorksheetAutomation(workbook);
 	    
@@ -203,6 +224,8 @@ public class MainWindow {
 	    int sheetIndex = WorksheetUtils.getWorksheetIndex(worksheet);
 	    setActiveWorksheetIndex(sheetIndex);
 	    
+	    setEmbeddedWorkbookName(workbookName);
+	    setExcelApplication(application);
 	    worksheet.dispose();
 	}
 
@@ -272,19 +295,22 @@ public class MainWindow {
 	        	Variant[] args = e.arguments;
 	        	
 	            /*
-	             * the first argument is a Range object. get the number and range of selected areas 
+	             * the first argument is a Range object. Get the number and range of selected areas 
 	             */	        	
-
 	        	OleAutomation rangeAutomation = args[0].getAutomation();
 	        	setCurrentSelection(RangeUtils.getRangeAddress(rangeAutomation).split(","));
 	        	args[0].dispose();
-							
+	        	rangeAutomation.dispose();	
+	        	
 				/*
-				 * the second argument is a Worksheet object. It is not consider here. See SheetActivate event listener.   
+				 * the second argument is a Worksheet object. Get the name and index of the worksheet.
 				 */
-				args[1].dispose();
+	        	OleAutomation worksheetAutomation = args[1].getAutomation();		        
+				setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
+				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
+				args[1].dispose();	
+				worksheetAutomation.dispose();
 				
-				rangeAutomation.dispose();
 	        }
 	    };	       
 	    return listener;
@@ -306,11 +332,9 @@ public class MainWindow {
 	        	/*
 	             * This event returns only one argument, a Worksheet object. Get the name and index of the activated worksheet.
 	             */ 					
-				OleAutomation worksheetAutomation = args[0].getAutomation();
-	        
+				OleAutomation worksheetAutomation = args[0].getAutomation();        
 				setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
 				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
-				
 				args[0].dispose();
 				worksheetAutomation.dispose();
 	        }
@@ -333,10 +357,6 @@ public class MainWindow {
 	 */
 	protected void disposeControlSite() {
 		if (controlSite != null){
-			
-			WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-			//embeddedWorkbook.dispose();
-			
 			controlSite.dispose();
 		}
 		controlSite = null;

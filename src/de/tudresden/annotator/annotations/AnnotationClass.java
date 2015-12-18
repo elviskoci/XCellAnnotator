@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.annotations;
 
+import java.util.HashSet;
+
 import org.eclipse.swt.ole.win32.OleAutomation;
 
 /**
@@ -15,9 +17,13 @@ public class AnnotationClass {
 	 * An automation that represents a template to be used for annotation. 
 	 * It can be a shape which attributes are set (text,line,shadow,fill, etc) 
 	 */
-	private OleAutomation annotationToolAutomation; 
-	
-	
+	private OleAutomation annotationAutomation;
+	private int priority = -1;
+	private boolean isContainer = false;
+	private boolean isDependent = false;
+	private HashSet<AnnotationClass>  containedClasses = new HashSet<AnnotationClass>();
+	private String name;
+
 	/*
 	 * The label (name) used for the annotation class 
 	 */
@@ -27,6 +33,7 @@ public class AnnotationClass {
 	 * The annotation tool that will be used to annotate 
 	 */
 	private AnnotationTool annotationTool; 
+	
 	
 	/*
 	 * The color associated with this annotation class.
@@ -63,6 +70,7 @@ public class AnnotationClass {
 	private int lineStyle = 1; // Single line
 	private double lineTransparency = 0;
 	
+	private int shapeType = 1; //default rectangle
 	
 	/**
 	 * 
@@ -107,6 +115,47 @@ public class AnnotationClass {
 		this.hasFill = hasFill;
 	}
 	
+	/**
+	 * 
+	 * @param classLabel a string used as label (name) for the annotation class
+	 * @param tool the annotation tool that will be used to annotate this class 
+	 * @param shapeType the type of AutoShape to create
+	 * @param hasFill set if the annotation tool has or not a fill
+	 */
+	public AnnotationClass(String classLabel, AnnotationTool tool, int shapeType, boolean hasFill) {
+		
+		this.label = classLabel;
+		this.shapeType = shapeType;
+		this.annotationTool = tool;
+		this.hasFill = hasFill;
+	}
+	
+	
+	/**
+	 * 
+	 * @param classLabel a string used as label (name) for the annotation class
+	 * @param tool the annotation tool that will be used to annotate this class 
+	 * @param shapeType the type of AutoShape to create
+	 * @param hasFill set if the annotation tool has or not a fill
+	 * @param color an RGB color represented as long using this formula: B * 65536 + G * 256 + R
+	 */
+	public AnnotationClass(String classLabel, AnnotationTool tool, int shapeType, boolean hasFill , long color) {
+		
+		this.label = classLabel;
+		this.color = color;
+		this.annotationTool = tool;
+		this.hasFill = hasFill;
+		this.shapeType = shapeType;
+	}
+	
+	
+	/**
+	 * 
+	 * @param lineStyle
+	 * @param lineWeight
+	 * @param lineColor
+	 * @param lineTransparency
+	 */
 	public void setLineProperties( int lineStyle, double lineWeight, long lineColor, double lineTransparency){
 		
 		this.lineStyle = lineStyle;
@@ -115,7 +164,15 @@ public class AnnotationClass {
 		this.lineTransparency = lineTransparency;
 	}
 	
-	
+	/**
+	 * 
+	 * @param shadowType
+	 * @param shadowStyle
+	 * @param shadowBlur
+	 * @param shadowColor
+	 * @param shadowSize
+	 * @param shadowTransparency
+	 */
 	public void setShadowProperties(int shadowType, int shadowStyle, int shadowBlur, long shadowColor, int shadowSize, double shadowTransparency){
 		
 		this.shadowType = shadowType;
@@ -126,6 +183,15 @@ public class AnnotationClass {
 		this.shadowTransparency = shadowTransparency;
 	}
 	
+	/**
+	 * 
+	 * @param text
+	 * @param textColor
+	 * @param boldText
+	 * @param fontSize
+	 * @param textHAlignment
+	 * @param textVAlignment
+	 */
     public void setTextProperties(String text, long textColor, boolean boldText, int fontSize, int textHAlignment, int textVAlignment ){
     	
     	this.text = text;
@@ -178,6 +244,21 @@ public class AnnotationClass {
 	public void setAnnotationTool(AnnotationTool annotationTool) {
 		this.annotationTool = annotationTool;
 	}
+	
+	/**
+	 * @return the shapeType
+	 */
+	public int getShapeType() {
+		return shapeType;
+	}
+
+	/**
+	 * @param shapeType the shapeType to set
+	 */
+	public void setShapeType(int shapeType) {
+		this.shapeType = shapeType;
+	}
+
 
 	/**
 	 * @return the useShadow

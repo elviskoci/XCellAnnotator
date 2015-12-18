@@ -77,11 +77,6 @@ public class WorkbookUtils {
 		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName, false);
 		worksheetsAutomation.dispose();
 		
-		if(worksheetAutomation==null){
-			System.out.println("ERROR: Could not retrieve find worksheet with name \""+sheetName+"\"");
-			System.exit(1);
-		}	
-		
 		return worksheetAutomation;
 	}	
 		

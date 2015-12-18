@@ -10,8 +10,14 @@ import de.tudresden.annotator.oleutils.ColorFormatUtils;
  */
 public class ClassGenerator {
 	
+	private AnnotationClass[] annotationClasses;
 	
-	public static AnnotationClass[] createAnnotationClasses(){
+	public ClassGenerator(){
+		setAnnotationClasses(createAnnotationClasses());
+	}
+	
+	
+	private AnnotationClass[] createAnnotationClasses(){
 		AnnotationClass[] classes =  new AnnotationClass[5];
 		
 		long white =  ColorFormatUtils.getRGBColorAsLong(255, 255, 255);
@@ -24,16 +30,16 @@ public class ClassGenerator {
 		long greyLight =  ColorFormatUtils.getRGBColorAsLong(217, 217, 217);
 		long greyDark = ColorFormatUtils.getRGBColorAsLong(118, 113, 113);
 		
-		classes[0] = createUsesRectange("Table", blue_accent5, greyDark);
-		classes[1] = createUsesTextBox("Attributes", blue_accent1, greyLight);
-		classes[2] = createUsesTextBox("Data", green_accent6, greyLight);
-		classes[3] = createUsesTextBox("Header", yellow, greyLight);
-		classes[4] = createUsesTextBox("Metadata", orange_accent2, greyLight);
+		classes[0] = createShapeAnnotationClass("Table", blue_accent5, greyDark);
+		classes[1] = createTextBoxAnnotationClass("Attributes", blue_accent1, greyLight);
+		classes[2] = createTextBoxAnnotationClass("Data", green_accent6, greyLight);
+		classes[3] = createTextBoxAnnotationClass("Header", yellow, greyLight);
+		classes[4] = createTextBoxAnnotationClass("Metadata", orange_accent2, greyLight);
 		
 		return classes;
 	}
 	
-	protected static AnnotationClass createUsesTextBox(String label, long backcolor, long textColor){
+	private  AnnotationClass createTextBoxAnnotationClass(String label, long backcolor, long textColor){
 		
 		AnnotationClass c = new AnnotationClass(label, AnnotationTool.TEXTBOX, backcolor);
 		c.setHasFill(true);
@@ -50,19 +56,38 @@ public class ClassGenerator {
 	}
 	
 	
-	protected static AnnotationClass createUsesRectange(String label, long lineColor, long shadowColor){
+	private static AnnotationClass createShapeAnnotationClass(String label, long lineColor, long shadowColor){
 		
-		AnnotationClass c = new AnnotationClass(label, AnnotationTool.RECTANGLE, false);
+		AnnotationClass c = new AnnotationClass(label, AnnotationTool.SHAPE, false);
+		
 		c.setHasFill(false);
-		c.setUseShadow(true);
 		c.setUseText(false);
-		c.setUseLine(true);
+
+		c.setUseShadow(true);
+		c.setShadowColor(shadowColor);
 		
+		c.setUseLine(true);
 		c.setLineColor(lineColor);
 		c.setLineWeight(2);
 		
-		c.setShadowColor(shadowColor);
+		c.setShapeType(1);
 		
 		return c; 
+	}
+
+
+	/**
+	 * @return the annotationClasses
+	 */
+	public AnnotationClass[] getAnnotationClasses() {
+		return annotationClasses;
+	}
+
+
+	/**
+	 * @param annotationClasses the annotationClasses to set
+	 */
+	public void setAnnotationClasses(AnnotationClass[] annotationClasses) {
+		this.annotationClasses = annotationClasses;
 	}
 }

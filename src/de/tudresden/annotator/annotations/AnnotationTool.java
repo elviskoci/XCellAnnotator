@@ -8,10 +8,11 @@ package de.tudresden.annotator.annotations;
  */
 public enum AnnotationTool {
 	
-	RECTANGLE (1),
-	TEXTBOX (2),
-	BORDERAROUND (3),
-	RANGEFILL (4);
+	BORDERAROUND (1),
+	RANGEFILL (2),
+	TEXTBOX (3),
+	SHAPE (4),
+	COMPLEXSHAPE (5);
 	
 	private final int code;
 
