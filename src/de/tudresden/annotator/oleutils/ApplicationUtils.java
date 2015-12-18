@@ -69,7 +69,7 @@ public class ApplicationUtils {
 	
 	
 	/**
-	 * Get the OleAutomation object for the embedded workbook  
+	 * Get the OleAutomation object for the embedded workbook using (given) its name   
 	 * @param application an OleAutomation that provides access to the functionalities of the (Excel) Application OLE object
 	 * @param workbookName the name of the embedded workbook
 	 * @return an OleAutomation that provides access to the functionalities of the Embedded Workbook OLE object
@@ -205,6 +205,24 @@ public class ApplicationUtils {
 		rangeVariant.dispose();
 		
 		return rangeAutomation;
+	}
+	
+	
+	/**
+	 * Set application alerts on or off 
+	 * @param applicationAutomation an OleAutomation object for accessing the (Excel) Application OLE object
+	 * @param display true to display alerts, false to suppress them 
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean setDisplayAlerts(OleAutomation applicationAutomation, String display){
+		
+		// get the OleAutomation object for the selected range 
+		int[] displayAlertsPropertyIds = applicationAutomation.getIDsOfNames(new String[]{"DisplayAlerts"});
+		Variant valueVariant = new Variant(display);
+		boolean isSuccess = applicationAutomation.setProperty(displayAlertsPropertyIds[0], valueVariant);
+		valueVariant.dispose();
+		
+		return isSuccess;
 	}
 	
 	

@@ -125,7 +125,7 @@ public class ShapeUtils {
 	/**
 	 * Get the name of the given shape		
 	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
-	 * @return a string the represents the name of the shape
+	 * @return a string that represents the name of the shape
 	 */
 	public static String getShapeName(OleAutomation shapeAutomation){
 		
@@ -154,6 +154,37 @@ public class ShapeUtils {
 		return isSuccess;
 	}
 	
+	
+	/**
+	 * Get ID of the given shape		
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 * @return a long that represents the ID of the shape
+	 */
+	public static long getShapeID(OleAutomation shapeAutomation){
+		
+		int[] shapeIdPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"ID"}); 
+		Variant idVariant = shapeAutomation.getProperty(shapeIdPropertyIds[0]);
+		long id = idVariant.getLong();
+		idVariant.dispose();
+
+		return id;
+	}
+	
+	/**
+	 * Set the visibility of the given shape
+	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.
+	 * @param visible true if the shape should be shown, false to hide the shape
+	 * @return if the operation was successful the method will return true, otherwise it will return false
+	 */
+	public static boolean setShapeVisibility(OleAutomation shapeAutomation, boolean visible){
+		
+		int[] visiblePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Visible"});
+		Variant visibilityVariant = new Variant(visible);
+		boolean isSuccess = shapeAutomation.setProperty(visiblePropertyIds[0], visibilityVariant);
+		visibilityVariant.dispose();
+		
+		return isSuccess;
+	}
 	
 	/**
 	 * Get FillFormat OleAutomation. This object can be used to change the format of the shape fill 

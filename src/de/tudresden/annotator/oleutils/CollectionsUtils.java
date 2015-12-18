@@ -95,7 +95,7 @@ public class CollectionsUtils {
 	 * @param automation
 	 * @return
 	 */
-	public static int getNumberOfObjectsInOleCollection(OleAutomation automation){
+	public static int countItemsInCollection(OleAutomation automation){
 		
 		int[] countProperyIds = automation.getIDsOfNames(new String[]{"Count"});
 		if(countProperyIds == null){

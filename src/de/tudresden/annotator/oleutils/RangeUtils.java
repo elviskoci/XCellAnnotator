@@ -30,6 +30,56 @@ public class RangeUtils {
 	
 	
 	/**
+	 * Get areas from a range that represents a multi area selection  
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation that provides access to the collection of areas. 
+	 */
+	public static OleAutomation getAreas(OleAutomation rangeAutomation){
+		
+		int[] areasPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Areas"}); 
+		Variant areasVariant = rangeAutomation.getProperty(areasPropertyIds[0]);	
+		OleAutomation areasAutomation = areasVariant.getAutomation();
+		areasVariant.dispose();
+		
+		return areasAutomation;
+	}
+	
+	
+	/**
+	 * Get range value 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return a string that represents the value of the range
+	 */
+	public static String getValue(OleAutomation rangeAutomation){
+		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
+		
+		Variant valueVariant =  rangeAutomation.getProperty(valuePropertyIds[0]);
+		String value =  valueVariant.getString();
+		valueVariant.dispose();
+		
+		return value;
+	}
+	
+	
+	/**
+	 * Set a value to the range 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @param value the string to set as value 
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean setValue(OleAutomation rangeAutomation, String value){
+		
+		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
+		
+		Variant valueVariant = new Variant(value);
+		boolean isSuccess = rangeAutomation.setProperty(valuePropertyIds[0], valueVariant);
+		valueVariant.dispose();
+		
+		return isSuccess;
+	}
+	
+	
+	/**
 	 * Get the number of the first column in the first area in the specified range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return the number of the first column in the first area in the specified range
@@ -46,6 +96,22 @@ public class RangeUtils {
 	
 	
 	/**
+	 * Get collection of columns in the range 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation that provides access to the collection of columns in the range 
+	 */
+	public static OleAutomation getRangeColumns(OleAutomation rangeAutomation){
+		
+		int[] columnsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Columns"}); 
+		Variant columnsPropertyVariant = rangeAutomation.getProperty(columnsPropertyIds[0]);	
+		OleAutomation columnsAutomation =  columnsPropertyVariant.getAutomation();
+		columnsPropertyVariant.dispose();
+		
+		return columnsAutomation;
+	}
+	
+	
+	/**
 	 * Get the number of the first row in the first area in the specified range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return the number of the first row in the first area in the specified range
@@ -58,6 +124,21 @@ public class RangeUtils {
 		rowPropertyVariant.dispose();
 		
 		return row;
+	}
+	
+	/**
+	 * Get collection of rows in the range 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation that provides access to the collection of rows in the range 
+	 */
+	public static OleAutomation getRangeRows(OleAutomation rangeAutomation){
+		
+		int[] rowsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Rows"}); 
+		Variant rowsPropertyVariant = rangeAutomation.getProperty(rowsPropertyIds[0]);	
+		OleAutomation rowsAutomation = rowsPropertyVariant.getAutomation();
+		rowsPropertyVariant.dispose();
+		
+		return rowsAutomation;
 	}
 	
 	
@@ -126,37 +207,32 @@ public class RangeUtils {
 	
 	
 	/**
-	 * Set value to the range 
+	 * Filter range based on a criteria applied to a single field  
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
-	 * @param value the string to set as value 
-	 * @return true if the operation was successful, false otherwise
+	 * @return true if the operation succeeded, false otherwise
 	 */
-	public static boolean setValue(OleAutomation rangeAutomation, String value){
+	public static boolean filterRange(OleAutomation rangeAutomation, int field, String criteria1){
 		
-		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
+		int[] autoFilterMethodIds = rangeAutomation.getIDsOfNames(new String[]{"AutoFilter", "Field", "Criteria1"});
 		
-		Variant valueVariant = new Variant(value);
-		boolean isSuccess = rangeAutomation.setProperty(valuePropertyIds[0], valueVariant);
-		valueVariant.dispose();
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(field);
+		args[1] = new Variant(criteria1);
+		int argsIds[] = Arrays.copyOfRange(autoFilterMethodIds, 1, autoFilterMethodIds.length);
 		
-		return isSuccess;
+		Variant result = rangeAutomation.invoke(autoFilterMethodIds[0], args, argsIds);
+		for (Variant arg : args) {
+			arg.dispose();
+		}
+		
+		if(result == null){
+			return false;
+		}
+		
+		result.dispose();
+		return true;
 	}
 	
-	
-	/**
-	 * Get range value 
-	 * @param rangeAutomation an OleAutomation to access a Range of cells
-	 * @return a string that represents the value of the range
-	 */
-	public static String getValue(OleAutomation rangeAutomation){
-		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
-		
-		Variant valueVariant =  rangeAutomation.getProperty(valuePropertyIds[0]);
-		String value =  valueVariant.getString();
-		valueVariant.dispose();
-		
-		return value;
-	}
 	
 	/**
 	 * Get special cells from the given range
@@ -187,34 +263,6 @@ public class RangeUtils {
 	
 	
 	/**
-	 * Filter range based on the given criteria 
-	 * @param rangeAutomation an OleAutomation to access a Range of cells
-	 * @return true if the operation succeeded, false otherwise
-	 */
-	public static boolean filterRange(OleAutomation rangeAutomation, int field, String criteria1){
-		
-		int[] autoFilterMethodIds = rangeAutomation.getIDsOfNames(new String[]{"AutoFilter", "Field", "Criteria1"});
-		
-		Variant[] args = new Variant[2];
-		args[0] = new Variant(field);
-		args[1] = new Variant(criteria1);
-		int argsIds[] = Arrays.copyOfRange(autoFilterMethodIds, 1, autoFilterMethodIds.length);
-		
-		Variant result = rangeAutomation.invoke(autoFilterMethodIds[0], args, argsIds);
-		for (Variant arg : args) {
-			arg.dispose();
-		}
-		
-		if(result == null){
-			return false;
-		}
-		
-		result.dispose();
-		return true;
-	}
-	
-	
-	/**
 	 * Draw a border around the range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @param lineStyle one of the constants of XlLineStyle 
@@ -228,7 +276,7 @@ public class RangeUtils {
 		Variant methodParams[] = new Variant[3];
 		methodParams[0] = new Variant(lineStyle); // line style (e.g., continuous, dashed ) 
 		methodParams[1] = new Variant(weight); // border weight  (e.g., thick, thin )
-		methodParams[2] = new Variant(color); // index into the current color palette
+		methodParams[2] = new Variant(color); // RGB color as a long value 
 	
 		int[] paramIds = Arrays.copyOfRange(borderAroundMethodIds, 1, borderAroundMethodIds.length);
 		Variant result = rangeAutomation.invoke(borderAroundMethodIds[0], methodParams, paramIds);
@@ -247,11 +295,11 @@ public class RangeUtils {
 	
 	
 	/**
-	 * Erase border around the range
+	 * Remove border around the range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return true if operation succeeded, false otherwise
 	 */
-	public static boolean eraseBorderAroundRange(OleAutomation rangeAutomation){
+	public static boolean removeBorderAroundRange(OleAutomation rangeAutomation){
 		 
 		int[] borderAroundMethodIds = rangeAutomation.getIDsOfNames(new String[]{"BorderAround", "LineStyle"});
 		Variant methodParams[] = new Variant[1];
@@ -276,7 +324,7 @@ public class RangeUtils {
 	
 	
 	/**
-	 * Delete the given  range of cells 
+	 * Delete the given range of cells 
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return true if the operation succeeded, false otherwise
 	 */

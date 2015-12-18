@@ -20,18 +20,8 @@ public class WorkbookUtils {
 	 */
 	public static String getWorkbookName(OleAutomation workbookAutomation){
 		
-		int[] namePropertyIds = workbookAutomation.getIDsOfNames(new String[]{"Name"});	
-		if (namePropertyIds == null){			
-			System.out.println("\"Name\" property not found for \"Workbook\" object!");
-			return null;
-		}		
-		
+		int[] namePropertyIds = workbookAutomation.getIDsOfNames(new String[]{"Name"});			
 		Variant nameVariant = workbookAutomation.getProperty(namePropertyIds[0]);
-		if (nameVariant == null) {
-			System.out.println("\"Name\" variant is null!");
-			return null;
-		}
-		
 		String workbookName = nameVariant.getString();
 		nameVariant.dispose();
 		
@@ -46,26 +36,13 @@ public class WorkbookUtils {
 	 */
 	public static OleAutomation getWorksheetsAutomation(OleAutomation workbookAutomation){
 		
-		// get ID of Worksheets property
-		int[] worksheetsObjectIds = workbookAutomation.getIDsOfNames(new String[]{"Worksheets"});
-		if (worksheetsObjectIds == null) {
-			System.out.println("Property \"Worksheets\" was not found for the given Workbook OLE object!");
-			return null;
-		}
-		
-		// get property using the ID 
-		Variant worksheetsVariant =  workbookAutomation.getProperty(worksheetsObjectIds[0]);	
-		if(worksheetsVariant == null){
-			System.out.println("\"Worksheets\" variant is null!");
-			return null;		
-		}
-		// get automation from the Worksheets variant
+		int[] worksheetsObjectIds = workbookAutomation.getIDsOfNames(new String[]{"Worksheets"}); 
+		Variant worksheetsVariant =  workbookAutomation.getProperty(worksheetsObjectIds[0]);
 		OleAutomation worksheetsAutomation = worksheetsVariant.getAutomation();
 		worksheetsVariant.dispose();
 		
 		return worksheetsAutomation;
 	}
-	
 	
 	/**
 	 * Get the active worksheet automation using the "ActiveSheet" property. 
@@ -74,16 +51,8 @@ public class WorkbookUtils {
 	 */
 	public static OleAutomation getActiveWorksheetAutomation(OleAutomation workbookAutomation){
 		
-		int[] worksheetIds = workbookAutomation.getIDsOfNames(new String[]{"ActiveSheet"});	
-		if (worksheetIds == null){			
-			System.out.println("\"ActiveSheet\" property not found for the given OleAutomation object!");
-			return null;
-		}		
+		int[] worksheetIds = workbookAutomation.getIDsOfNames(new String[]{"ActiveSheet"});		
 		Variant worksheetVariant = workbookAutomation.getProperty(worksheetIds[0]);
-		if (worksheetVariant == null) {
-			System.out.println("Workbook variant is null!");
-			return null;
-		}		
 		OleAutomation worksheetAutomation = worksheetVariant.getAutomation();
 		worksheetVariant.dispose();
 		
@@ -108,6 +77,11 @@ public class WorkbookUtils {
 		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName, false);
 		worksheetsAutomation.dispose();
 		
+		if(worksheetAutomation==null){
+			System.out.println("ERROR: Could not retrieve find worksheet with name \""+sheetName+"\"");
+			System.exit(1);
+		}	
+		
 		return worksheetAutomation;
 	}	
 		
@@ -126,6 +100,12 @@ public class WorkbookUtils {
 		}	
 		
 		OleAutomation worksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, index, false);
+		
+		if(worksheetAutomation==null){
+			System.out.println("ERROR: Could not retrieve find worksheet with index \""+index+"\"");
+			System.exit(1);
+		}	
+		
 		worksheetsAutomation.dispose();
 		
 		return worksheetAutomation;
@@ -145,7 +125,7 @@ public class WorkbookUtils {
 			System.exit(1);
 		}	
 		
-		int count = CollectionsUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
+		int count = CollectionsUtils.countItemsInCollection(worksheetsAutomation);
 		OleAutomation lastSheet = getWorksheetAutomationByIndex(workbookAutomation, count); 
 		
 		int[] addMethodIds = worksheetsAutomation.getIDsOfNames(new String[]{"Add", "After"});	
@@ -229,15 +209,16 @@ public class WorkbookUtils {
 	public static boolean protectAllWorksheets(OleAutomation workbookAutomation){	
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
 		
-		int count = CollectionsUtils.getNumberOfObjectsInOleCollection(worksheetsAutomation);
+		int count = CollectionsUtils.countItemsInCollection(worksheetsAutomation);
 		
 		int i; 
 		boolean isSuccess=true; 
 		for (i = 1; i <= count; i++) {
 		
 			OleAutomation nextWorksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, i, false);					
-			if(!WorksheetUtils.protectWorksheet(nextWorksheetAutomation)){
-				System.out.println("ERROR: Could not protect one of the workbooks!");
+			if(!WorksheetUtils.protectWorksheet(nextWorksheetAutomation)){			
+				String  name = WorksheetUtils.getWorksheetName(nextWorksheetAutomation);
+				System.out.println("ERROR: Could not protect the workbook \""+name+"\"");
 				isSuccess=false;			
 			}	
 			nextWorksheetAutomation.dispose();	
@@ -262,6 +243,119 @@ public class WorkbookUtils {
 	
 	
 	/**
+	 * Unprotect all worksheets that are part of the given workbook
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @return true if operation succeeded, false otherwise
+	 */
+	public static boolean unprotectAllWorksheets(OleAutomation workbookAutomation){	
+		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
+		
+		int count = CollectionsUtils.countItemsInCollection(worksheetsAutomation);
+		
+		int i; 
+		boolean isSuccess=true; 
+		for (i = 1; i <= count; i++) {
+		
+			OleAutomation nextWorksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, i, false);					
+			if(!WorksheetUtils.unprotectWorksheet(nextWorksheetAutomation)){
+				String  name = WorksheetUtils.getWorksheetName(nextWorksheetAutomation);
+				System.out.println("ERROR: Could not unprotect the workbook \""+name+"\"");	
+				isSuccess = false;
+			}	
+			nextWorksheetAutomation.dispose();	
+			if(!isSuccess){
+				break;
+			}
+		}	
+		
+		if(!isSuccess){
+			for(int j=1; j<i;j++){
+				OleAutomation nextWorksheetAutomation =  CollectionsUtils.getItemByIndex(worksheetsAutomation, j, false);
+				WorksheetUtils.protectWorksheet(nextWorksheetAutomation);
+				nextWorksheetAutomation.dispose();
+			}
+			worksheetsAutomation.dispose();
+			return false;
+		}
+		
+		worksheetsAutomation.dispose();
+		return true;
+	}
+	
+	
+	/**
+	 * Save the embedded workbook
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @return true if operation succeeded, false otherwise
+	 */
+	public static boolean saveWorkbook(OleAutomation workbookAutomation){		
+		int[] saveMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Save"});	
+		Variant result = workbookAutomation.invoke(saveMethodIds[0]);
+		
+		if(result==null)
+			return false;
+		
+		result.dispose();	
+		return true;
+	}
+	
+	
+	/**
+	 * Is the embedded workbook saved
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @return true if workbook has not changed since last save, false otherwise
+	 */
+	public static boolean isWorkbookSaved(OleAutomation workbookAutomation){
+		
+		int[] savedMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Saved"});	
+		Variant result = workbookAutomation.getProperty(savedMethodIds[0]);
+		boolean isSaved = result.getBoolean();
+		result.dispose();
+		
+		return isSaved;
+	}
+	
+	
+	/**
+	 * Save as the given workbook 
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @param path the path of the file to save
+	 * @param format the format of the file to save. If null is passed this parameter will be ignored.
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean saveWorkbookAs(OleAutomation workbookAutomation, String path, Integer format) {
+
+		int[] saveMethodIds = workbookAutomation.getIDsOfNames(new String[] { "SaveAs", "FileName", "FileFormat"});
+
+		Variant[] args ;
+		int[] argsIds ;
+		if(format==null){
+			argsIds = new int[] { saveMethodIds[1] };
+			args = new Variant[1];
+			args[0] = new Variant(path); // file path
+			
+		}else{
+			argsIds = new int[] { saveMethodIds[1], saveMethodIds[2] };
+			args = new Variant[2];
+			args[0] = new Variant(path); // file path
+			args[1] = new Variant(format); // file format , XlFileFormat Enumeration
+		}
+		
+		Variant pVarResult = workbookAutomation.invoke(saveMethodIds[0], args, argsIds);
+		for (Variant arg : args) {
+			arg.dispose();
+		}
+		
+		if(pVarResult==null){
+			return false;
+		}
+		
+		pVarResult.dispose();
+		return true;
+	}
+
+	
+	/**
 	 * Close the given workbook. Invoke the "Close" method of the Workbook OLe object. Specify if should save changes.     
 	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the Workbook OLE object 
 	 * @param saveChanges if yes, changes made in the documents will be saved. Otherwise, all changes will be discarded. 
@@ -272,6 +366,7 @@ public class WorkbookUtils {
 			System.out.println("ERROR: Workbook is null!!!");
 			return false;
 		}		
+		
 		//TODO: implement when saveChanges = true
 		int[] closeMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Close","SaveChanges"}); //"Filename"	
 		if (closeMethodIds == null){			
@@ -284,7 +379,7 @@ public class WorkbookUtils {
 		
 		int[] argumentIds = Arrays.copyOfRange(closeMethodIds, 1, closeMethodIds.length); 
 		Variant result = workbookAutomation.invoke(closeMethodIds[0], args, argumentIds);
-		if(result==null){ // || result.getType() == OLE.VT_EMPTY)
+		if(result==null){ 
 			return false;
 		}
 		

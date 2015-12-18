@@ -118,11 +118,33 @@ public class WorksheetUtils {
 		
 		int[] activateMethodsIds = worksheetAutomation.getIDsOfNames(new String[]{"Activate"});	
 		if (activateMethodsIds == null){			
-			System.out.println("\"Activate\" property not found for \"Worksheet\" object!");
+			System.out.println("\"Activate\" method not found for \"Worksheet\" object!");
 			return false;
 		}		
 
 		Variant result = worksheetAutomation.invoke(activateMethodsIds[0]);
+		if(result==null)
+			return false;
+		
+		result.dispose();
+		return true;
+	}
+	
+	
+	/**
+	 * Make all data in the worksheet visible. Also, invoking this method will remove filters on the sheet data.  
+	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+	 * @return true if operation was successful, false otherwise
+	 */
+	public static boolean showAllWorksheetData(OleAutomation worksheetAutomation){
+		
+		int[] showAllDataMethodsIds = worksheetAutomation.getIDsOfNames(new String[]{"ShowAllData"});	
+		if (showAllDataMethodsIds == null){			
+			System.out.println("\"ShowAllData\" method not found for \"Worksheet\" object!");
+			return false;
+		}		
+
+		Variant result = worksheetAutomation.invoke(showAllDataMethodsIds[0]);
 		if(result==null)
 			return false;
 		
@@ -163,10 +185,15 @@ public class WorksheetUtils {
 		return rangeAutomation;
 	}
 	
+	
+	/**
+	 * Get the used range for the given worksheet
+	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
+	 * @return an OleAutomation for accessing the used range
+	 */
 	public static OleAutomation getUsedRange(OleAutomation worksheetAutomation){
 		
-		int[] usedRangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"UsedRange"});
-		
+		int[] usedRangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"UsedRange"});	
 		Variant usedRangeVariant = worksheetAutomation.getProperty(usedRangePropertyIds[0]);
 		OleAutomation usedRangeAutomation = usedRangeVariant.getAutomation();
 		usedRangeVariant.dispose();
@@ -210,32 +237,25 @@ public class WorksheetUtils {
 		
 		// get the id of the "Protect" method and the considered parameters
 		// you can find the documentation of this OLE method here https://msdn.microsoft.com/EN-US/library/ff840611.aspx
-		int[] protectMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Protect", "DrawingObjects", "Contents",  
-					"Scenarios", "AllowFormattingCells", "AllowFormattingColumns", "AllowFormattingRows", 
-					"AllowInsertingColumns", "AllowInsertingRows","AllowInsertingHyperlinks", "AllowDeletingColumns",
-					"AllowDeletingRows", "AllowSorting", "AllowFiltering", "AllowUsingPivotTables" });
+		int[] protectMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Protect", "AllowFormattingColumns", "AllowFormattingRows"});
 		
 		if (protectMethodIds == null) {
 			System.out.println("Method \"Protect\" of \"Worksheet\" OLE Object is not found!");
 			return false;
 		}else{
-			Variant[] args = new Variant[14];
-			args[0] = new Variant(true);
-			args[1] = new Variant(true);
-			args[2] = new Variant(true);
-			args[3] = new Variant(false);
-			args[4] = new Variant(true); // allow user to resize columns
-			args[5] = new Variant(true); // allow user to resize rows
-			args[6] = new Variant(false);
-			args[7] = new Variant(false);
-			args[8] = new Variant(false);
-			args[9] = new Variant(false);
-			args[10] = new Variant(false);
-			args[11] = new Variant(false);
-			args[12] = new Variant(false);
-			args[13] = new Variant(false);
+			Variant[] args = new Variant[2];
+			args[0] = new Variant(true); // allow user to resize columns
+			args[1] = new Variant(true); // allow user to resize rows
 			
-			Variant result = worksheetAutomation.invoke(protectMethodIds[0],args,Arrays.copyOfRange(protectMethodIds, 1, protectMethodIds.length));	
+			int argsIds[] = Arrays.copyOfRange(protectMethodIds, 1, protectMethodIds.length);
+			
+			Variant result = worksheetAutomation.invoke(protectMethodIds[0], args, argsIds);	
+			if(result==null){
+				System.err.println("The worksheet.protect method returned null");
+				System.exit(1);
+				// return false;
+			}
+			
 			result.dispose();
 			for (Variant arg: args) {
 				arg.dispose();
@@ -271,21 +291,29 @@ public class WorksheetUtils {
 		return true;
 	}
 	
-	
-	public static boolean saveAsCSV(OleAutomation worksheetAutomation, String fileName){
+	/**
+	 * Export the data in the given worksheet as a CSV file 
+	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+	 * @param filePath the path of the file to save the data 
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean saveAsCSV(OleAutomation worksheetAutomation, String filePath){
 		
 		int[] saveAsMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"SaveAs", "FileName", "FileFormat"});	
 		
 		Variant[] args = new Variant[2];
-		args[0] = new Variant(fileName);
+		args[0] = new Variant(filePath);
 		args[1] = new Variant(6); // xlCSV = 6 
 		
 		int argsIds[] = Arrays.copyOfRange(saveAsMethodIds, 1, saveAsMethodIds.length); 
 		Variant result = worksheetAutomation.invoke(saveAsMethodIds[0], args, argsIds);
 		
-		if(result==null)
-			return false;
-					
+		if(result==null){
+			System.err.println("The worksheet.unprotect method returned null");
+			System.exit(1);
+			// return false;
+		}
+		
 		for (Variant arg : args) {
 			arg.dispose();
 		}
