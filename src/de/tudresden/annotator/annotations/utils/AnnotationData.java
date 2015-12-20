@@ -46,7 +46,12 @@ public class AnnotationData {
 					
 		writeNewRow( annotationDataSheet, startColumn, endRow, annotation);			
 		
-		workbookAnnotation.addAnnotation(annotation);
+		
+		if(workbookAnnotation.getWorkbookName() == null || workbookAnnotation.getWorkbookName().compareTo("")==0){		
+			String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
+			workbookAnnotation.setWorkbookName(workbookName);
+		}
+		workbookAnnotation.addRangeAnnotation(annotation);
 	}
 	
 	
@@ -69,11 +74,13 @@ public class AnnotationData {
 		OleAutomation cell3 = WorksheetUtils.getRangeAutomation(annotationDataSheet, ((char) (startColumn+2))+""+endRow, null);
 		RangeUtils.setValue(cell3, annotation.getAnnotationClass().getLabel());
 		OleAutomation cell4 = WorksheetUtils.getRangeAutomation(annotationDataSheet, ((char) (startColumn+3))+""+endRow, null);
-		RangeUtils.setValue(cell4, String.valueOf(annotation.getAnnotationName()));
+		RangeUtils.setValue(cell4, annotation.getName());
 		OleAutomation cell5 = WorksheetUtils.getRangeAutomation(annotationDataSheet, ((char) (startColumn+4))+""+endRow, null);
-		RangeUtils.setValue(cell5, String.valueOf(annotation.getAnnotationClass().getAnnotationTool().getCode()));
+		RangeUtils.setValue(cell5, annotation.getAnnotationClass().getAnnotationTool().name());
 		OleAutomation cell6 = WorksheetUtils.getRangeAutomation(annotationDataSheet, ((char) (startColumn+5))+""+endRow, null);
-		RangeUtils.setValue(cell6, annotation.getRangeAddress());
+		RangeUtils.setValue(cell6, String.valueOf(annotation.getAnnotationClass().getAnnotationTool().getCode()));
+		OleAutomation cell7 = WorksheetUtils.getRangeAutomation(annotationDataSheet, ((char) (startColumn+6))+""+endRow, null);
+		RangeUtils.setValue(cell7, annotation.getRangeAddress());
 		
 		WorksheetUtils.protectWorksheet(annotationDataSheet);	
 	}
@@ -100,9 +107,11 @@ public class AnnotationData {
 		OleAutomation cellD1 = WorksheetUtils.getRangeAutomation(newWorksheet, "D1", null);
 		RangeUtils.setValue(cellD1, "AnnotationName");
 		OleAutomation cellE1 = WorksheetUtils.getRangeAutomation(newWorksheet, "E1", null);
-		RangeUtils.setValue(cellE1, "AnnotationTool");
+		RangeUtils.setValue(cellE1, "AnnotationToolName");
 		OleAutomation cellF1 = WorksheetUtils.getRangeAutomation(newWorksheet, "F1", null);
-		RangeUtils.setValue(cellF1, "Range");
+		RangeUtils.setValue(cellF1, "AnnotationToolCode");
+		OleAutomation cellG1 = WorksheetUtils.getRangeAutomation(newWorksheet, "G1", null);
+		RangeUtils.setValue(cellG1, "Range");
 		
 		//WorksheetUtils.setWorksheetVisibility(newWorksheet, false);		
 		WorkbookUtils.protectWorkbook(workbookAutomation, true, false);

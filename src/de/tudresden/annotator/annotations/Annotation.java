@@ -7,18 +7,34 @@ import java.util.Collection;
 import java.util.HashMap;
 
 /**
+ * This class represents an abstract annotation in a spreadsheet  
  * @author Elvis Koci
+ * @param <P> The class of the object that acts as the Parent Annotation 
+ * @param <T> The class of the objects that act as children (dependent) Annotations  
  */
-public abstract class Annotation {
+public abstract class Annotation < P extends Annotation, T extends Annotation>{
 	
-	private String annotationId; 
-	private HashMap <String, HashMap<String, Annotation>> annotationsByClass ; 
-	private HashMap <String, Annotation> allAnnotations;
+	/*
+	 * A hash map that organizes (buckets) annotations by class label 
+	 */
+	private HashMap <String, HashMap<String, T>> annotationsByClass ; 
 	
-		
+	/*
+	 * A hashmap that stores all the annotations that are contained by this annotation
+	 * In other words, all annotations in the hashmap depend on this annotation object.  
+	 */
+	private HashMap <String, T> allAnnotations;
+	
+	/*
+	 * The parent Annotation of this annotation object
+	 * This annotation object is dependent from the parent  
+	 */
+	private P parent;
+	
+	
 	public Annotation(){
-		this.annotationsByClass =  new HashMap<String, HashMap<String, Annotation>>();
-		this.allAnnotations =  new HashMap<String, Annotation>();
+		this.annotationsByClass =  new HashMap<String, HashMap<String, T>>();
+		this.allAnnotations =  new HashMap<String, T>();
 	}
 	
 	/**
@@ -26,89 +42,144 @@ public abstract class Annotation {
 	 * @param key a string that is used as an id (key) for the annotation object
 	 * @param annotation the annotation object to add
 	 */
-	public void addAnnotation(String key, Annotation annotation) {
+	public void addAnnotation(String key, T annotation){
 		this.allAnnotations.put(key, annotation);
 	}
-
+	
+	
 	/**
-	 * Remove annotation
-	 * @param key a string that is used as an id (key) for the annotation object
+	 * Remove the annotation that has the given key
+	 * @param key an object that is used as an id (key) for the annotation object
 	 */
-	public void removeAnnotation(String key) {
+	public void removeAnnotation(String key){
 		this.allAnnotations.remove(key);
 	}
 	
 	/**
-	 * Get the annotation by id
+	 * Get the annotation by id (key)
 	 * @param key a string that is used as an id (key) for the annotation object
-	 * @return
+	 * @return the annotation object
 	 */
-	public Annotation getAnnotation(String key){
+	public T getAnnotation(String key){
 		return this.allAnnotations.get(key);
 	}
-
+	
+	
+	/**
+	 * Get all annotations 
+	 * @return a collection of annotation objects
+	 */
+	public Collection<T> getAllAnnotations(){
+		return this.allAnnotations.values();
+	}
+	
 	
 	/**
 	 * Get all the annotations that have the given class label
 	 * @param label a string that represents the label of a Annotation class
-	 * @return a set of annotation objects
+	 * @return a collection of annotation objects
 	 */
-	public Collection<Annotation> getAnnotationsByClass(String label){
-		HashMap<String, Annotation> map = annotationsByClass.get(label);
+	public Collection<T> getAnnotationsByClass(String classLabel){
+		HashMap<String, T> map = annotationsByClass.get(classLabel);
 		if(map==null)
 			return null;
 		
 		return map.values();
 	}
 	
+	
 	/**
 	 * Add an annotation to the set containing annotations of the same class 
 	 * @param label a string that represents the label of a Annotation class
-	 * @param annotation the object that represents the annotation to add
+	 * @param anntationId a string that represents the id (key) of the annotation object
+	 * @param annotation an object that represents the annotation to add
 	 */
-	public void addAnnotationToSet(String label, String annotationId, Annotation annotation){
-				
-		HashMap<String, Annotation>  map = annotationsByClass.get(label);
+	public void addAnnotationToBucket(String classLabel, String key, T annotation){
+		HashMap<String, T>  map = annotationsByClass.get(classLabel);
 		if(map == null){
-			map = new HashMap<String, Annotation>();
+			map = new HashMap<String, T>();
 		}
 		
-		map.put(annotationId, annotation);
+		map.put(key, annotation);
 		
-		this.annotationsByClass.put(label, map);
+		this.annotationsByClass.put(classLabel, map);
 	}
+
 	
 	/**
 	 * Remove an annotation from the set containing annotations of the same class 
-	 * @param label a string that represents the label of a Annotation class
-	 * @param annotationId a string that represents the id of the annotation
+	 * @param classLabel a string that represents the label of a Annotation class
+	 * @param key a string that is used as an id (key) for the annotation object
 	 */
-	public void removeAnnotationFromSet(String label, String annotationId){
+	public void removeAnnotationFromBucket(String classLabel, String key){
 		
-		HashMap<String, Annotation>  map = annotationsByClass.get(label);
+		HashMap<String, T>  map = annotationsByClass.get(classLabel);
 		if(map == null)
 			return;
 		
-		map.remove(annotationId);
+		map.remove(key);		
 	}
 
+	
+	/**
+	 * Remove all annotation having the given class label
+	 * @param classLabel a string that represents the label of a Annotation class
+	 */
+	public void removeAllAnnotationsOfClass(String classLabel){
 		
+		HashMap<String, T>  map = annotationsByClass.get(classLabel);
+		
+		if(map == null)
+			return;
+		
+		map.clear();		
+		annotationsByClass.put(classLabel, map);
+	}
+	
+	
 	/**
-	 * @return the annotationId
+	 * Remove all annotations 
 	 */
-	public String getAnnotationId() {
-		return annotationId;
+	public void removeAllAnnotations(){
+		this.allAnnotations.clear();
+		this.annotationsByClass.clear();
+	}
+	
+	
+	/**
+	 * @return the parent
+	 */
+	public P getParent() {
+		return parent;
 	}
 
+
 	/**
-	 * @param annotationId the annotationId to set
+	 * @param parent the parent to set
 	 */
-	protected void setAnnotationId(String annotationId) {
-		this.annotationId = annotationId;
+	public void setParent(P parent) {
+		this.parent = parent;
 	}
 
-	public abstract boolean equals(Annotation obj);
+	
+	/**
+	 * Get the key for this annotation object
+	 * @return the key a string that represents the key (id) for this annotation object
+	 */
+	protected abstract String getKey();
 
-	public abstract int hashCode();
+//	/**
+//	 * Check if the given annotation object is equal to this one
+//	 * @param annotation the annotation object to compare this object to
+//	 * @return true if the objects are equal, false otherwise
+//	 */
+//	public abstract boolean equals(Annotation<P, T> annotation);
+//
+//	
+//	/**
+//	 * Get the hashcode of this object
+//	 * @return the hashcode of the object
+//	 */
+//	public abstract int hashCode();
 	
 }

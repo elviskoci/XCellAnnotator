@@ -6,8 +6,9 @@ package de.tudresden.annotator.annotations;
 /**
  * @author Elvis Koci
  */
-public class WorksheetAnnotation extends Annotation {
+public class WorksheetAnnotation extends Annotation<WorkbookAnnotation, RangeAnnotation> {
 
+	private String workbookName;
 	private String sheetName;
 	private int sheetIndex;
 
@@ -16,12 +17,33 @@ public class WorksheetAnnotation extends Annotation {
 	 * @param sheetName
 	 * @param sheetIndex
 	 */
+	public WorksheetAnnotation(String workbookName, String sheetName, int sheetIndex) {
+		this.workbookName = workbookName;
+		this.sheetIndex = sheetIndex;
+		this.sheetName = sheetName;
+	}
+		
+	/**
+	 * @param sheetName
+	 * @param sheetIndex
+	 */
 	public WorksheetAnnotation(String sheetName, int sheetIndex) {
 		this.sheetIndex = sheetIndex;
 		this.sheetName = sheetName;
-		
-		String annotationId = sheetName+"_"+sheetIndex;
-		this.setAnnotationId(annotationId);
+	}
+
+	/**
+	 * @return the workbookName
+	 */
+	public String getWorkbookName() {
+		return workbookName;
+	}
+
+	/**
+	 * @param workbookName the workbookName to set
+	 */
+	public void setWorkbookName(String workbookName) {
+		this.workbookName = workbookName;
 	}
 
 	/**
@@ -52,23 +74,33 @@ public class WorksheetAnnotation extends Annotation {
 		this.sheetIndex = sheetIndex;
 	}
 
-	
+	/* (non-Javadoc)
+	 * @see de.tudresden.annotator.annotations2.Annotation#getKey()
+	 */
 	@Override
-	public boolean equals(Annotation obj) {
-		if (obj instanceof WorksheetAnnotation) {
-
-			WorksheetAnnotation sheetAnnotation = (WorksheetAnnotation) obj;
-
-			return sheetAnnotation.getSheetName().compareTo(this.getSheetName()) == 0
-					&& sheetAnnotation.getSheetIndex() == this.getSheetIndex();
-		}
-		return false;
+	protected String getKey() {
+		return this.sheetName ;
 	}
-
 	
-	@Override
-	public int hashCode() {
-		return this.getSheetName().hashCode() + this.getSheetIndex();
+	protected static String getKey(String sheetName, String sheetIndex) {
+		return sheetName+"_"+sheetIndex;
 	}
-
+	
+//	@Override
+//	public boolean equals(Annotation<WorkbookAnnotation, RangeAnnotation> annotation) {
+//		
+//		if (annotation instanceof WorksheetAnnotation) {
+//			WorksheetAnnotation sheetAnnotation = (WorksheetAnnotation) annotation;
+//
+//			return sheetAnnotation.getSheetName().compareTo(this.getSheetName()) == 0
+//					&& sheetAnnotation.getSheetIndex() == this.getSheetIndex();
+//		}
+//		return false;
+//	}
+//
+//	
+//	@Override
+//	public int hashCode() {
+//		return this.getSheetName().hashCode() + this.getSheetIndex();
+//	}
 }

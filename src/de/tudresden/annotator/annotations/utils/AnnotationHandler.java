@@ -56,7 +56,7 @@ public class AnnotationHandler {
 			callAnnotationMethod(sheetAutomation, rangeAutomation, annotationClass, annotationName);
 			
 			// save metadata about the annotation
-			RangeAnnotation ra = new RangeAnnotation(annotationClass, annotationName, area, sheetName, sheetIndex);
+			RangeAnnotation ra = new RangeAnnotation(sheetName, sheetIndex, annotationClass, annotationName, area);
 			AnnotationData.saveAnnotationData(workbookAutomation, ra);	
 		}
 					
@@ -267,14 +267,13 @@ public class AnnotationHandler {
 		 		
 		// all shapes that are used for annotations have names that start with the following string pattern 
 		String sheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
-		String start = getStartOfAnnotationName(sheetName);
+		String startString = getStartOfAnnotationName(sheetName);
 		
 		int count = CollectionsUtils.countItemsInCollection(shapesAutomation);	
-		// System.out.println("Number of shapes in collection: "+count);
 		for (int i = 1; i <= count; i++) {
 			 OleAutomation shapeAutomation = CollectionsUtils.getItemByIndex(shapesAutomation, i, true);	 
 			 String name = ShapeUtils.getShapeName(shapeAutomation);
-			 if(name.indexOf(start)== 0){
+			 if(name.indexOf(startString)== 0){
 				 ShapeUtils.setShapeVisibility(shapeAutomation, visible);
 			 }
 			 shapeAutomation.dispose();
@@ -338,11 +337,11 @@ public class AnnotationHandler {
 		
 		// all shapes that are used for annotating have names that start with the following string pattern 
 		String sheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
-		String start =  getStartOfAnnotationName(sheetName);
+		String startString =  getStartOfAnnotationName(sheetName);
 		while (processed!=count){
 			 OleAutomation shapeAutomation = CollectionsUtils.getItemByIndex(shapesAutomation, 1, true);	 
 			 String name = ShapeUtils.getShapeName(shapeAutomation);
-			 if(name.indexOf(start)==0){
+			 if(name.indexOf(startString)==0){
 				 ShapeUtils.deleteShape(shapeAutomation);
 			 }
 			 processed++;

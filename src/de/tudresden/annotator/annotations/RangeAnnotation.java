@@ -3,69 +3,34 @@
  */
 package de.tudresden.annotator.annotations;
 
+import de.tudresden.annotator.annotations.utils.AnnotationHandler;
+
 /**
  * @author Elvis Koci
  */
-public class RangeAnnotation extends Annotation {
+public class RangeAnnotation extends Annotation <RangeAnnotation, RangeAnnotation> {
 
-	private AnnotationClass annotationClass; 	
-	private String annotationName;
-	private String rangeAddress;
 	private String sheetName;
 	private int sheetIndex;
-	private Annotation parent;
+	private AnnotationClass annotationClass; 	
+	private String name;
+	private String rangeAddress;
+	
 	
 	/**
-	 * @param annotationClass
-	 * @param annotationName
-	 * @param rangeAddress
-	 * @param sheetName
-	 * @param sheetIndex
+	 * Create a new RangeAnnotation
+	 * @param sheetName the name of the worksheet where the RangeAnnotation is placed 
+	 * @param sheetIndex the index of the worksheet where the RangeAnnotation is placed 
+	 * @param annotationClass the AnnotationClass that this RangeAnnotation is member of
+	 * @param name a string that represents the name of the RangeAnnotation
+	 * @param rangeAddress the address of the range that was annotated 
 	 */
-	public RangeAnnotation(AnnotationClass annotationClass, String annotationName, String rangeAddress,
-			String sheetName, int sheetIndex) {
-		super();
+	public RangeAnnotation(String sheetName, int sheetIndex, AnnotationClass annotationClass, String name, String rangeAddress ) {
 		this.annotationClass = annotationClass;
-		this.annotationName = annotationName;
+		this.name = name;
 		this.rangeAddress = rangeAddress;
 		this.sheetName = sheetName;
-		this.sheetIndex = sheetIndex;
-	}
-
-
-	/**
-	 * @return the annotationClass
-	 */
-	public AnnotationClass getAnnotationClass() {
-		return annotationClass;
-	}
-
-	/**
-	 * @param annotationClass the annotationClass to set
-	 */
-	public void setAnnotationClass(AnnotationClass annotationClass) {
-		this.annotationClass = annotationClass;
-	}
-
-	/**
-	 * @return the annotationName
-	 */
-	public String getAnnotationName() {
-		return annotationName;
-	}
-
-	/**
-	 * @param annotationName the annotationName to set
-	 */
-	public void setAnnotationName(String annotationName) {
-		this.annotationName = annotationName;
-	}
-
-	/**
-	 * @return the rangeAddress
-	 */
-	public String getRangeAddress() {
-		return rangeAddress;
+		this.sheetIndex = sheetIndex;	
 	}
 
 	/**
@@ -97,40 +62,74 @@ public class RangeAnnotation extends Annotation {
 	}
 
 	/**
+	 * @return the annotationClass
+	 */
+	public AnnotationClass getAnnotationClass() {
+		return annotationClass;
+	}
+
+	/**
+	 * @param annotationClass the annotationClass to set
+	 */
+	public void setAnnotationClass(AnnotationClass annotationClass) {
+		this.annotationClass = annotationClass;
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @return the rangeAddress
+	 */
+	public String getRangeAddress() {
+		return rangeAddress;
+	}
+
+	/**
 	 * @param rangeAddress the rangeAddress to set
 	 */
 	public void setRangeAddress(String rangeAddress) {
 		this.rangeAddress = rangeAddress;
 	}
+
 	
-	/**
-	 * @return the parent
+	/* (non-Javadoc)
+	 * @see de.tudresden.annotator.annotations2.Annotation#getKey()
 	 */
-	public Annotation getParent() {
-		return parent;
-	}
-
-
-	/**
-	 * @param parent the parent to set
-	 */
-	public void setParent(Annotation parent) {
-		this.parent = parent;
-	}
-
-
 	@Override
-	public boolean equals(Annotation obj) {
-		
-		if (obj instanceof RangeAnnotation) {	
-			RangeAnnotation rangeAnnotation = (RangeAnnotation) obj;		
-            return rangeAnnotation.getAnnotationName().compareToIgnoreCase(this.getAnnotationName())==0;
-        }
-        return false;
+	protected String getKey() {
+		return this.name;
 	}
 	
-	@Override
-	public int hashCode() {
-		return this.getAnnotationName().hashCode();
+	
+	protected static String getKey(String sheetName, String classLabel, String rangeAddress) {
+		return AnnotationHandler.getStartOfAnnotationName(sheetName)+"_"+classLabel+"_"+rangeAddress;
 	}
+	
+
+//	@Override
+//	public boolean equals(Annotation <RangeAnnotation, RangeAnnotation> annotation) {
+//		if (annotation instanceof RangeAnnotation) {	
+//			RangeAnnotation rangeAnnotation = (RangeAnnotation) annotation;		
+//            return rangeAnnotation.getName().compareToIgnoreCase(this.getName())==0;
+//        }
+//        return false;
+//	}
+//
+//	
+//	@Override
+//	public int hashCode() {
+//		return this.getName().hashCode();
+//	}
 }
