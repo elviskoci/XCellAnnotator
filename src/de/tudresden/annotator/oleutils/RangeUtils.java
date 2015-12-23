@@ -13,6 +13,7 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class RangeUtils {
 	
+	
 	/**
 	 * Get the address of the range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
@@ -26,6 +27,42 @@ public class RangeUtils {
 		addressVariant.dispose();
 		
 		return address;
+	}
+	
+	
+	/**
+	 * Get the number of cells in the range. This method can handle very large range selection 
+	 * @param rangeAutomation an automation that provides access to Range OLE object
+	 * @return a long that represents the number of cells in the range
+	 */
+	public static long countLarge(OleAutomation rangeAutomation){
+		
+		int[] countLargeProperyIds = rangeAutomation.getIDsOfNames(new String[]{"CountLarge"});
+				
+		Variant countLargePropertyVariant =  rangeAutomation.getProperty(countLargeProperyIds[0]);			
+				
+		long countLarge = countLargePropertyVariant.getLong();
+		countLargePropertyVariant.dispose();
+		
+		return countLarge;
+	}
+	
+	
+	/**
+	 * Get the number of cells in the range. This method can handle ranges having up to 2,147,483,647 cells
+	 * @param rangeAutomation an automation that provides access to Range OLE object
+	 * @return an integer that represents the number of cells in the range
+	 */
+	public static long count(OleAutomation rangeAutomation){
+		
+		int[] countProperyIds = rangeAutomation.getIDsOfNames(new String[]{"Count"});
+				
+		Variant countPropertyVariant =  rangeAutomation.getProperty(countProperyIds[0]);			
+				
+		int count = countPropertyVariant.getInt();
+		countPropertyVariant.dispose();
+		
+		return count;
 	}
 	
 	
@@ -339,5 +376,122 @@ public class RangeUtils {
 		
 		result.dispose();
 		return true;
+	}
+	
+	
+	/**
+	 * Check if the first range contains (completely) the second range based on the given addresses 
+	 * @param rangeAddress1 the address of the first range (i.e. the potential container) 
+	 * @param rangeAddress2 the address of the second range (i.e. the range that might be contained by the first one)
+	 * @return true if the first range contains the second range, false otherwise. 
+	 */
+	public static boolean checkForContainment(String rangeAddress1 , String rangeAddress2){
+		
+		String r1Cells[] = rangeAddress1.split(":");
+		String r2Cells[] = rangeAddress2.split(":");
+		
+		String r1TopLeft = null, r1DownRight = null, r2TopLeft = null, r2DownRight = null;	
+		r1TopLeft =  r1Cells[0];
+		if(r1Cells.length == 1){
+			r1DownRight = r1Cells[0];
+		}else{
+			r1DownRight = r1Cells[1];
+		}
+		
+		r2TopLeft = r2Cells[0];	
+		if(r2Cells.length == 1){
+			r2DownRight = r2Cells[0];
+		}else{
+			r2DownRight = r2Cells[1];
+		}
+			
+		int topColComp = compareCellsByColumn(r1TopLeft, r2TopLeft);
+		int topRowComp = compareCellsByRow(r1TopLeft, r2TopLeft);
+			
+		int downColComp = compareCellsByColumn(r1DownRight, r2DownRight);
+		int downRowComp = compareCellsByRow(r1DownRight, r2DownRight);
+				
+		boolean downRightCellContained =  topColComp<=0 && topRowComp<=0;
+		boolean topLeftCellContained = downColComp>=0 && downRowComp>=0; 
+		
+		if(downRightCellContained && topLeftCellContained)
+			return true;
+		
+		return false;
+	}
+	
+	
+	/**
+	 * Check if the first range contains at least a part of the second range based on the given addresses. 
+	 * In other words, check if the ranges share cells. 
+	 * @param rangeAddress1 the address of the first range 
+	 * @param rangeAddress2 the address of the second range 
+	 * @return true if the first range shares cells with the second range, false otherwise. 
+	 */
+	public static boolean checkForPartialContainment(String rangeAddress1 , String rangeAddress2){
+		
+		String r1Cells[] = rangeAddress1.split(":");
+		String r2Cells[] = rangeAddress2.split(":");
+		
+		String r1TopLeft = null, r1DownRight = null, r2TopLeft = null, r2DownRight = null;	
+		r1TopLeft =  r1Cells[0];	
+		if(r1Cells.length == 1){
+			r1DownRight = r1Cells[0];
+		}else{
+			r1DownRight = r1Cells[1];
+		}
+		
+		r2TopLeft = r2Cells[0];	
+		if(r2Cells.length == 1){
+			r2DownRight = r2Cells[0];
+		}else{
+			r2DownRight = r2Cells[1];
+		}
+					
+		int topDownColComp = compareCellsByColumn(r1TopLeft, r2DownRight);
+		int topDownRowComp = compareCellsByRow(r1TopLeft, r2DownRight);
+		
+		int downTopColComp = compareCellsByColumn(r1DownRight, r2TopLeft);
+		int downTopRowComp = compareCellsByRow(r1DownRight, r2TopLeft);
+		
+		boolean rowsNotItersecting =  downTopRowComp<0 || topDownRowComp>0; 
+		boolean colsNotIntersecting =  downTopColComp<0 || topDownColComp>0; 
+		
+		if(!(rowsNotItersecting || colsNotIntersecting))
+			return true;
+		
+		return false; 
+	}
+	
+	/**
+	 * Compare two cells based on their column address 
+	 * @param cell1Address a string that represents the address of the first cell
+	 * @param cell2Address a string that represents the address of the second cell
+	 * @return it returns 0 if the cells have the same column address, 
+	 * a negative number if the second cell has higher (Alphabetically) column address, 
+	 * a positive number if the first cell has a higher (Alphabetically) column address
+	 */
+	public static int compareCellsByColumn(String cell1Address, String cell2Address){
+		
+		String col1 =  cell1Address.replaceAll("[0-9\\$]+","");
+		String col2 =  cell2Address.replaceAll("[0-9\\$]+","");
+		
+		return col1.compareTo(col2);
+	}
+	
+	/**
+	 * Compare two cells based on their row number 
+	 * @param cell1Address a string that represents the address of the first cell
+	 * @param cell2Address a string that represents the address of the second cell
+	 * @return it returns 0 if the cells have the same row, 
+	 * a negative number if the second cell has higher row number, 
+	 * a positive number if the first cell has a higher row number
+	 */
+	public static int compareCellsByRow(String cell1Address, String cell2Address){
+		
+		int row1 =  Integer.valueOf(cell1Address.replaceAll("[^0-9]+",""));
+		int row2 =  Integer.valueOf(cell2Address.replaceAll("[^0-9]+",""));
+				
+		return row1 - row2;
 	}
 }

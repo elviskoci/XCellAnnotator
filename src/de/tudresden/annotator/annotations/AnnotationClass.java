@@ -3,27 +3,25 @@
  */
 package de.tudresden.annotator.annotations;
 
-import java.util.HashSet;
-
-import org.eclipse.swt.ole.win32.OleAutomation;
+import java.util.ArrayList;
 
 /**
  * @author Elvis Koci
  */
 public class AnnotationClass {
 	
-	/*
-	 * Experimental 
-	 * An automation that represents a template to be used for annotation. 
-	 * It can be a shape which attributes are set (text,line,shadow,fill, etc) 
-	 */
-	private OleAutomation annotationAutomation;
-	private int priority = -1;
-	private boolean isContainer = false;
-	private boolean isDependent = false;
-	private HashSet<AnnotationClass>  containedClasses = new HashSet<AnnotationClass>();
-	private String name;
 
+	// private OleAutomation annotationAutomation;
+	
+	/*
+	 * The following  five attributes model the dependencies between the annotations 
+	 */
+	private boolean isContainer = false;
+	private ArrayList<AnnotationClass>  containedClasses = new ArrayList<AnnotationClass>();	
+	private boolean isDependent = false;
+	private AnnotationClass container;  
+	private boolean canBeContained;
+	
 	/*
 	 * The label (name) used for the annotation class 
 	 */
@@ -46,6 +44,7 @@ public class AnnotationClass {
 	 * If a simple border is used to annotate, than this property it is not considered.   
 	 */
 	private boolean hasFill = true; 
+	
 	private double fillTransparency = 0.80;
 	
 	private boolean useShadow = false;
@@ -70,6 +69,9 @@ public class AnnotationClass {
 	private int lineStyle = 1; // Single line
 	private double lineTransparency = 0;
 	
+	/*
+	 * The type of the shape to use for the annotation. Check MsoAutoShapeType enumeration
+	 */
 	private int shapeType = 1; //default rectangle
 	
 	/**
@@ -173,7 +175,8 @@ public class AnnotationClass {
 	 * @param shadowSize
 	 * @param shadowTransparency
 	 */
-	public void setShadowProperties(int shadowType, int shadowStyle, int shadowBlur, long shadowColor, int shadowSize, double shadowTransparency){
+	public void setShadowProperties(int shadowType, int shadowStyle, int shadowBlur, 
+									long shadowColor, int shadowSize, double shadowTransparency){
 		
 		this.shadowType = shadowType;
 		this.shadowBlur = shadowBlur;
@@ -560,5 +563,112 @@ public class AnnotationClass {
 	 */
 	public void setFillTransparency(double fillTransparency) {
 		this.fillTransparency = fillTransparency;
+	}
+
+
+	/**
+	 * @return the isContainer
+	 */
+	public boolean isContainer() {
+		return isContainer;
+	}
+
+
+	/**
+	 * @param isContainer the isContainer to set
+	 */
+	public void setIsContainer(boolean isContainer) {
+		this.isContainer = isContainer;
+	}
+
+
+	/**
+	 * @return the isDependent
+	 */
+	public boolean isDependent() {
+		return isDependent;
+	}
+
+
+	/**
+	 * @param isDependent the isDependent to set
+	 */
+	public void setIsDependent(boolean isDependent) {
+		if(isDependent)
+			setCanBeContained(true);
+		
+		this.isDependent = isDependent;
+	}
+	
+	
+	/**
+	 * @param isDependent the isDependent to set
+	 */
+	public void setIsDependent(boolean isDependent, AnnotationClass container) {
+		if(isDependent){
+			setCanBeContained(true);
+			this.setContainer(container);
+		}
+		
+		this.isDependent = isDependent;
+	}
+
+
+	/**
+	 * @return the containedClasses
+	 */
+	public ArrayList<AnnotationClass> getContainedClasses() {
+		return containedClasses;
+	}
+
+
+	/**
+	 * @param containedClasses the containedClasses to set
+	 */
+	public boolean setContainedClasses(ArrayList<AnnotationClass> containedClasses) {
+		if(this.isContainer){
+			this.containedClasses = containedClasses;
+			return true;
+		}
+		
+		return false;
+	}
+
+
+	/**
+	 * @return the container
+	 */
+	public AnnotationClass getContainer() {
+		return container;
+	}
+
+	
+	/**
+	 * @param container the container to set
+	 */
+	public void setContainer(AnnotationClass container) {
+		this.container = container;
+		
+		if(container!=null && !isContainer())
+			this.setIsDependent(true);
+		
+		if(container!=null && !isContainable())
+			this.setCanBeContained(true);
+	}
+
+	
+	/**
+	 * @return the canBeContained
+	 */
+	public boolean isContainable() {
+		return canBeContained;
+	}
+
+	
+	/**
+	 * @param canBeContained the canBeContained to set
+	 */
+	public void setCanBeContained(boolean canBeContained) {
+		this.canBeContained = canBeContained;
 	}
 }

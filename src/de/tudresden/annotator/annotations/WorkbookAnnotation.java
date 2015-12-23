@@ -4,25 +4,37 @@
 package de.tudresden.annotator.annotations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 
-import de.tudresden.annotator.annotations.utils.AnnotationHandler;
+import org.json.JSONObject;
 
 /**
+ * 
  * @author Elvis Koci
  */
-public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnnotation>{
-
+public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
+	
+	/**
+	 * The name of the workbook that is embedded in the application
+	 */
 	private String workbookName;
+	
+	
+	/**
+	 * This hashmap is used to manage worksheet annotations
+	 * For the moment the key is the name of the worksheet
+	 * The WorksheetAnnotation objects acts as value 
+	 */
 	private HashMap<String, WorksheetAnnotation> worksheetAnnotations;
+	
 	
 	/**
 	 * @param workbookName
 	 */
 	public WorkbookAnnotation() {
 		this.worksheetAnnotations = new  HashMap<String, WorksheetAnnotation>();
-		this.setParent(null);
 	}
 	
 	
@@ -32,9 +44,9 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 	public WorkbookAnnotation(String workbookName) {
 		this.workbookName = workbookName;
 		this.worksheetAnnotations = new  HashMap<String, WorksheetAnnotation>();
-		this.setParent(null);
 	}
 
+	
 	/**
 	 * @param workbookName
 	 * @param worksheetAnnotations
@@ -42,8 +54,8 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 	public WorkbookAnnotation(String workbookName, HashMap<String, WorksheetAnnotation> worksheetAnnotations) {
 		this.workbookName = workbookName;
 		this.worksheetAnnotations = worksheetAnnotations;
-		this.setParent(null);
 	}
+	
 	
 	/**
 	 * Add a new RangeAutomation
@@ -55,21 +67,8 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 	 */
 	public void addRangeAnnotation(String sheetName, int sheetIndex, AnnotationClass annotationClass, String name, String rangeAddress ){
 		
-		String sheetKey = sheetName;
-		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
-		
-		if(sheetAnnotation==null){
-			sheetAnnotation = new WorksheetAnnotation(sheetName, sheetIndex);
-			this.worksheetAnnotations.put(sheetKey, sheetAnnotation);
-		}
-		
 		RangeAnnotation rangeAnnotation= new RangeAnnotation(sheetName, sheetIndex, annotationClass, name, rangeAddress);
-		
-		sheetAnnotation.addAnnotation(name, rangeAnnotation);
-		sheetAnnotation.addAnnotationToBucket(annotationClass.getLabel(), name, rangeAnnotation);
-		
-		this.addAnnotation(name, rangeAnnotation);
-		this.addAnnotationToBucket(annotationClass.getLabel(), name, rangeAnnotation);		
+		addRangeAnnotation(rangeAnnotation);
 	}
 	
 	
@@ -84,7 +83,17 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 		
 		if(sheetAnnotation==null){
 			sheetAnnotation = new WorksheetAnnotation(rangeAnnotation.getSheetName(), rangeAnnotation.getSheetIndex());
+			sheetAnnotation.setParent(this);
 			this.worksheetAnnotations.put(sheetKey, sheetAnnotation);
+			
+		}
+		
+		DependentAnnotation<?> parent = rangeAnnotation.getParent();
+		if(parent!=null){
+			parent.addAnnotationToBucket(rangeAnnotation.getAnnotationClass().getLabel(), rangeAnnotation.getName(), rangeAnnotation);
+			parent.addAnnotation(rangeAnnotation.getName(), rangeAnnotation);
+		}else{
+			rangeAnnotation.setParent(sheetAnnotation);
 		}
 		
 		sheetAnnotation.addAnnotation(rangeAnnotation.getName(), rangeAnnotation);
@@ -93,6 +102,7 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 		this.addAnnotation(rangeAnnotation.getName(), rangeAnnotation);
 		this.addAnnotationToBucket(rangeAnnotation.getAnnotationClass().getLabel(), rangeAnnotation.getName(), rangeAnnotation);
 	}
+	
 	
 	/**
 	 * Get the RangeAutomation based on the worksheet key and annotation key
@@ -116,7 +126,7 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 	 * @param classLabel the label of the AnnotationClass that this RangeAnnotation is member of
 	 * @return a collection of RangeAutomations that correspond to the given arguments
 	 */
-	public Collection<RangeAnnotation> getRangeAnnotationsFromBucket(String sheetKey, String classLabel){
+	public Collection<RangeAnnotation> getSheetAnnotationsByClass(String sheetKey, String classLabel){
 		
 		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
 		
@@ -124,6 +134,22 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 			return null;
 		
 		return sheetAnnotation.getAnnotationsByClass(classLabel);		
+	}
+	
+	
+	/**
+	 * Get all annotation objects for the specified worksheet
+	 * @param sheetKey a string that represents the key (id) of the worksheet 
+	 * @return a collection of annotations objects
+	 */
+	public Collection<RangeAnnotation> getAllRangeAnnotationsForSheet(String sheetKey){
+		
+		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
+		
+		if(sheetAnnotation==null)
+			return null;
+		
+		return sheetAnnotation.getAllAnnotations();
 	}
 	
 	
@@ -166,14 +192,36 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 		this.removeAnnotation(annotationKey);
 		this.removeAnnotationFromBucket(classLabel, annotationKey);
 	}
+	
+	
+	/**
+	 * Remove a RangeAutomation 
+	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
+	 * @param rangeAnnotationKey a string that is used as key for the annotation object 
+	 */
+	public void removeRangeAnnotation(String sheetKey, String rangeAnnotationKey){
+		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
 		
+		if(sheetAnnotation==null)
+			return;
+		
+		String classLabel = sheetAnnotation.getAnnotation(rangeAnnotationKey).getAnnotationClass().getLabel();
+		
+		sheetAnnotation.removeAnnotation(rangeAnnotationKey);
+		sheetAnnotation.removeAnnotationFromBucket(classLabel, rangeAnnotationKey);
+		
+		this.removeAnnotation(rangeAnnotationKey);
+		this.removeAnnotationFromBucket(classLabel, rangeAnnotationKey);
+	}
+	
+	
 	/**
 	 * Remove all RangeAutomations belonging to the specified Workbook and AnnotationClass
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 * @param classLabel the label of the AnnotationClass that this RangeAnnotation is member of
 	 * 
 	 */
-	public void emptyRangeAnnotationBucket(String sheetKey, String classLabel){
+	public void emptySheetAnnotationBucket(String sheetKey, String classLabel){
 		
 		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
 		
@@ -182,8 +230,8 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 		
 		ArrayList<RangeAnnotation>  annotations= new ArrayList<RangeAnnotation>(sheetAnnotation.getAnnotationsByClass(classLabel));	
 		for (RangeAnnotation rangeAnnotation : annotations) {
-			this.removeAnnotationFromBucket(classLabel, rangeAnnotation.getKey());
-			this.removeAnnotation(rangeAnnotation.getKey());
+			this.removeAnnotationFromBucket(classLabel, rangeAnnotation.getName());
+			this.removeAnnotation(rangeAnnotation.getName());
 		}
 		
 		sheetAnnotation.removeAllAnnotationsOfClass(classLabel);
@@ -194,7 +242,7 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 	 * Remove all RangeAutomation belonging to the worksheet with the given key
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 */
-	public void removeAllAnnotationFromSheet(String sheetKey){
+	public void removeAllAnnotationsFromSheet(String sheetKey){
 		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
 		sheetAnnotation.removeAllAnnotations();
 	}
@@ -213,16 +261,22 @@ public class WorkbookAnnotation extends Annotation<WorkbookAnnotation, RangeAnno
 	public void setWorkbookName(String workbookName) {
 		this.workbookName = workbookName;
 	}
-
 	
-	/* (non-Javadoc)
-	 * @see de.tudresden.annotator.annotations2.Annotation#getKey()
+		
+	/**
+	 * @return the worksheetAnnotations
 	 */
-	@Override
-	protected String getKey() {
-		return this.workbookName;
+	public HashMap<String, WorksheetAnnotation> getWorksheetAnnotations() {
+		return worksheetAnnotations;
 	}
 
+
+	@Override 
+	public String toString() {
+			
+		JSONObject json = new JSONObject(worksheetAnnotations);
+		return json.toString();
+	}
 	
 	
 //	@Override

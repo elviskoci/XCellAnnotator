@@ -3,10 +3,12 @@
  */
 package de.tudresden.annotator.annotations;
 
+import org.json.JSONObject;
+
 /**
  * @author Elvis Koci
  */
-public class WorksheetAnnotation extends Annotation<WorkbookAnnotation, RangeAnnotation> {
+public class WorksheetAnnotation extends DependentAnnotation<WorkbookAnnotation> {
 
 	private String workbookName;
 	private String sheetName;
@@ -73,17 +75,17 @@ public class WorksheetAnnotation extends Annotation<WorkbookAnnotation, RangeAnn
 	public void setSheetIndex(int sheetIndex) {
 		this.sheetIndex = sheetIndex;
 	}
-
-	/* (non-Javadoc)
-	 * @see de.tudresden.annotator.annotations2.Annotation#getKey()
-	 */
-	@Override
-	protected String getKey() {
-		return this.sheetName ;
+	
+	public static String generateKey(String sheetName, int sheetIndex) {
+		//return sheetName+"_"+sheetIndex;
+		return sheetName;
 	}
 	
-	protected static String getKey(String sheetName, String sheetIndex) {
-		return sheetName+"_"+sheetIndex;
+	
+	@Override 
+	public String toString() {
+		// JSONObject json = new JSONObject(this.allAnnotations);
+		return this.allAnnotations.toString(); 
 	}
 	
 //	@Override

@@ -6,7 +6,6 @@ package de.tudresden.annotator.annotations.utils;
 import org.eclipse.swt.ole.win32.OleAutomation;
 
 import de.tudresden.annotator.annotations.RangeAnnotation;
-import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -15,10 +14,9 @@ import de.tudresden.annotator.oleutils.WorksheetUtils;
 /**
  * @author Elvis Koci
  */
-public class AnnotationData {
+public class AnnotationDataSheet {
 	
 	protected static final String name = "Annotation_Data_Sheet";
-	protected static final WorkbookAnnotation workbookAnnotation = new WorkbookAnnotation();
 	
 	/**
 	 * Save the annotation data
@@ -45,13 +43,7 @@ public class AnnotationData {
 		endRow =  endRow + 1;
 					
 		writeNewRow( annotationDataSheet, startColumn, endRow, annotation);			
-		
-		
-		if(workbookAnnotation.getWorkbookName() == null || workbookAnnotation.getWorkbookName().compareTo("")==0){		
-			String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
-			workbookAnnotation.setWorkbookName(workbookName);
-		}
-		workbookAnnotation.addRangeAnnotation(annotation);
+	
 	}
 	
 	

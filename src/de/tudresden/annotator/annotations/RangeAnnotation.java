@@ -8,7 +8,7 @@ import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 /**
  * @author Elvis Koci
  */
-public class RangeAnnotation extends Annotation <RangeAnnotation, RangeAnnotation> {
+public class RangeAnnotation extends DependentAnnotation<DependentAnnotation<?>> {
 
 	private String sheetName;
 	private int sheetIndex;
@@ -103,20 +103,16 @@ public class RangeAnnotation extends Annotation <RangeAnnotation, RangeAnnotatio
 		this.rangeAddress = rangeAddress;
 	}
 
-	
-	/* (non-Javadoc)
-	 * @see de.tudresden.annotator.annotations2.Annotation#getKey()
-	 */
-	@Override
-	protected String getKey() {
-		return this.name;
-	}
-	
-	
-	protected static String getKey(String sheetName, String classLabel, String rangeAddress) {
+		
+	public static String generateKey(String sheetName, String classLabel, String rangeAddress) {
 		return AnnotationHandler.getStartOfAnnotationName(sheetName)+"_"+classLabel+"_"+rangeAddress;
 	}
 	
+	@Override 
+	public String toString() { 
+		//JSONObject json = new JSONObject(new ArrayList<RangeAnnotation>(this.getAllAnnotations()));
+		return this.allAnnotations.toString(); 
+	}
 
 //	@Override
 //	public boolean equals(Annotation <RangeAnnotation, RangeAnnotation> annotation) {

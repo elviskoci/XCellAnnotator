@@ -12,24 +12,18 @@ import java.util.HashMap;
  * @param <P> The class of the object that acts as the Parent Annotation 
  * @param <T> The class of the objects that act as children (dependent) Annotations  
  */
-public abstract class Annotation < P extends Annotation, T extends Annotation>{
+public abstract class Annotation < T extends Annotation<?>>{
 	
 	/*
 	 * A hash map that organizes (buckets) annotations by class label 
 	 */
-	private HashMap <String, HashMap<String, T>> annotationsByClass ; 
+	protected HashMap <String, HashMap<String, T>> annotationsByClass ; 
 	
 	/*
 	 * A hashmap that stores all the annotations that are contained by this annotation
 	 * In other words, all annotations in the hashmap depend on this annotation object.  
 	 */
-	private HashMap <String, T> allAnnotations;
-	
-	/*
-	 * The parent Annotation of this annotation object
-	 * This annotation object is dependent from the parent  
-	 */
-	private P parent;
+	protected HashMap <String, T> allAnnotations;
 	
 	
 	public Annotation(){
@@ -146,28 +140,6 @@ public abstract class Annotation < P extends Annotation, T extends Annotation>{
 	}
 	
 	
-	/**
-	 * @return the parent
-	 */
-	public P getParent() {
-		return parent;
-	}
-
-
-	/**
-	 * @param parent the parent to set
-	 */
-	public void setParent(P parent) {
-		this.parent = parent;
-	}
-
-	
-	/**
-	 * Get the key for this annotation object
-	 * @return the key a string that represents the key (id) for this annotation object
-	 */
-	protected abstract String getKey();
-
 //	/**
 //	 * Check if the given annotation object is equal to this one
 //	 * @param annotation the annotation object to compare this object to

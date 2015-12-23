@@ -13,7 +13,7 @@ import org.eclipse.swt.ole.win32.OleClientSite;
 import org.eclipse.swt.ole.win32.OleControlSite;
 import org.eclipse.swt.ole.win32.Variant;
 
-import de.tudresden.annotator.annotations.utils.AnnotationData;
+import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.main.MainWindow;
 
@@ -47,12 +47,12 @@ public class FileUtils {
 		}
 		
 		AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, false);
-		AnnotationData.setVisibility(embeddedWorkbook, false);
+		AnnotationDataSheet.setVisibility(embeddedWorkbook, false);
 		
 		System.out.println("The file path is: "+filePath);
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
-		AnnotationData.setVisibility(embeddedWorkbook, true);
+		AnnotationDataSheet.setVisibility(embeddedWorkbook, true);
 		AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, true);
 		
 		boolean isProtected = WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);		
