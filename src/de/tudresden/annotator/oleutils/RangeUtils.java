@@ -53,7 +53,7 @@ public class RangeUtils {
 	 * @param rangeAutomation an automation that provides access to Range OLE object
 	 * @return an integer that represents the number of cells in the range
 	 */
-	public static long count(OleAutomation rangeAutomation){
+	public static int count(OleAutomation rangeAutomation){
 		
 		int[] countProperyIds = rangeAutomation.getIDsOfNames(new String[]{"Count"});
 				
@@ -81,9 +81,24 @@ public class RangeUtils {
 		return areasAutomation;
 	}
 	
+	/**
+	 * Get a collection of cells from a range  
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation that provides access to the collection of cells. 
+	 */
+	public static OleAutomation getCells(OleAutomation rangeAutomation){
+		
+		int[] cellsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Cells"}); 
+		Variant cellsVariant = rangeAutomation.getProperty(cellsPropertyIds[0]);	
+		OleAutomation cellsAutomation = cellsVariant.getAutomation();
+		cellsVariant.dispose();
+		
+		return cellsAutomation;
+	}
+	
 	
 	/**
-	 * Get range value 
+	 * Get range value. This method assumes single cell ranges.
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return a string that represents the value of the range
 	 */
@@ -99,7 +114,7 @@ public class RangeUtils {
 	
 	
 	/**
-	 * Set a value to the range 
+	 * Set a value to the range. This method assumes single cell ranges.
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @param value the string to set as value 
 	 * @return true if the operation was successful, false otherwise
@@ -114,6 +129,29 @@ public class RangeUtils {
 		
 		return isSuccess;
 	}
+	
+	
+	/**
+	 * Get the value of each cell in the range. 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an array of strings. each string represent a cell value.
+	 */
+	public static String[] getRangeValues(OleAutomation rangeAutomation){
+		
+		OleAutomation cells = RangeUtils.getCells(rangeAutomation);
+		int countCells = CollectionsUtils.countItemsInCollection(cells); 
+		
+		String[] values = new String[countCells];
+		int i = 1; 
+		while(i<=countCells){
+			OleAutomation cellAutomation = CollectionsUtils.getItemByIndex(cells, i, false);
+			values[i-1]= RangeUtils.getValue(cellAutomation);
+			i++;
+		}
+		
+		return values;
+	}
+	
 	
 	
 	/**

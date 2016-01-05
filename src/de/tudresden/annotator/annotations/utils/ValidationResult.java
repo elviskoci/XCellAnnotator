@@ -8,9 +8,10 @@ package de.tudresden.annotator.annotations.utils;
  */
 public enum ValidationResult {
 	
-	OK (1), 
-	OVERLAPPING (2), 
-	NOTCONTAINED (3);
+	OK (1),
+	EMPTY (2),
+	OVERLAPPING (3), 
+	NOTCONTAINED (4);
 
 	private final int code;
     

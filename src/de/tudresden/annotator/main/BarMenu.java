@@ -1,5 +1,7 @@
 package de.tudresden.annotator.main;
 
+import java.util.Iterator;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -53,6 +55,19 @@ public class BarMenu {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				MainWindow.getInstance().fileOpen();
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				boolean isDataInMemory = AnnotationDataSheet.readAnnotationData(workbookAutomation);
+				if(isDataInMemory){
+					System.out.println(AnnotationHandler.getWorkbookAnnotation().getWorksheetAnnotations());
+					AnnotationHandler.setVisilityForShapeAnnotations(workbookAutomation, true);
+					AnnotationDataSheet.setVisibility(workbookAutomation, true);
+				}else{
+					int style = SWT.ICON_WARNING;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Could not read the annotation data. "
+	 	            		+ "Either there are no annotations or the annotation data are not in the expect format.");
+	 	            messageBox.open();
+				}
 			}
 		});
 		
@@ -258,11 +273,10 @@ public class BarMenu {
 		Menu menuMarkAs = new Menu(markAsMenuItem);
 		markAsMenuItem.setMenu(menuMarkAs);
 		
-		ClassGenerator cg = new ClassGenerator();
-		AnnotationClass[] classes = cg.getAnnotationClasses();
-		
-		for (AnnotationClass annotationClass : classes) {
-			
+		Iterator<AnnotationClass> itr = ClassGenerator.getAnnotationClasses().values().iterator();
+	
+		while(itr.hasNext()){
+			AnnotationClass annotationClass = (AnnotationClass) itr.next();
 			MenuItem menuAnnotateTable = new MenuItem(menuMarkAs, SWT.CASCADE);
 			menuAnnotateTable.setText(annotationClass.getLabel());
 			menuAnnotateTable.addSelectionListener(new SelectionAdapter() {

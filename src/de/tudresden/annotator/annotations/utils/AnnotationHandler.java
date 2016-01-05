@@ -64,9 +64,28 @@ public class AnnotationHandler {
 		WorksheetUtils.unprotectWorksheet(sheetAutomation);
 
 		// for each area in the range create an annotation
-		for (String area : selectedAreas) {
+		for (String selectedArea : selectedAreas) {
 			
-			String[] subStrings = area.split(":");
+			boolean isEmpty = true; 
+			OleAutomation usedRange = WorksheetUtils.getUsedRange(sheetAutomation);
+			OleAutomation usedAreas = RangeUtils.getAreas(usedRange);
+			int count = CollectionsUtils.countItemsInCollection(usedAreas);
+			for(int i=1; i<=count;i++){
+				OleAutomation usedArea = CollectionsUtils.getItemByIndex(usedAreas, i, false);
+				String usedAreaAddress = RangeUtils.getRangeAddress(usedArea);
+				if(RangeUtils.checkForPartialContainment(usedAreaAddress, selectedArea)){
+					isEmpty = false;
+				}
+				//usedArea.dispose();
+			}
+			usedAreas.dispose();
+			usedRange.dispose();
+			
+			if(isEmpty){
+				return new AnnotationResult(ValidationResult.EMPTY, "The selected range does not contain any value!");
+			}
+			
+			String[] subStrings = selectedArea.split(":");
 
 			String topRightCell = subStrings[0];
 			String downLeftCell = null;
@@ -75,9 +94,10 @@ public class AnnotationHandler {
 			
 			
 			String classLabel = annotationClass.getLabel();
-			String annotationName = generateAnnotationName(sheetName, classLabel, area);
+			String annotationName = generateAnnotationName(sheetName, classLabel, selectedArea);
 			
-			RangeAnnotation ra = new RangeAnnotation(sheetName, sheetIndex, annotationClass, annotationName, area);
+			
+			RangeAnnotation ra = new RangeAnnotation(sheetName, sheetIndex, annotationClass, annotationName, selectedArea);
 			
 			ValidationResult validationResult = validateAnnotation(ra);
 			
@@ -90,13 +110,14 @@ public class AnnotationHandler {
 				}
 				
 				if(validationResult==ValidationResult.OVERLAPPING){
-					String message = "Could not create a \""+classLabel+"\" annotation! The selected range \""+area+"\" overlaps with an existing annotation."; 
+					String message = "Could not create a \""+classLabel+"\" annotation! The selected range \""+selectedArea+"\" overlaps with an existing annotation."; 
 					return new AnnotationResult(validationResult, message);
 				}
 			}
 			
 
-			OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, topRightCell, downLeftCell);				
+			OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, topRightCell, downLeftCell);
+			
 			callAnnotationMethod(sheetAutomation, rangeAutomation, annotationClass, annotationName);
 			
 			// save on the AnnotationDataSheet metadata about the annotation 
@@ -159,6 +180,7 @@ public class AnnotationHandler {
 		AnnotationClass annotationClass =  annotation.getAnnotationClass();
 		String sheetKey = annotation.getSheetName();
 		//WorksheetAnnotation.generateKey(annotation.getSheetName(), annotation.getSheetIndex());
+		
 		
 		if(annotationClass.isDependent()){
 						
@@ -563,7 +585,7 @@ public class AnnotationHandler {
 					 workbookAnnotation.removeRangeAnnotation(sheetName, name);
 			 }
 			 processed++;
-			 shapeAutomation.dispose();
+			 // shapeAutomation.dispose();
 			 // TODO: Dispose shapeAutomation ?
 		}			
 		shapesAutomation.dispose();

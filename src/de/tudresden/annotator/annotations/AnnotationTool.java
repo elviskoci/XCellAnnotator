@@ -26,4 +26,15 @@ public enum AnnotationTool {
 	public int getCode() {
 		return code;
 	}
+	
+	public static AnnotationTool getByCode(int code){
+		
+		for (AnnotationTool tool : values()) {
+			if (tool.getCode() == code) {
+				return tool;
+			}
+		}
+		
+		return null;
+	}
 }

@@ -12,13 +12,49 @@ public class RangeTests {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		String c1 = "AA", c2 = "ABZ";		
+		System.out.println(countCellsBetweenColumns(c1, c2, true));
+	}
+	
+	public static int countCellsBetweenColumns(String startColumn, String endColumn, boolean inclusive){
 		
-		String range1 = "$D$6:$J$15", range2 = "$C$2";
-		// System.out.println("Does first range contain second? "+RangeTests.checkForContainment(range1, range2));
-		// System.out.println("Partial Containment? "+RangeTests.checkForPartialContainment(range1, range2));
+		int countFields = 0;	
+		if(startColumn.length() < endColumn.length()){
+			
+			for (int i = 0; i < startColumn.length(); i++) {
+				int diff = endColumn.charAt(i) - startColumn.charAt(i);
+				if(diff!=0)
+					countFields = countFields + (diff * 26) + 26;
+			}
+
+			for (int j = endColumn.length()-startColumn.length(); j < endColumn.length(); j++) {
+				countFields = countFields + ((endColumn.charAt(j)-'A') + 1);
+			}
+		}
 		
-		System.out.println(!range1.matches("^[a-zA-Z\\$]{3,5}[1-9]{1,7}"));
-		System.out.println(!range2.matches("^[a-zA-Z\\$]{3,5}[1-9]{1,7}"));
+		if(startColumn.length()==endColumn.length()){
+			
+			if(startColumn.length()>1){
+				for (int k = 0; k < startColumn.length(); k++) {
+					int diff = endColumn.charAt(k) - startColumn.charAt(k);
+					
+					if(k==(startColumn.length()-1)){
+						countFields = countFields + diff + 1;
+						break;
+					}
+					
+					if(diff!=0){
+						countFields = countFields + (diff * 26);
+					}
+					
+					System.out.println(countFields);
+				}
+			}else{
+				countFields = endColumn.compareTo(startColumn) + 1; 
+			}
+		}
+		
+		return countFields;
 	}
 	
 	public static boolean checkForContainment(String range1 , String range2){

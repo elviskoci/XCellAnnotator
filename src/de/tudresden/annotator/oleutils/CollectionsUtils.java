@@ -62,7 +62,11 @@ public class CollectionsUtils {
 		
 		int[] itemPropertyIds = automation.getIDsOfNames(new String[]{"Item"});
 		if(itemPropertyIds == null){
-			System.out.println("Property \"Item\" not found for the give Ole object");
+			if(!useMethod){
+				System.out.println("Property \"Item\" not found for the give Ole object");
+			}else{
+				System.out.println("Method \"Item\" not found for the give Ole object");
+			}
 			return null;
 		}
 		

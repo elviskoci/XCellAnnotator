@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.annotations.utils;
 
+import java.util.HashMap;
+
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.AnnotationTool;
 import de.tudresden.annotator.oleutils.ColorFormatUtils;
@@ -12,14 +14,17 @@ import de.tudresden.annotator.oleutils.ColorFormatUtils;
  */
 public class ClassGenerator {
 	
-	private AnnotationClass[] annotationClasses;
+	private static final HashMap<String, AnnotationClass> annotationClasses;
 	
-	public ClassGenerator(){
-		setAnnotationClasses(createAnnotationClasses());
+	static{
+		annotationClasses = new HashMap<String, AnnotationClass>();
+		AnnotationClass[] classes = createAnnotationClasses();
+		for (AnnotationClass annotationClass : classes) {
+			annotationClasses.put(annotationClass.getLabel(), annotationClass);
+		}
 	}
-	
-	
-	private AnnotationClass[] createAnnotationClasses(){
+		
+	private static AnnotationClass[] createAnnotationClasses(){
 		
 		AnnotationClass[] classes =  new AnnotationClass[5];
 		
@@ -78,7 +83,7 @@ public class ClassGenerator {
 		return c; 
 	}
 
-	private  AnnotationClass createTextBoxAnnotationClass(String label, long backcolor, boolean useText, long textColor,
+	private  static AnnotationClass createTextBoxAnnotationClass(String label, long backcolor, boolean useText, long textColor,
 														    boolean isContainable, boolean isDependent, AnnotationClass container){
 		
 		AnnotationClass c = new AnnotationClass(label, AnnotationTool.TEXTBOX, backcolor);
@@ -100,18 +105,12 @@ public class ClassGenerator {
 		return c; 
 	}
 
+
 	/**
-	 * @return the annotationClasses
+	 * @return the annotationclasses
 	 */
-	public AnnotationClass[] getAnnotationClasses() {
+	public static HashMap<String, AnnotationClass> getAnnotationClasses() {
 		return annotationClasses;
 	}
-
-
-	/**
-	 * @param annotationClasses the annotationClasses to set
-	 */
-	public void setAnnotationClasses(AnnotationClass[] annotationClasses) {
-		this.annotationClasses = annotationClasses;
-	}
+	
 }

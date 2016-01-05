@@ -73,7 +73,7 @@ public class AnnotationClass {
 	 * The type of the shape to use for the annotation. Check MsoAutoShapeType enumeration
 	 */
 	private int shapeType = 1; //default rectangle
-	
+		
 	/**
 	 * 
 	 * @param classLabel a string used as label (name) for the annotation class
