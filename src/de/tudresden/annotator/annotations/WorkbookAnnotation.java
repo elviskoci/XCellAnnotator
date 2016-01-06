@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 
-import org.json.JSONObject;
-
 /**
  * 
  * @author Elvis Koci
@@ -19,7 +17,8 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	 * The name of the workbook that is embedded in the application
 	 */
 	private String workbookName;
-	
+	boolean isCompleted = false;
+	boolean isNotApplicable = false;
 	
 	/**
 	 * This hashmap is used to manage worksheet annotations
@@ -269,12 +268,42 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 		return worksheetAnnotations;
 	}
 
+	/**
+	 * @return the isCompleted
+	 */
+	public boolean isCompleted() {
+		return isCompleted;
+	}
 
-	@Override 
+
+	/**
+	 * @param isCompleted the isCompleted to set
+	 */
+	public void setCompleted(boolean isCompleted) {
+		this.isCompleted = isCompleted;
+	}
+
+
+	/**
+	 * @return the isIrrelevant
+	 */
+	public boolean isNotApplicable() {
+		return isNotApplicable;
+	}
+
+
+	/**
+	 * @param isNotApplicable the isNotApplicable to set
+	 */
+	public void setNotApplicable(boolean isNotApplicable) {
+		this.isNotApplicable = isNotApplicable;
+	}
+
+
+	@Override
 	public String toString() {
-			
-		JSONObject json = new JSONObject(worksheetAnnotations);
-		return json.toString();
+		//JSONObject json = new JSONObject(worksheetAnnotations);
+		return this.worksheetAnnotations.toString();
 	}
 	
 	

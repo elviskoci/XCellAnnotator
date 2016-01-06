@@ -13,6 +13,8 @@ public class WorksheetAnnotation extends DependentAnnotation<WorkbookAnnotation>
 	private String workbookName;
 	private String sheetName;
 	private int sheetIndex;
+	boolean isCompleted = false;
+	boolean notApplicable = false;
 
 	/**
 	 * @param workbookName
@@ -75,18 +77,41 @@ public class WorksheetAnnotation extends DependentAnnotation<WorkbookAnnotation>
 	public void setSheetIndex(int sheetIndex) {
 		this.sheetIndex = sheetIndex;
 	}
-	
-	public static String generateKey(String sheetName, int sheetIndex) {
-		//return sheetName+"_"+sheetIndex;
-		return sheetName;
+
+	/**
+	 * @return the isCompleted
+	 */
+	public boolean isCompleted() {
+		return isCompleted;
 	}
-	
+
+	/**
+	 * @param isCompleted the isCompleted to set
+	 */
+	public void setCompleted(boolean isCompleted) {
+		this.isCompleted = isCompleted;
+	}
+
+	/**
+	 * @return the isIrrelevant
+	 */
+	public boolean isNotApplicable() {
+		return notApplicable;
+	}
+
+	/**
+	 * @param isNotApplicable the isNotApplicable to set
+	 */
+	public void setNotApplicable(boolean isNotApplicable) {
+		this.notApplicable = isNotApplicable;
+	}
 	
 	@Override 
 	public String toString() {
 		// JSONObject json = new JSONObject(this.allAnnotations);
 		return this.allAnnotations.toString(); 
 	}
+
 	
 //	@Override
 //	public boolean equals(Annotation<WorkbookAnnotation, RangeAnnotation> annotation) {
