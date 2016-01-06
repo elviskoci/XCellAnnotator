@@ -187,6 +187,31 @@ public class WorksheetUtils {
 	
 	
 	/**
+	 * Get a cell from the specified worksheet given the row and the column number. 
+	 * @param worksheetAutomation an OleAutomation to access the worksheet that contains the cell
+	 * @param row an integer that represents the row number (index)
+	 * @param column an integer that represents the column number (index)
+	 * @return an OleAutomation that provides access to the cell. 
+	 */
+	public static OleAutomation getCell(OleAutomation worksheetAutomation, int row, int column){
+		
+		int[] cellsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Cells"}); 
+		
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(row);
+		args[1] = new Variant(column);
+		
+		Variant cellsVariant = worksheetAutomation.getProperty(cellsPropertyIds[0], args);	
+		OleAutomation cellAutomation = cellsVariant.getAutomation();
+		cellsVariant.dispose();
+		
+		args[0].dispose();
+		args[1].dispose();
+		
+		return cellAutomation; 
+	}
+	
+	/**
 	 * Get the used range for the given worksheet
 	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
 	 * @return an OleAutomation for accessing the used range

@@ -81,6 +81,7 @@ public class RangeUtils {
 		return areasAutomation;
 	}
 	
+	
 	/**
 	 * Get a collection of cells from a range  
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
@@ -159,11 +160,11 @@ public class RangeUtils {
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return the number of the first column in the first area in the specified range
 	 */
-	public static String getRangeColumn(OleAutomation rangeAutomation){
+	public static int getFirstColumnIndex(OleAutomation rangeAutomation){
 		
 		int[] columnPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Column"}); 
 		Variant columnPropertyVariant = rangeAutomation.getProperty(columnPropertyIds[0]);	
-		String column = columnPropertyVariant.getString();
+		int column = columnPropertyVariant.getInt();
 		columnPropertyVariant.dispose();
 		
 		return column;
@@ -191,11 +192,11 @@ public class RangeUtils {
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return the number of the first row in the first area in the specified range
 	 */
-	public static String getRangeRow(OleAutomation rangeAutomation){
+	public static int getFirstRowIndex(OleAutomation rangeAutomation){
 		
 		int[] rowPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Row"}); 
 		Variant rowPropertyVariant = rangeAutomation.getProperty(rowPropertyIds[0]);	
-		String row = rowPropertyVariant.getString();
+		int row = rowPropertyVariant.getInt();
 		rowPropertyVariant.dispose();
 		
 		return row;
