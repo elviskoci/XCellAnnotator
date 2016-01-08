@@ -165,7 +165,7 @@ public class ApplicationUtils {
 		}		
 		Variant worksheetVariant = applicationAutomation.getProperty(worksheetIds[0]);
 		if (worksheetVariant == null) {
-			System.out.println("Workbook variant is null!");
+			System.out.println("Worksheet variant is null!");
 			return null;
 		}		
 		OleAutomation worksheetAutomation = worksheetVariant.getAutomation();
@@ -173,6 +173,29 @@ public class ApplicationUtils {
 		
 		return worksheetAutomation;
 	}
+	
+	/**
+	 * Get the OleAutomation for the WorksheetFunction
+	 * @param applicationAutomation an OleAutomation that provides access to the functionalities of the Excel (Application) OLE object
+	 * @return an OleAutomation that provides access to the functionalities of WorksheetFunction
+	 */
+	public static  OleAutomation getWorksheetFunctionAutomation(OleAutomation applicationAutomation){
+		
+		int[] wfIds = applicationAutomation.getIDsOfNames(new String[]{"WorksheetFunction"});	
+		if (wfIds == null){			
+			System.out.println("\"WorksheetFunction\" property not found for the given Application OleAutomation object!");
+			return null;
+		}		
+		Variant worksheetFunctionVariant = applicationAutomation.getProperty(wfIds[0]);
+		if (worksheetFunctionVariant == null) {
+			System.out.println("WorksheetFunction variant is null!");
+			return null;
+		}		
+		OleAutomation worksheetFunctionAutomation = worksheetFunctionVariant.getAutomation();
+		worksheetFunctionVariant.dispose();
+		
+		return worksheetFunctionAutomation;
+	}	
 	
 	/**
 	 * Get the specified range automation from the active worksheet. The address of the top left cell and down right cell have to be provided.

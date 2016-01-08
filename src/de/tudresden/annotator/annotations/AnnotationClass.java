@@ -3,29 +3,18 @@
  */
 package de.tudresden.annotator.annotations;
 
-import java.util.ArrayList;
+import org.eclipse.swt.SWT;
 
 /**
  * @author Elvis Koci
  */
 public class AnnotationClass {
 	
-
-	// private OleAutomation annotationAutomation;
-	
-	/*
-	 * The following  five attributes model the dependencies between the annotations 
-	 */
-	private boolean isContainer = false;
-	private ArrayList<AnnotationClass>  containedClasses = new ArrayList<AnnotationClass>();	
-	private boolean isDependent = false;
-	private AnnotationClass container;  
-	private boolean canBeContained;
-	
 	/*
 	 * The label (name) used for the annotation class 
 	 */
 	private String label; 
+	
 	
 	/*
 	 * The annotation tool that will be used to annotate 
@@ -34,18 +23,33 @@ public class AnnotationClass {
 	
 	
 	/*
+	 * The following  five attributes model the dependencies between the annotations 
+	 */
+	private boolean isContainer = false;
+	private boolean isDependent = false;
+	private AnnotationClass container;  
+	private boolean canBeContained;
+	
+	/*
+	 * The following represents the shortcut that will be used for the menu item corresponding to this class
+	 */
+	private int shortcut = -1; 
+	
+	
+	/*
 	 * The color associated with this annotation class.
 	 * It is an RGB color represented as long using this formula: B * 65536 + G * 256 + R
 	 */
 	private long color;
+	
 	
 	/*
 	 * Set if to use fill or not. If annotation tool is a shape, this property will apply to shape fill. 
 	 * If a simple border is used to annotate, than this property it is not considered.   
 	 */
 	private boolean hasFill = true; 
-	
 	private double fillTransparency = 0.80;
+	
 	
 	private boolean useShadow = false;
 	private int shadowType = 21; // offset diagonal bottom right
@@ -55,6 +59,7 @@ public class AnnotationClass {
 	private int shadowSize = 100;
 	private double shadowTransparency = 0.45;
 	
+	
 	private boolean useText = false;
 	private String text = null;
 	private long textColor = -1;
@@ -63,11 +68,13 @@ public class AnnotationClass {
 	private int textHAlignment = -4108; // align center
 	private int textVAlignment = -4108; // align center
 	
+	
 	private boolean useLine = false;
 	private double lineWeight = 1;
 	private long lineColor = -1; 
 	private int lineStyle = 1; // Single line
 	private double lineTransparency = 0;
+	
 	
 	/*
 	 * The type of the shape to use for the annotation. Check MsoAutoShapeType enumeration
@@ -166,6 +173,7 @@ public class AnnotationClass {
 		this.lineTransparency = lineTransparency;
 	}
 	
+	
 	/**
 	 * 
 	 * @param shadowType
@@ -185,6 +193,7 @@ public class AnnotationClass {
 		this.shadowColor = shadowColor;
 		this.shadowTransparency = shadowTransparency;
 	}
+	
 	
 	/**
 	 * 
@@ -213,6 +222,7 @@ public class AnnotationClass {
 		return label;
 	}
 
+	
 	/**
 	 * @param label the label to set
 	 */
@@ -220,6 +230,35 @@ public class AnnotationClass {
 		this.label = label;
 	}
 
+	
+	/**
+	 * @return the shortcut
+	 */
+	public int getShortcut() {
+		return shortcut;
+	}
+
+
+	/**
+	 * @param shortcut the shortcut to set
+	 */
+	public void setShortcut(int shortcut) {
+		this.shortcut = shortcut;
+	}
+
+	
+	/**
+	 * Generate a shortcut given the label of the annotation class
+	 * @param label a string that represents the label of the annotation class
+	 * @return a integer that represents the shortcut to be used for the annotation class
+	 */
+	public static int generateShortcut(String label){
+		char firstChar = label.charAt(0);
+		int  shortcut= SWT.MOD1 | SWT.MOD2 + firstChar;
+		return shortcut;
+	}
+	
+	
 	/**
 	 * @return the color
 	 */
@@ -227,6 +266,7 @@ public class AnnotationClass {
 		return color;
 	}
 
+	
 	/**
 	 * @param color the color to set
 	 */
@@ -234,6 +274,7 @@ public class AnnotationClass {
 		this.color = color;
 	}
 
+	
 	/**
 	 * @return the annotationTool
 	 */
@@ -241,12 +282,14 @@ public class AnnotationClass {
 		return annotationTool;
 	}
 
+	
 	/**
 	 * @param annotationTool the annotationTool to set
 	 */
 	public void setAnnotationTool(AnnotationTool annotationTool) {
 		this.annotationTool = annotationTool;
 	}
+	
 	
 	/**
 	 * @return the shapeType
@@ -255,6 +298,7 @@ public class AnnotationClass {
 		return shapeType;
 	}
 
+	
 	/**
 	 * @param shapeType the shapeType to set
 	 */
@@ -270,6 +314,7 @@ public class AnnotationClass {
 		return useShadow;
 	}
 
+	
 	/**
 	 * @param useShadow the useShadow to set
 	 */
@@ -277,6 +322,7 @@ public class AnnotationClass {
 		this.useShadow = useShadow;
 	}
 
+	
 	/**
 	 * @return the shadowType
 	 */
@@ -284,6 +330,7 @@ public class AnnotationClass {
 		return shadowType;
 	}
 
+	
 	/**
 	 * @param shadowType the shadowType to set
 	 */
@@ -291,6 +338,7 @@ public class AnnotationClass {
 		this.shadowType = shadowType;
 	}
 
+	
 	/**
 	 * @return the shadowStyle
 	 */
@@ -298,6 +346,7 @@ public class AnnotationClass {
 		return shadowStyle;
 	}
 
+	
 	/**
 	 * @param shadowStyle the shadowStyle to set
 	 */
@@ -305,6 +354,7 @@ public class AnnotationClass {
 		this.shadowStyle = shadowStyle;
 	}
 
+	
 	/**
 	 * @return the shadowBlur
 	 */
@@ -312,6 +362,7 @@ public class AnnotationClass {
 		return shadowBlur;
 	}
 
+	
 	/**
 	 * @param shadowBlur the shadowBlur to set
 	 */
@@ -319,6 +370,7 @@ public class AnnotationClass {
 		this.shadowBlur = shadowBlur;
 	}
 
+	
 	/**
 	 * @return the shadowColor
 	 */
@@ -326,6 +378,7 @@ public class AnnotationClass {
 		return shadowColor;
 	}
 
+	
 	/**
 	 * @param shadowColor the shadowColor to set
 	 */
@@ -333,6 +386,7 @@ public class AnnotationClass {
 		this.shadowColor = shadowColor;
 	}
 
+	
 	/**
 	 * @return the shadowSize
 	 */
@@ -340,6 +394,7 @@ public class AnnotationClass {
 		return shadowSize;
 	}
 
+	
 	/**
 	 * @param shadowSize the shadowSize to set
 	 */
@@ -347,6 +402,7 @@ public class AnnotationClass {
 		this.shadowSize = shadowSize;
 	}
 
+	
 	/**
 	 * @return the shadowTransparency
 	 */
@@ -354,6 +410,7 @@ public class AnnotationClass {
 		return shadowTransparency;
 	}
 
+	
 	/**
 	 * @param shadowTransparency the shadowTransparency to set
 	 */
@@ -361,6 +418,7 @@ public class AnnotationClass {
 		this.shadowTransparency = shadowTransparency;
 	}
 
+	
 	/**
 	 * @return the useText
 	 */
@@ -368,6 +426,7 @@ public class AnnotationClass {
 		return useText;
 	}
 
+	
 	/**
 	 * @param useText the useText to set
 	 */
@@ -375,6 +434,7 @@ public class AnnotationClass {
 		this.useText = useText;
 	}
 
+	
 	/**
 	 * @return the text
 	 */
@@ -382,6 +442,7 @@ public class AnnotationClass {
 		return text;
 	}
 
+	
 	/**
 	 * @param text the text to set
 	 */
@@ -389,6 +450,7 @@ public class AnnotationClass {
 		this.text = text;
 	}
 
+	
 	/**
 	 * @return the textColor
 	 */
@@ -396,6 +458,7 @@ public class AnnotationClass {
 		return textColor;
 	}
 
+	
 	/**
 	 * @param textColor the textColor to set
 	 */
@@ -403,6 +466,7 @@ public class AnnotationClass {
 		this.textColor = textColor;
 	}
 
+	
 	/**
 	 * @return the boldText
 	 */
@@ -410,6 +474,7 @@ public class AnnotationClass {
 		return boldText;
 	}
 
+	
 	/**
 	 * @param boldText the boldText to set
 	 */
@@ -417,6 +482,7 @@ public class AnnotationClass {
 		this.boldText = boldText;
 	}
 
+	
 	/**
 	 * @return the fontSize
 	 */
@@ -424,6 +490,7 @@ public class AnnotationClass {
 		return fontSize;
 	}
 
+	
 	/**
 	 * @param fontSize the fontSize to set
 	 */
@@ -431,6 +498,7 @@ public class AnnotationClass {
 		this.fontSize = fontSize;
 	}
 
+	
 	/**
 	 * @return the useLine
 	 */
@@ -438,6 +506,7 @@ public class AnnotationClass {
 		return useLine;
 	}
 
+	
 	/**
 	 * @param useLine the useLine to set
 	 */
@@ -445,6 +514,7 @@ public class AnnotationClass {
 		this.useLine = useLine;
 	}
 
+	
 	/**
 	 * @return the lineWeight
 	 */
@@ -452,6 +522,7 @@ public class AnnotationClass {
 		return lineWeight;
 	}
 
+	
 	/**
 	 * @param lineWeight the lineWeight to set
 	 */
@@ -459,6 +530,7 @@ public class AnnotationClass {
 		this.lineWeight = lineWeight;
 	}
 
+	
 	/**
 	 * @return the lineColor
 	 */
@@ -466,6 +538,7 @@ public class AnnotationClass {
 		return lineColor;
 	}
 
+	
 	/**
 	 * @param lineColor the lineColor to set
 	 */
@@ -473,6 +546,7 @@ public class AnnotationClass {
 		this.lineColor = lineColor;
 	}
 
+	
 	/**
 	 * @return the lineStyle
 	 */
@@ -480,6 +554,7 @@ public class AnnotationClass {
 		return lineStyle;
 	}
 
+	
 	/**
 	 * @param lineStyle the lineStyle to set
 	 */
@@ -487,6 +562,7 @@ public class AnnotationClass {
 		this.lineStyle = lineStyle;
 	}
 
+	
 	/**
 	 * @return the lineTransparency
 	 */
@@ -494,6 +570,7 @@ public class AnnotationClass {
 		return lineTransparency;
 	}
 
+	
 	/**
 	 * @param lineTransparency the lineTransparency to set
 	 */
@@ -613,28 +690,7 @@ public class AnnotationClass {
 		this.isDependent = isDependent;
 	}
 
-
-	/**
-	 * @return the containedClasses
-	 */
-	public ArrayList<AnnotationClass> getContainedClasses() {
-		return containedClasses;
-	}
-
-
-	/**
-	 * @param containedClasses the containedClasses to set
-	 */
-	public boolean setContainedClasses(ArrayList<AnnotationClass> containedClasses) {
-		if(this.isContainer){
-			this.containedClasses = containedClasses;
-			return true;
-		}
-		
-		return false;
-	}
-
-
+	
 	/**
 	 * @return the container
 	 */

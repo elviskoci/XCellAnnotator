@@ -9,6 +9,10 @@ import java.io.File;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
@@ -191,6 +195,7 @@ public class MainWindow {
         OleListener sheetActivationlistener = createSheetActivationEventListener(application);
         getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
         
+        
 		// minimize ribbon.	TODO: Try hiding individual CommandBars
 	    ApplicationUtils.hideRibbon(application);	
 	    
@@ -310,7 +315,9 @@ public class MainWindow {
 				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
 				args[1].dispose();	
 				worksheetAutomation.dispose();
-				
+						
+				MainWindow.getInstance().getShell().setFocus();
+				MainWindow.getInstance().getShell().setFocus();
 	        }
 	    };	       
 	    return listener;
@@ -337,6 +344,8 @@ public class MainWindow {
 				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
 				args[0].dispose();
 				worksheetAutomation.dispose();
+				
+				MainWindow.getInstance().getControlSite().setFocus();
 	        }
 	    };	       
 	    return listener;
@@ -539,7 +548,7 @@ public class MainWindow {
 		MainWindow main = MainWindow.getInstance(); 
 		
 	    main.buildGUIWindow(main.getShell());
-
+	    
   		main.getShell().open();
   		
   	    while (!main.getShell().isDisposed ()) {

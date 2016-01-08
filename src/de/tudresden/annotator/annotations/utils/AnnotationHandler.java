@@ -7,11 +7,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
+import org.eclipse.swt.ole.win32.Variant;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.AnnotationTool;
 import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
+import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.oleutils.CharactersUtils;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
 import de.tudresden.annotator.oleutils.ColorFormatUtils;
@@ -23,6 +25,7 @@ import de.tudresden.annotator.oleutils.ShadowFormatUtils;
 import de.tudresden.annotator.oleutils.ShapeUtils;
 import de.tudresden.annotator.oleutils.TextFrameUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
+import de.tudresden.annotator.oleutils.WorksheetFunctionUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 /**
@@ -45,16 +48,46 @@ public class AnnotationHandler {
 	}
 
 	
+	public static void createBaseAnnotations(OleAutomation workbookAutomation){
+		
+		// save on memory metadata about the annotation
+		if(workbookAnnotation.getWorkbookName() == null || workbookAnnotation.getWorkbookName().compareTo("")==0){		
+			String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
+			workbookAnnotation.setWorkbookName(workbookName);
+		}
+		
+		OleAutomation worksheetsAutomation = WorkbookUtils.getWorksheetsAutomation(workbookAutomation);
+		if(worksheetsAutomation==null)
+			return;
+		
+		int i = 1;
+		while (true) {
+			OleAutomation worksheet = CollectionsUtils.getItemByIndex(worksheetsAutomation, i++, false);
+			
+			if(worksheet==null)
+				break;
+			
+			String name = WorksheetUtils.getWorksheetName(worksheet);
+			int index = WorksheetUtils.getWorksheetIndex(worksheet);
+			WorksheetAnnotation wa = new WorksheetAnnotation(name, index);
+			workbookAnnotation.getWorksheetAnnotations().put(name, wa);
+		}
+		
+	}
+	
+	
 	/**
 	 * Annotate the selected ranges (areas) of cells 
 	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
+	 * @param worksheetFunction an OleAutomation that provide access to the various excel functions (Ex. sum, count)
 	 * @param sheetName the name of the worksheet that contains the selected range 
 	 * @param sheetIndex the index of the worksheet that contains the selected range
 	 * @param selectedAreas an array of strings that represent all the selected ranges (areas)   
 	 * @param annotationClass the class to use for the annotation
 	 * @return an AnnotationResult object that holds information about the results from the execution of this method
 	 */
-	public static AnnotationResult annotate(OleAutomation workbookAutomation, String sheetName, int sheetIndex,
+	public static AnnotationResult annotate(OleAutomation workbookAutomation, OleAutomation worksheetFunction, 
+								String sheetName, int sheetIndex,
 								String selectedAreas[], AnnotationClass annotationClass) {
 
 		// get the OleAutomation object for the worksheet using its name
@@ -62,45 +95,34 @@ public class AnnotationHandler {
 
 		// unprotect the worksheet in order to create the annotations
 		WorksheetUtils.unprotectWorksheet(sheetAutomation);
-
+				
 		// for each area in the range create an annotation
 		for (String selectedArea : selectedAreas) {
-			
-			boolean isEmpty = true; 
-			OleAutomation usedRange = WorksheetUtils.getUsedRange(sheetAutomation);
-			OleAutomation usedAreas = RangeUtils.getAreas(usedRange);
-			int count = CollectionsUtils.countItemsInCollection(usedAreas);
-			for(int i=1; i<=count;i++){
-				OleAutomation usedArea = CollectionsUtils.getItemByIndex(usedAreas, i, false);
-				String usedAreaAddress = RangeUtils.getRangeAddress(usedArea);
-				if(RangeUtils.checkForPartialContainment(usedAreaAddress, selectedArea)){
-					isEmpty = false;
-				}
-				//usedArea.dispose();
-			}
-			usedAreas.dispose();
-			usedRange.dispose();
-			
-			if(isEmpty){
-				return new AnnotationResult(ValidationResult.EMPTY, "The selected range does not contain any value!");
-			}
-			
-			String[] subStrings = selectedArea.split(":");
 
+			// get range automation for selected area
+			String[] subStrings = selectedArea.split(":");
 			String topRightCell = subStrings[0];
 			String downLeftCell = null;
 			if (subStrings.length == 2)
 				downLeftCell = subStrings[1];
 			
-			
+			// ensure that the range contains data (i.e., range not empty)
+			OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, topRightCell, downLeftCell);
+			Variant rangeVariant = new Variant(selectedAreaAuto);
+			Variant result = WorksheetFunctionUtils.callFunction(worksheetFunction, "COUNTA", new Variant[]{rangeVariant});  
+			double notEmpty = result.getDouble();
+			result.dispose();
+			if(notEmpty==0){
+				return new AnnotationResult(ValidationResult.EMPTY, "The selected range does not contain any value!");
+			}
+				
+			// create annotation object			
 			String classLabel = annotationClass.getLabel();
 			String annotationName = generateAnnotationName(sheetName, classLabel, selectedArea);
-			
-			
 			RangeAnnotation ra = new RangeAnnotation(sheetName, sheetIndex, annotationClass, annotationName, selectedArea);
 			
+			// validate annotation before creation
 			ValidationResult validationResult = validateAnnotation(ra);
-			
 			if(validationResult!=ValidationResult.OK){
 				
 				if(validationResult==ValidationResult.NOTCONTAINED){
@@ -115,23 +137,19 @@ public class AnnotationHandler {
 				}
 			}
 			
-
+			 
+			// range automation has to re-created here because was disposed when checked if range is empty 
 			OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, topRightCell, downLeftCell);
-			
+			// draw annotation
 			callAnnotationMethod(sheetAutomation, rangeAutomation, annotationClass, annotationName);
 			
 			// save on the AnnotationDataSheet metadata about the annotation 
 			AnnotationDataSheet.saveAnnotationData(workbookAutomation, ra);	
 			
-			// save on memory metadata about the annotation
-			if(workbookAnnotation.getWorkbookName() == null || workbookAnnotation.getWorkbookName().compareTo("")==0){		
-				String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
-				workbookAnnotation.setWorkbookName(workbookName);
-			}
+			// add the annotation object in memory data structure
 			workbookAnnotation.addRangeAnnotation(ra);
-							
-		}
-					
+		}		
+		
 		// protect the worksheet to prevent user from modifying the annotations
 		WorksheetUtils.protectWorksheet(sheetAutomation);
 		WorksheetUtils.makeWorksheetActive(sheetAutomation);
@@ -433,7 +451,7 @@ public class AnnotationHandler {
 			OleAutomation fontAutomation = CharactersUtils.getFontAutomation(charactersAutomation);
 			FontUtils.setFontColor(fontAutomation, annotationClass.getTextColor());
 			FontUtils.setBoldFont(fontAutomation, annotationClass.isBoldText()); 
-			FontUtils.setFontSize(fontAutomation, annotationClass.getFontSize()); // TODO: should be relative to the size of the range 
+			FontUtils.setFontSize(fontAutomation, annotationClass.getFontSize()); // TODO: font size should be relative to the size of the range ? 
 			
 			fontAutomation.dispose();
 			charactersAutomation.dispose();

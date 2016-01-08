@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.test;
 
+import org.eclipse.swt.SWT;
+
 /**
  * @author Elvis Koci
  */
@@ -12,8 +14,14 @@ public class RangeTests {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String c1 = "AA", c2 = "ABZ";		
-		System.out.println(countCellsBetweenColumns(c1, c2, true));
+		int d =  (SWT.MOD1 | SWT.MOD2) + 'S';
+		System.out.println(d);
+		System.out.println(SWT.MOD1);
+		System.out.println(SWT.MOD2);
+		//System.out.println(d - SWT.MOD1);
+		//System.out.println(d - SWT.MOD2);
+		//System.out.println(d - SWT.MOD1 - SWT.MOD2);
+		System.out.println(((char) (d - SWT.MOD1 - SWT.MOD2)));
 	}
 	
 	public static int countCellsBetweenColumns(String startColumn, String endColumn, boolean inclusive){
