@@ -323,19 +323,6 @@ public class AnnotationHandler {
 	
 	
 	/**
-	 * Draw the annotation on top of the selected range. 
-	 * The annotation is drawn based on the properties specified in the annotation class 
-	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
-	 * @param ra the RangeAnnotation object to draw
-	 */
-	public static void drawAnnotation(OleAutomation workbookAutomation, RangeAnnotation ra){
-		OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
-		OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, ra.getRangeAddress());
-		drawAnnotation(sheetAutomation, rangeAutomation, ra.getAnnotationClass(), ra.getName());
-	}
-	
-	
-	/**
 	 * This method calls the function to draw the annotation based on the annotation tool specified in the annotations class
 	 * @param sheetAutomation an OleAutomation for accessing the active worksheet functionalities
 	 * @param rangeAutomation an OleAutomation for accessing the selected range functionalities
@@ -350,6 +337,45 @@ public class AnnotationHandler {
 		case BORDERAROUND: annotateByBorderAround(rangeAutomation, annotationClass, annotationName); break;
 		default: System.out.println("Option not recognized"); System.exit(1); break;
 		}	
+	}
+	
+	
+	/**
+	 * Draw the annotation on top of the selected range. 
+	 * The annotation is drawn based on the properties specified in the annotation class 
+	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
+	 * @param ra the RangeAnnotation object to draw
+	 */
+	public static void drawAnnotation(OleAutomation workbookAutomation, RangeAnnotation ra){
+		OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
+		OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, ra.getRangeAddress());
+		drawAnnotation(sheetAutomation, rangeAutomation, ra.getAnnotationClass(), ra.getName());
+	}
+	
+	
+	/**
+	 * Draw all annotation object in memory 
+	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
+	 */
+	public static void drawAllAnnotations(OleAutomation workbookAutomation){	
+		
+		boolean areUnprotected = WorkbookUtils.unprotectAllWorksheets(workbookAutomation);
+		if(!areUnprotected){		
+			System.out.println("ERROR: Could not unprotect all worksheets. Operation failed!");
+			return;
+		}
+			
+		ArrayList<RangeAnnotation> allAnnotations = 
+				new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
+		for (RangeAnnotation rangeAnnotation : allAnnotations) {
+			AnnotationHandler.drawAnnotation(workbookAutomation, rangeAnnotation);
+		}
+		
+		boolean areProtected = WorkbookUtils.protectAllWorksheets(workbookAutomation);
+		if(!areProtected){
+			System.out.println("ERROR: Could not protect all worksheets. Operation failed!");
+			return;
+		}
 	}
 	
 	
@@ -626,9 +652,7 @@ public class AnnotationHandler {
 			 String name = ShapeUtils.getShapeName(shapeAutomation);
 			 
 			 if(name.indexOf(startString)==0){
-				 boolean result = ShapeUtils.deleteShape(shapeAutomation);
-				 if(result)
-					 workbookAnnotation.removeRangeAnnotation(sheetName, name);
+				 ShapeUtils.deleteShape(shapeAutomation);
 			 }else{
 				 i++;
 			 }

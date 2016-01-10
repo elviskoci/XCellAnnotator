@@ -33,7 +33,6 @@ import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
-import de.tudresden.annotator.oleutils.FileUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
@@ -107,7 +106,7 @@ public class MainWindow {
 	 	            if( response== SWT.YES){	
 	 	            	
 	 	            	String filePath = directoryPath+"\\"+fileName;
-	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	boolean isSaved = FileManager.saveProgress(embeddedWorkbook, filePath);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		System.err.println("Could not save progress!");
@@ -186,16 +185,14 @@ public class MainWindow {
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
 	    // TODO: suppress alerts
-	    // System.out.println(ApplicationUtils.setDisplayAlerts(application, false));
-        
+	        
 	    // add event listeners
 	    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
         
         OleListener sheetActivationlistener = createSheetActivationEventListener(application);
         getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
-        
-        
+            
 		// minimize ribbon.	TODO: Try hiding individual CommandBars
 	    ApplicationUtils.hideRibbon(application);	
 	    
@@ -208,14 +205,6 @@ public class MainWindow {
 	    // get active workbook, the one that is embedded in this application
 	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
 	    setEmbeddedWorkbook(workbook);
-	    
-	    // protect the structure of the active workbook
-	    //if(!WorkbookUtils.protectWorkbook(workbook, true, false))
-	    	//System.out.println("\nERROR: Unable to protect active workbook!");
-	    
-	    // protect all individual worksheets
-	    if(!WorkbookUtils.protectAllWorksheets(workbook))
-	    	System.out.println("\nERROR: Unable to protect the worksheets that are part of the active workbook!");
 	    
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
 	    String workbookName = WorkbookUtils.getWorkbookName(workbook);

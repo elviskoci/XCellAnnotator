@@ -22,7 +22,6 @@ import de.tudresden.annotator.annotations.utils.AnnotationResult;
 import de.tudresden.annotator.annotations.utils.ClassGenerator;
 import de.tudresden.annotator.annotations.utils.ValidationResult;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
-import de.tudresden.annotator.oleutils.FileUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 
 public class BarMenu {
@@ -71,23 +70,40 @@ public class BarMenu {
 					return;
 				}
 				
-				// create a worksheet annotation object for each worksheets in the embedded workbook.
-				// set the name to the workbook annotation
-				AnnotationHandler.createBaseAnnotations(workbookAutomation);
+				// show the annotation data sheet
+				// TODO: Check why it does not make visible
+				AnnotationDataSheet.setVisibility(workbookAutomation, true);
 				
-				// check if there are annotation data. 
-				// if yes read them and recreate the hierarchical structure in memory
-				AnnotationDataSheet.readAnnotationData(workbookAutomation);
-				AnnotationHandler.setVisilityForShapeAnnotations(workbookAutomation, true);
-				
-				// draw again the range annotations  
-				ArrayList<RangeAnnotation> allAnnotations = 
-						new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
-				for (RangeAnnotation rangeAnnotation : allAnnotations) {
-					AnnotationHandler.drawAnnotation(workbookAutomation, rangeAnnotation);
+				boolean isProtected = WorkbookUtils.protectWorkbook(workbookAutomation, true, false);		
+				if(!isProtected){
+					int style = SWT.ERROR;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("ERROR: Could not protect the workbook. Operation failed!");
+					message.open();
+					WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
+					MainWindow.getInstance().disposeControlSite();
+					return;
 				}
 				
-
+				// protect the annotation data sheet if it is not protected already
+				// TODO: implement the method the gets if worksheet is protected
+				isProtected = AnnotationDataSheet.protect(workbookAutomation);
+				if(!isProtected){
+					int style = SWT.ERROR;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("ERROR: Could not protect annotation data sheet! ");
+					message.open();
+					WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
+					MainWindow.getInstance().disposeControlSite();
+					return;
+				}
+				
+				// read the annotation data and recreate inmemory structure
+				AnnotationDataSheet.readAnnotationData(workbookAutomation);
+				
+				// re-draw all the annotation in memory structure 
+				AnnotationHandler.drawAllAnnotations(workbookAutomation);
+								
 				// enable menu items (sub-menus) that are relevant  
 				MenuItem fileMenu = menuItems[0]; // File menu 
 				MenuItem[] fileSubmenus = fileMenu.getMenu().getItems();
@@ -147,7 +163,7 @@ public class BarMenu {
 				String filePath = directory+"\\"+fileName;
 				
 				ApplicationUtils.setDisplayAlerts(MainWindow.getInstance().getExcelApplication(), "False");		
-				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath);
+				boolean result = FileManager.saveProgress(embeddedWorkbook, filePath);
 				if(result){
             		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
             		int style = SWT.ICON_INFORMATION;
@@ -213,7 +229,7 @@ public class BarMenu {
 	 	            if( response== SWT.YES){	
 	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
-	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	boolean isSaved = FileManager.saveProgress(embeddedWorkbook, filePath);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;

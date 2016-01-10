@@ -3,6 +3,7 @@
  */
 package de.tudresden.annotator.annotations.utils;
 
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -161,6 +162,7 @@ public class AnnotationDataSheet {
 	 * @return true if annotation data were successfully read, false otherwise
 	 */
 	public static void readAnnotationData(OleAutomation workbookAutomation){
+		
 		
 		// get the OleAutomation object for the sheet that stores 
 		// the annotation metadata (a.k.a. annotation data sheet) 
@@ -562,6 +564,41 @@ public class AnnotationDataSheet {
 			return false; 
 		
 		boolean result = WorksheetUtils.setWorksheetVisibility(annotationDataSheet, visible);
+		annotationDataSheet.dispose();
+		return result;
+	}
+	
+	
+	/**
+	 * Protect the annotation data sheet
+	 * @param embeddedWorkbook an OleAutomation that is used to access the functionalities of the workbook that is currently embedded by the application
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean protect(OleAutomation embeddedWorkbook){
+		
+		OleAutomation annotationDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(annotationDataSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.protectWorksheet(annotationDataSheet);
+		annotationDataSheet.dispose();
+		return result;
+	}
+	
+	/**
+	 * Unprotect the annotation data sheet
+	 * @param embeddedWorkbook an OleAutomation that is used to access the functionalities of the workbook that is currently embedded by the application
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean unprotect(OleAutomation embeddedWorkbook){
+		
+		OleAutomation annotationDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(annotationDataSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.unprotectWorksheet(annotationDataSheet);
 		annotationDataSheet.dispose();
 		return result;
 	}

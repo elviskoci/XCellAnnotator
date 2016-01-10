@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.tudresden.annotator.oleutils;
+package de.tudresden.annotator.main;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,19 +10,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
-import org.eclipse.swt.ole.win32.OleClientSite;
-import org.eclipse.swt.ole.win32.OleControlSite;
-import org.eclipse.swt.ole.win32.Variant;
 
 import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
-import de.tudresden.annotator.main.MainWindow;
+import de.tudresden.annotator.oleutils.WorkbookUtils;
 
 /**
  * @author Elvis Koci
  */
-public class FileUtils {
+public class FileManager {
 	
 	public static final String CurrentProgressFileName = "annotated"; 
 	
@@ -33,51 +30,41 @@ public class FileUtils {
 			System.out.println("There are no changes since last save");
 			return false;
 		}
-			
+		
+		//delete all shape annotations
+		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
+	
 		boolean isUnprotected = WorkbookUtils.unprotectWorkbook(embeddedWorkbook);		
 		if(!isUnprotected){
 			System.out.println("ERROR: Could not unprotect the workbook. Operation failed!");
 			return false;
-			//System.exit(1);
 		}
 
 		boolean areUnprotected =WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
 		if(!areUnprotected){
 			System.out.println("ERROR: Could not unprotect all worksheets. Operation failed!");
 			return false;
-			//System.exit(1);
 		}
 		
-
-		//AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, false);
-		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
+		AnnotationDataSheet.protect(embeddedWorkbook);
 		AnnotationDataSheet.setVisibility(embeddedWorkbook, false);
 		
-		//System.out.println("The file path is: "+filePath);
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
 		AnnotationDataSheet.setVisibility(embeddedWorkbook, true);
-		
 		// draw again the range annotations  
-//		ArrayList<RangeAnnotation> allAnnotations = 
-//				new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
-//		for (RangeAnnotation rangeAnnotation : allAnnotations) {
-//			AnnotationHandler.drawAnnotation(embeddedWorkbook, rangeAnnotation);
-//		}
-//		AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, true);
+		AnnotationHandler.drawAllAnnotations(embeddedWorkbook);
 
 		boolean isProtected = WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);		
 		if(!isProtected){
 			System.out.println("ERROR: Could not protect the workbook. Operation failed!");
 			return false;
-			//System.exit(1);
 		}
 		
 		boolean areProtected = WorkbookUtils.protectAllWorksheets(embeddedWorkbook);
 		if(!areProtected){
 			System.out.println("ERROR: Could not protect all worksheets. Operation failed!");
 			return false;
-			//System.exit(1);
 		}
 		
 		return isSuccess;
