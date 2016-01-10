@@ -7,12 +7,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleClientSite;
 import org.eclipse.swt.ole.win32.OleControlSite;
 import org.eclipse.swt.ole.win32.Variant;
 
+import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.main.MainWindow;
@@ -46,15 +48,24 @@ public class FileUtils {
 			//System.exit(1);
 		}
 		
-		AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, false);
+
+		//AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, false);
+		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
 		AnnotationDataSheet.setVisibility(embeddedWorkbook, false);
 		
-		System.out.println("The file path is: "+filePath);
+		//System.out.println("The file path is: "+filePath);
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
 		AnnotationDataSheet.setVisibility(embeddedWorkbook, true);
-		AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, true);
 		
+		// draw again the range annotations  
+//		ArrayList<RangeAnnotation> allAnnotations = 
+//				new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
+//		for (RangeAnnotation rangeAnnotation : allAnnotations) {
+//			AnnotationHandler.drawAnnotation(embeddedWorkbook, rangeAnnotation);
+//		}
+//		AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, true);
+
 		boolean isProtected = WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);		
 		if(!isProtected){
 			System.out.println("ERROR: Could not protect the workbook. Operation failed!");

@@ -31,7 +31,7 @@ public class RangeUtils {
 	
 	
 	/**
-	 * Get the number of cells in the range. This method can handle very large range selection 
+	 * Get the number of cells in the range. This method can handle very large selection of cells 
 	 * @param rangeAutomation an automation that provides access to Range OLE object
 	 * @return a long that represents the number of cells in the range
 	 */
@@ -154,7 +154,6 @@ public class RangeUtils {
 	}
 	
 	
-	
 	/**
 	 * Get the number of the first column in the first area in the specified range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
@@ -177,13 +176,35 @@ public class RangeUtils {
 	 * @return an OleAutomation that provides access to the collection of columns in the range 
 	 */
 	public static OleAutomation getRangeColumns(OleAutomation rangeAutomation){
-		
+				
 		int[] columnsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Columns"}); 
 		Variant columnsPropertyVariant = rangeAutomation.getProperty(columnsPropertyIds[0]);	
+		
 		OleAutomation columnsAutomation =  columnsPropertyVariant.getAutomation();
 		columnsPropertyVariant.dispose();
 		
 		return columnsAutomation;
+	}
+	
+	/**
+	 * Get a specific column in the range 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation that provides access to the range that represents the entire specified column 
+	 */
+	public static OleAutomation getRangeColumn(OleAutomation rangeAutomation, String column){
+				
+		int[] columnsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Columns"}); 
+		
+		Variant[] args= new Variant[1];
+		args[0] = new Variant(column);
+		
+		Variant columnPropertyVariant = rangeAutomation.getProperty(columnsPropertyIds[0], args);	
+		args[0].dispose();
+		
+		OleAutomation columnAutomation =  columnPropertyVariant.getAutomation();
+		columnPropertyVariant.dispose();
+		
+		return columnAutomation;
 	}
 	
 	
@@ -215,6 +236,42 @@ public class RangeUtils {
 		rowsPropertyVariant.dispose();
 		
 		return rowsAutomation;
+	}
+	
+	
+	/**
+	 * Get a specific row from the range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation that provides access to the range that represents the entire specified row 
+	 */
+	public static OleAutomation getRangeRow(OleAutomation rangeAutomation, int row){
+		
+		int[] rowsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Rows"}); 
+
+		Variant[] args= new Variant[1];
+		args[0] = new Variant(row);
+		
+		Variant rowPropertyVariant = rangeAutomation.getProperty(rowsPropertyIds[0], args);
+		args[0].dispose();
+		
+		OleAutomation rowAutomation = rowPropertyVariant.getAutomation();
+		rowPropertyVariant.dispose();
+		
+		return rowAutomation;
+	}
+	
+	
+	/**
+	 * Hide/Show the given range. This method applies only to ranges that represent entire rows or columns
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 */
+	public static void setRangeVisibility(OleAutomation rangeAutomation, boolean visible){
+		
+		int[] hiddenPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Hidden"});
+		Variant hiddenVariant = new Variant(!visible);
+
+		rangeAutomation.setProperty(hiddenPropertyIds[0], hiddenVariant);
+		hiddenVariant.dispose();
 	}
 	
 	

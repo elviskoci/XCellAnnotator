@@ -154,11 +154,12 @@ public class WorksheetUtils {
 	
 	
 	/**
-	 * Get the specified range automation. The address of the top left cell and down right cell have to be provided.
+	 * Get the specified range automation. The address of the top_left_cell and down_right_cell have to be provided.
+	 * For single cell ranges the address of the down_right_cell is NULL or the same as the top_left_cell    
 	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
 	 * @param topLeftCell address of top left cell (e.g., "A1" or "$A$1" )
 	 * @param downRightCell address of down right cell (e.g., "C3" or "$C$3" )
-	 * @return
+	 * @return an OleAutomation that provides access the specified range 
 	 */
 	public static OleAutomation getRangeAutomation(OleAutomation worksheetAutomation, String topLeftCell, String downRightCell){
 		
@@ -187,6 +188,67 @@ public class WorksheetUtils {
 	
 	
 	/**
+	 * Get the specified range automation given its address. 
+	 * This method supports simple ranges having only one area (i.e., not multi-selection)
+	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
+	 * @param rangeAddress a string representing the address the range (e.g., "$A$1:$C$2", "$D$4", "B2:G6")
+	 * @return an OleAutomation that provides access the specified range 
+	 */
+	public static OleAutomation getRangeAutomation(OleAutomation worksheetAutomation, String rangeAddress){
+		
+		String[] subStrings = rangeAddress.split(":");
+		String topLeftCell = subStrings[0];
+		String downRightCell = null;
+		if (subStrings.length == 2)
+			downRightCell = subStrings[1];
+		
+		return getRangeAutomation(worksheetAutomation, topLeftCell, downRightCell);
+	}
+	
+	
+	/**
+	 * Get the OleAutomation for the specified multi-selection range automation 
+	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
+	 * @param multiSelectionRange a string that represents the address of the multi-selection range (Ex. "$A$1:$C$2, $A$4:$C$4, $D$6" ) 
+	 * @return an OleAutomation that provides access to the multi-selection range 
+	 */
+	public static OleAutomation getMultiSelectionRangeAutomation(OleAutomation worksheetAutomation, String multiSelectionRange){
+		
+		// get the OleAutomation object for the multi-selection (multi-area) range 
+		int[] rangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Range"});
+		
+		Variant[] args = new Variant[1];
+		args[0] = new Variant(multiSelectionRange);
+
+		Variant rangeVariant = worksheetAutomation.getProperty(rangePropertyIds[0], args);
+		OleAutomation rangeAutomation = rangeVariant.getAutomation();
+		
+		for (Variant arg : args) {
+			arg.dispose();
+		}
+		rangeVariant.dispose();
+		
+		return rangeAutomation;
+	}
+	
+
+	/**
+	 * Get the used range for the given worksheet
+	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
+	 * @return an OleAutomation for accessing the used range
+	 */
+	public static OleAutomation getUsedRange(OleAutomation worksheetAutomation){
+		
+		int[] usedRangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"UsedRange"});	
+		Variant usedRangeVariant = worksheetAutomation.getProperty(usedRangePropertyIds[0]);
+		OleAutomation usedRangeAutomation = usedRangeVariant.getAutomation();
+		usedRangeVariant.dispose();
+		
+		return usedRangeAutomation;
+	}
+	
+	
+	/**
 	 * Get a cell from the specified worksheet given the row and the column number. 
 	 * @param worksheetAutomation an OleAutomation to access the worksheet that contains the cell
 	 * @param row an integer that represents the row number (index)
@@ -211,19 +273,81 @@ public class WorksheetUtils {
 		return cellAutomation; 
 	}
 	
+	
 	/**
-	 * Get the used range for the given worksheet
-	 * @param worksheetAutomation an OleAutomation object for accessing the Worksheet OLE object
-	 * @return an OleAutomation for accessing the used range
+	 * Get collection of columns in the worksheet 
+	 * @param worksheetAutomation an OleAutomation to access the worksheet that contains the cell
+	 * @return an OleAutomation that provides access to the collection of columns in the worksheet 
 	 */
-	public static OleAutomation getUsedRange(OleAutomation worksheetAutomation){
+	public static OleAutomation getRangeColumns(OleAutomation worksheetAutomation){
+				
+		int[] columnsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Columns"}); 
+		Variant columnsPropertyVariant = worksheetAutomation.getProperty(columnsPropertyIds[0]);	
 		
-		int[] usedRangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"UsedRange"});	
-		Variant usedRangeVariant = worksheetAutomation.getProperty(usedRangePropertyIds[0]);
-		OleAutomation usedRangeAutomation = usedRangeVariant.getAutomation();
-		usedRangeVariant.dispose();
+		OleAutomation columnsAutomation =  columnsPropertyVariant.getAutomation();
+		columnsPropertyVariant.dispose();
 		
-		return usedRangeAutomation;
+		return columnsAutomation;
+	}
+	
+
+	/**
+	 * Get a specific column in the worksheet 
+	 * @param worksheetAutomation an OleAutomation to access the worksheet that contains the cell
+	 * @return an OleAutomation that provides access to the range that represents the entire specified column in the worksheet
+	 */
+	public static OleAutomation getRangeColumn(OleAutomation worksheetAutomation, String column){
+				
+		int[] columnsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Columns"}); 
+		
+		Variant[] args= new Variant[1];
+		args[0] = new Variant(column);
+		
+		Variant columnPropertyVariant = worksheetAutomation.getProperty(columnsPropertyIds[0], args);	
+		args[0].dispose();
+		
+		OleAutomation columnAutomation =  columnPropertyVariant.getAutomation();
+		columnPropertyVariant.dispose();
+		
+		return columnAutomation;
+	}
+	
+	
+	/**
+	 * Get collection of rows in the worksheet 
+	 * @param worksheetAutomation an OleAutomation to access the worksheet that contains the cell
+	 * @return an OleAutomation that provides access to the collection of rows in the worksheet 
+	 */
+	public static OleAutomation getRangeRows(OleAutomation worksheetAutomation){
+		
+		int[] rowsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Rows"}); 
+		Variant rowsPropertyVariant = worksheetAutomation.getProperty(rowsPropertyIds[0]);	
+		OleAutomation rowsAutomation = rowsPropertyVariant.getAutomation();
+		rowsPropertyVariant.dispose();
+		
+		return rowsAutomation;
+	}
+	
+	
+	/**
+	 * Get a specific row from the worksheet
+	 * @param worksheetAutomation an OleAutomation to access the worksheet that contains the cell
+	 * @return an OleAutomation that provides access to the range that represents the entire specified row in the worksheet
+	 */
+	public static OleAutomation getRangeRow(OleAutomation worksheetAutomation, int row){
+		
+		int[] rowsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Rows"}); 
+
+		Variant[] args= new Variant[1];
+		args[0] = new Variant(row);
+		
+		Variant rowPropertyVariant = worksheetAutomation.getProperty(rowsPropertyIds[0], args);
+		args[0].dispose();
+		
+		OleAutomation rowAutomation = rowPropertyVariant.getAutomation();
+		rowPropertyVariant.dispose();
+		
+		return rowAutomation;
 	}
 	
 	

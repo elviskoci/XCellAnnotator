@@ -246,6 +246,17 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	}
 	
 	
+	@Override
+	/**
+	 * Remove all annotations 
+	 */
+	public void removeAllAnnotations(){
+		this.allAnnotations.clear();
+		this.annotationsByClass.clear();
+		this.worksheetAnnotations.clear();
+	}
+	
+	
 	/**
 	 * @return the workbookName
 	 */

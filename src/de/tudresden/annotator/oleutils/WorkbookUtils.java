@@ -28,6 +28,22 @@ public class WorkbookUtils {
 		return workbookName;
 	}
 	
+	
+	/**
+	 * Get the Application automation from the embedded workbook
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the Workbook OLE object 
+	 * @return an OleAutomation to access the (Excel) application
+	 */
+	public static OleAutomation getApplicationAutomation(OleAutomation workbookAutomation){
+		
+		int[] applicationPropertyIds = workbookAutomation.getIDsOfNames(new String[]{"Application"}); 
+		Variant applicationVariant =  workbookAutomation.getProperty(applicationPropertyIds[0]);
+		OleAutomation applicationAutomation = applicationVariant.getAutomation();
+		applicationVariant.dispose();
+		
+		return applicationAutomation;
+	}
+	
 
 	/**
 	 * Get the Worksheets automation

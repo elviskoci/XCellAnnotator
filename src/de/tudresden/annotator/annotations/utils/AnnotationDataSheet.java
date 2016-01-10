@@ -3,12 +3,14 @@
  */
 package de.tudresden.annotator.annotations.utils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.MessageBox;
+import org.w3c.dom.ranges.Range;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.RangeAnnotation;
@@ -165,7 +167,7 @@ public class AnnotationDataSheet {
 		OleAutomation annotationDataSheet = 
 				WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
 		
-		// workbook has no annotation data.
+		// workbook has no annotation data
 		if(annotationDataSheet==null)
 			return;
 		
@@ -174,7 +176,7 @@ public class AnnotationDataSheet {
 		if(usedRange==null){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setText("Annotation data sheet is empty. Header row is missing! "
+			message.setMessage("Annotation data sheet is empty. Header row is missing! "
 							+"Please delete the \""+name+"\" worksheet before proceeding with the annotation");
 			message.open();
 			return;
@@ -188,7 +190,7 @@ public class AnnotationDataSheet {
 		if(countAreas>1){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setText("Could not read the annotation data from the sheet "+name+".\n" +
+			message.setMessage("Could not read the annotation data from the sheet "+name+".\n" +
 							"Data are not in the expected format. " +
 							"There seem to be empty rows or empty columns between the data!");
 			message.open();
@@ -208,6 +210,7 @@ public class AnnotationDataSheet {
 		
 		validateHeaderRow(annotationDataSheet, topLeftRow, topLeftColumn, downRightColumn);
 	
+		AnnotationHandler.createBaseAnnotations(workbookAutomation);
 		WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 		for (int i = (topLeftRow + 1); i <=downRightRow; i++) {
 			RangeAnnotation annotation = readAnnotationDataRow(annotationDataSheet, i, topLeftColumn, downRightColumn);
@@ -237,13 +240,13 @@ public class AnnotationDataSheet {
 		if(values.length < fields.size()){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setText("The number of fields in the annotation data sheet is larger than the declared (expected) fields");
+			message.setMessage("The number of fields in the annotation data sheet is larger than the declared (expected) fields");
 			message.open();
 			return false;
 		}else if(values.length > fields.size()){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setText("The number of fields in the annotation data sheet is smaller than the declared (expected) fields");
+			message.setMessage("The number of fields in the annotation data sheet is smaller than the declared (expected) fields");
 			message.open();
 			return false;
 		}
@@ -255,7 +258,7 @@ public class AnnotationDataSheet {
 			if( val==null || val.compareTo("")==0){
 				int style = SWT.ICON_ERROR;
 				MessageBox message = MainWindow.getInstance().createMessageBox(style);
-				message.setText("There are empty cells in the header row! Each field has to have a name.");
+				message.setMessage("There are empty cells in the header row! Each field has to have a name.");
 				message.open();
 				return false;
 			}
@@ -263,7 +266,7 @@ public class AnnotationDataSheet {
 			if(!fields.containsKey(val)){
 				int style = SWT.ICON_ERROR;
 				MessageBox message = MainWindow.getInstance().createMessageBox(style);
-				message.setText("Field \""+val+"\" is not recognized. It is not part of the pre-defined (expected) fields");
+				message.setMessage("Field \""+val+"\" is not recognized. It is not part of the pre-defined (expected) fields");
 				message.open();
 				return false;
 			}
@@ -352,66 +355,104 @@ public class AnnotationDataSheet {
 	 * Delete the annotation data for the worksheet with the given name 
 	 * This method will clear all the rows in the annotation (meta-)data sheet 
 	 * that are associated with the specified worksheet  
-	 * @param workbookAutomation
-	 * @param sheetName
+	 * @param workbookAutomation an OleAumation for accessing the functionalities of the embedded workbook
+	 * @param sheetName the name of the worksheet where the annotation are placed (drawn)
+	 * @param permanentDelete if true the annotation data will be deleted permanently, otherwise they will just be hidden  
 	 */
-	public static void deleteAnnotationDataForWorksheet(OleAutomation workbookAutomation, String sheetName ){
+	public static void deleteAnnotationDataForWorksheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
 		
 		// the sheet that stores the annotation metadata is excluded from this process
 		if(sheetName.compareTo(name)==0)
 			return;
 			
 		// get the OleAutomation object for the sheet that stores the annotation metadata (a.k.a. annotation data sheet) 
-		OleAutomation annotationDataSheetBeforeDelete = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
+		OleAutomation annotationDataSheetBeforeFilter = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
 		
 		// unprotect the annotation data sheet
-		boolean isUnprotected= WorksheetUtils.unprotectWorksheet(annotationDataSheetBeforeDelete);
+		boolean isUnprotected= WorksheetUtils.unprotectWorksheet(annotationDataSheetBeforeFilter);
 		if(!isUnprotected){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setText("Annotation Data Sheet could not be unprotected!");
+			message.setMessage("Annotation Data Sheet could not be unprotected!");
 			message.open();
 			return;
 		}
 		
 		// determine the position of the field that represents the name of the sheet
-		OleAutomation topLeftCellAuto = WorksheetUtils.getRangeAutomation(annotationDataSheetBeforeDelete, startColumn+""+startRow, null);
+		OleAutomation topLeftCellAuto = WorksheetUtils.getRangeAutomation(annotationDataSheetBeforeFilter, startColumn+""+startRow, null);
 		int columnIndex = RangeUtils.getFirstColumnIndex(topLeftCellAuto);
 		topLeftCellAuto.dispose();
 		int fieldRelativePosition = fields.get("Sheet.Name");
 		int fieldIndex = columnIndex + fieldRelativePosition;
 		
-		// get the range that is currently used (contains data)
-		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheetBeforeDelete);
-		String usedAddress = RangeUtils.getRangeAddress(usedRange);
+		// get the range that contains the annotation data together with the header row
+		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheetBeforeFilter);
+		
+		// filter this range to get only those rows relevant to the specified sheet 
+		RangeUtils.filterRange(usedRange, fieldIndex, sheetName); 
+				
+		// get the range OleAutomation for the filtered results. This range still includes the header row.  
+		OleAutomation filteredRange = RangeUtils.getSpecialCells(usedRange, 12); // xlCellTypeVisible = 12  (visible cells)
 		usedRange.dispose();
 		
-		int position = usedAddress.indexOf(":");
-		String downRight = usedAddress.substring(position+1).replace("$", "");
-		String topLeft = startColumn+""+(startRow+1);
-		
-		// get the range that includes only the annotation data, not the header 
-		// select those rows that contain data about the given worksheet name
-		OleAutomation dataRange = WorksheetUtils.getRangeAutomation(annotationDataSheetBeforeDelete, topLeft, downRight);
-		RangeUtils.filterRange(dataRange, fieldIndex, sheetName); 
-	
-		// get the range OleAutomation for the filtered results. This range does not include the header row.  
-		OleAutomation filteredRange = RangeUtils.getSpecialCells(dataRange, 12); // xlCellTypeVisible = 12  (visible cells)
-		dataRange.dispose();
-		
-		// delete the filtered rows 
-		RangeUtils.deleteRange(filteredRange);
+		// get all the areas in the filtered range 
+		OleAutomation areasAuto = RangeUtils.getAreas(filteredRange);
 		filteredRange.dispose();
-
-		annotationDataSheetBeforeDelete.dispose();
+		int countAreas = CollectionsUtils.countItemsInCollection(areasAuto);
 		
-		// remove filter from the annotation data sheet, to show all data
-		OleAutomation annotationDataSheetAfterDelete = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
-		WorksheetUtils.showAllWorksheetData(annotationDataSheetAfterDelete);
+		// get all rows (indices) in the filtered range. exclude the header row 
+		ArrayList<Integer> filteredRows = new ArrayList<Integer>();
+		for (int j = 1; j <=countAreas; j++) {
+			OleAutomation area = CollectionsUtils.getItemByIndex(areasAuto, j, false);
+			OleAutomation rowsAuto = RangeUtils.getRangeRows(area);
+			int countRows = CollectionsUtils.countItemsInCollection(rowsAuto);
+			for (int i = 1; i <=countRows; i++) {				
+				if(!(j==1 && i==1)){ // j==1 && i==1 corresponds to the header row
+					OleAutomation row =  CollectionsUtils.getItemByIndex(rowsAuto, i, false);
+					int rowIndex = RangeUtils.getFirstRowIndex(row);
+					filteredRows.add(rowIndex);
+				}
+			}			
+		}
+		areasAuto.dispose();
+		
+		// dispose the AnnotationDataSheet OleAutomation and create a new one. 
+		// this is done to prevent some OLE exception that appear when using the same
+		// OleAutomation after filtering the range 
+		annotationDataSheetBeforeFilter.dispose();	
+		OleAutomation annotationDataSheetAfterFilter = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
+		
+		// remove filtered rows 
+		// if permanentDelete is set true the delete method is used, else hide the rows
+		WorksheetUtils.showAllWorksheetData(annotationDataSheetAfterFilter);
+		if(!permanentDelete){ 
+			for (int i = 0; i < filteredRows.size(); i++) {
+				int rowIndex = filteredRows.get(i);
+				OleAutomation rowAuto= WorksheetUtils.getRangeRow(annotationDataSheetAfterFilter, rowIndex);	
+				RangeUtils.setRangeVisibility(rowAuto, false);
+			}
+		}else{
+			String multiSelectionRange = "";
+			for (int i = 0; i < filteredRows.size(); i++) {
+				int rowIndex = filteredRows.get(i);
+				String rowAddress = "$"+rowIndex+":$"+rowIndex;
+				multiSelectionRange = multiSelectionRange.concat(rowAddress+",");
+			}
+			multiSelectionRange = multiSelectionRange.substring(0, (multiSelectionRange.length()-1));
+
+			OleAutomation filteredRowsAuto = WorksheetUtils.getMultiSelectionRangeAutomation(annotationDataSheetAfterFilter, multiSelectionRange);
+			RangeUtils.deleteRange(filteredRowsAuto);
+		}
 		
 		// protect the worksheet from further user manipulation 
-		WorksheetUtils.protectWorksheet(annotationDataSheetAfterDelete);
-		annotationDataSheetAfterDelete.dispose();		
+		boolean isProtected= WorksheetUtils.protectWorksheet(annotationDataSheetAfterFilter);
+		if(!isProtected){
+			int style = SWT.ICON_ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Annotation Data Sheet could not be protected!");
+			message.open();
+		}
+		annotationDataSheetAfterFilter.dispose();		
 	}
 	
 	
@@ -430,7 +471,7 @@ public class AnnotationDataSheet {
 		if(!isUnprotected){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setText("Annotation Data Sheet could not be unprotected!");
+			message.setMessage("Annotation Data Sheet could not be unprotected!");
 			message.open();
 			return;
 		}

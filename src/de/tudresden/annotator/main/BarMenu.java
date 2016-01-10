@@ -1,5 +1,6 @@
 package de.tudresden.annotator.main;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.eclipse.swt.SWT;
@@ -12,6 +13,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
+import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
@@ -51,7 +53,9 @@ public class BarMenu {
 		Menu menuFile = new Menu(fileMenu);
 		fileMenu.setMenu(menuFile);
 		
-		// open
+		/*
+		 *  open file
+		 */
 		MenuItem menuFileOpen = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileOpen.setText("Open... \tCtrl+O");
 		menuFileOpen.addSelectionListener(new SelectionAdapter() {
@@ -74,11 +78,16 @@ public class BarMenu {
 				// check if there are annotation data. 
 				// if yes read them and recreate the hierarchical structure in memory
 				AnnotationDataSheet.readAnnotationData(workbookAutomation);
-				AnnotationDataSheet.setVisibility(workbookAutomation, true);
-				
-				// TODO: based on these data draw the annotations
 				AnnotationHandler.setVisilityForShapeAnnotations(workbookAutomation, true);
 				
+				// draw again the range annotations  
+				ArrayList<RangeAnnotation> allAnnotations = 
+						new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
+				for (RangeAnnotation rangeAnnotation : allAnnotations) {
+					AnnotationHandler.drawAnnotation(workbookAutomation, rangeAnnotation);
+				}
+				
+
 				// enable menu items (sub-menus) that are relevant  
 				MenuItem fileMenu = menuItems[0]; // File menu 
 				MenuItem[] fileSubmenus = fileMenu.getMenu().getItems();
@@ -97,7 +106,9 @@ public class BarMenu {
 		});
 		menuFileOpen.setAccelerator(SWT.MOD1+'O');
 		
-		// open prev
+		/*
+		 *  open prev file
+		 */
 		MenuItem menuFileOpenPrevious = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileOpenPrevious.setText("Open Prev");
 		menuFileOpenPrevious.addSelectionListener(new SelectionAdapter() {
@@ -108,7 +119,9 @@ public class BarMenu {
 		});
 		menuFileOpenPrevious.setEnabled(false);
 		
-		// open next
+		/*
+		 *  open next file
+		 */
 		MenuItem menuFileOpenNext = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileOpenNext.setText("Open Next");
 		menuFileOpenNext.addSelectionListener(new SelectionAdapter() {
@@ -119,7 +132,9 @@ public class BarMenu {
 		});
 		menuFileOpenNext.setEnabled(false);
 				
-		// save
+		/*
+		 *  save file
+		 */
 		MenuItem menuFileSave = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileSave.setText("Save \tCtrl+S");
 		menuFileSave.addSelectionListener(new SelectionAdapter() {
@@ -134,9 +149,16 @@ public class BarMenu {
 				ApplicationUtils.setDisplayAlerts(MainWindow.getInstance().getExcelApplication(), "False");		
 				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath);
 				if(result){
-            		FileUtils.markFileAsAnnotated(directory, fileName, 1);
+            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
+            		int style = SWT.ICON_INFORMATION;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("The file was successfully saved.");
+					message.open();
 				}else{
-					System.out.println("The file was not saved!");
+					int style = SWT.ICON_ERROR;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("ERROR: The file could not be saved!");
+					message.open();
 				}
 				
 				ApplicationUtils.setDisplayAlerts(MainWindow.getInstance().getExcelApplication(), "True");	
@@ -145,11 +167,15 @@ public class BarMenu {
 		menuFileSave.setEnabled(false);
 		menuFileSave.setAccelerator(SWT.MOD1 + 'S');
 		
-		// export
+		/*
+		 *  export file
+		 */
 		MenuItem menuFileExport = addExportMenu(menuFile);
 		menuFileExport.setEnabled(false);
 		
-		// close
+		/*
+		 *  close file
+		 */
 		MenuItem menuFileClose = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileClose.setText("Close");
 		menuFileClose.addSelectionListener(new SelectionAdapter() {
@@ -163,7 +189,9 @@ public class BarMenu {
 		menuFileClose.setEnabled(false);
 		
 		
-		// exit
+		/*
+		 *  exit application
+		 */
 		MenuItem menuFileExit = new MenuItem(menuFile, SWT.CASCADE);
 		menuFileExit.setText("Exit \tCtrl+Q");
 		menuFileExit.addSelectionListener(new SelectionAdapter() {
@@ -188,11 +216,14 @@ public class BarMenu {
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
 	 	            	
 	 	            	if(!isSaved){
-	 	            		System.err.println("Could not save progress!");
+	 	            		int messageStyle = SWT.ICON_ERROR;
+	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						message.setMessage("ERROR: The file could not be saved!");
+	 						message.open();
 	 	            	}else{
 	 	            		String directory = MainWindow.getInstance().getDirectoryPath();
 	 	            		String fileName = MainWindow.getInstance().getFileName();
-	 	            		FileUtils.markFileAsAnnotated(directory, fileName, 1);
+	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
 	 	            		
 		 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 		 	            	MainWindow.getInstance().disposeControlSite();
@@ -218,7 +249,6 @@ public class BarMenu {
 			}
 		});
 		menuFileExit.setAccelerator(SWT.MOD1 + 'Q');
-		
 		
 		return fileMenu;
 	}
@@ -316,17 +346,14 @@ public class BarMenu {
 				public void widgetSelected(SelectionEvent e) {
 					 
 					 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-					 OleAutomation applicationAutomation = MainWindow.getInstance().getExcelApplication();
-					 OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAutomation);
-					 
 					 
 					 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
 					 int sheetIndex = MainWindow.getInstance().getActiveWorksheetIndex();
 					 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
 
 					 AnnotationResult  result=  
-							 AnnotationHandler.annotate(workbookAutomation, worksheetFunctionAuto, 
-					 		 sheetName, sheetIndex, currentSelection, annotationClass);				 
+							 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
+					 		 currentSelection, annotationClass);				 
 					 
 					 if(result.getValidationResult()!=ValidationResult.OK){
 		        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
@@ -584,8 +611,7 @@ public class BarMenu {
 		menuItemClearInSheet.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
-				OleAutomation applicationAutomation = MainWindow.getInstance().getExcelApplication();
+
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
 				AnnotationHandler.setVisibilityForWorksheetShapeAnnotations(workbookAutomation, sheetName, false);
@@ -612,6 +638,10 @@ public class BarMenu {
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
 
 				AnnotationHandler.deleteAllShapeAnnotations(workbookAutomation);
+				
+				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
+				workbookAnnotation.removeAllAnnotations();
+				
 				AnnotationDataSheet.deleteAllAnnotationData(workbookAutomation);
 			}
 		});	
@@ -627,7 +657,11 @@ public class BarMenu {
 				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
 				
 				AnnotationHandler.deleteShapeAnnotationsFromWorksheet(workbookAutomation, sheetName);
-				AnnotationDataSheet.deleteAnnotationDataForWorksheet(workbookAutomation, sheetName);
+				
+				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
+				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
+				
+				AnnotationDataSheet.deleteAnnotationDataForWorksheet(workbookAutomation, sheetName, false);			
 			}
 		});	
 			
