@@ -1,7 +1,9 @@
 package de.tudresden.annotator.main;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -13,7 +15,6 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
-import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
@@ -23,6 +24,7 @@ import de.tudresden.annotator.annotations.utils.ClassGenerator;
 import de.tudresden.annotator.annotations.utils.ValidationResult;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
+import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 public class BarMenu {
 	
@@ -62,17 +64,13 @@ public class BarMenu {
 			public void widgetSelected(SelectionEvent e) {
 				
 				// open the files selection window
-				MainWindow.getInstance().fileOpen();
+				FileManager.fileOpen();
 				
 				// get the OleAutomation for the embedded workbook
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				if (workbookAutomation == null) {
 					return;
 				}
-				
-				// show the annotation data sheet
-				// TODO: Check why it does not make visible
-				AnnotationDataSheet.setVisibility(workbookAutomation, true);
 				
 				boolean isProtected = WorkbookUtils.protectWorkbook(workbookAutomation, true, false);		
 				if(!isProtected){
@@ -85,19 +83,28 @@ public class BarMenu {
 					return;
 				}
 				
+				
+				OleAutomation  annotationDataSheet = 
+						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, AnnotationDataSheet.getName()); 
+				
 				// protect the annotation data sheet if it is not protected already
-				// TODO: implement the method the gets if worksheet is protected
-				isProtected = AnnotationDataSheet.protect(workbookAutomation);
-				if(!isProtected){
-					int style = SWT.ERROR;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
-					message.setMessage("ERROR: Could not protect annotation data sheet! ");
-					message.open();
-					WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
-					MainWindow.getInstance().disposeControlSite();
-					return;
+				if(annotationDataSheet!=null){
+					isProtected = WorksheetUtils.protectWorksheet(annotationDataSheet);
+					if(!isProtected){
+						int style = SWT.ERROR;
+						MessageBox message = MainWindow.getInstance().createMessageBox(style);
+						message.setMessage("ERROR: Could not protect annotation data sheet! ");
+						message.open();
+						WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
+						MainWindow.getInstance().disposeControlSite();
+						return;
+					}
 				}
 				
+				// show the annotation data sheet
+				// TODO: Check why it does not make visible
+				if(annotationDataSheet!=null)
+					WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
 				// read the annotation data and recreate inmemory structure
 				AnnotationDataSheet.readAnnotationData(workbookAutomation);
 				
@@ -162,7 +169,9 @@ public class BarMenu {
 				String directory = MainWindow.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
-				ApplicationUtils.setDisplayAlerts(MainWindow.getInstance().getExcelApplication(), "False");		
+				OleAutomation applicationAutomation = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
+				
+				ApplicationUtils.setDisplayAlerts(applicationAutomation, "False");		
 				boolean result = FileManager.saveProgress(embeddedWorkbook, filePath);
 				if(result){
             		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
@@ -177,7 +186,7 @@ public class BarMenu {
 					message.open();
 				}
 				
-				ApplicationUtils.setDisplayAlerts(MainWindow.getInstance().getExcelApplication(), "True");	
+				ApplicationUtils.setDisplayAlerts(applicationAutomation, "True");	
 			}
 		});
 		menuFileSave.setEnabled(false);
@@ -214,8 +223,8 @@ public class BarMenu {
 			@Override
 			public void widgetSelected(SelectionEvent e) {	
 				
-				if( MainWindow.getInstance().getControlSite()!=null && 
-						MainWindow.getInstance().getControlSite().isDirty() &&
+				if( !MainWindow.getInstance().isControlSiteNull() && 
+						MainWindow.getInstance().isControlSiteDirty() &&
 						 	MainWindow.getInstance().getEmbeddedWorkbook()!=null){
 					
 					
@@ -352,10 +361,31 @@ public class BarMenu {
 		Menu menuAnnotateRange = new Menu(annotateRangeMenuItem);
 		annotateRangeMenuItem.setMenu(menuAnnotateRange);
 		
-		Iterator<AnnotationClass> itr = ClassGenerator.getAnnotationClasses().values().iterator();
-	
-		while(itr.hasNext()){
-			AnnotationClass annotationClass = (AnnotationClass) itr.next();
+		LinkedHashMap<String, AnnotationClass> map =  ClassGenerator.getAnnotationClasses();
+		Iterator<String> keys = map.keySet().iterator();
+		
+		// using the leftmost characters to make it easier for the user to simultaneously handle the mouse and keyboard
+		ArrayList<Character> shortcutChars  = new ArrayList<Character>();
+		shortcutChars.addAll(Arrays.asList(new Character[]{'A', 'S', 'D', 'X', 'Z', 'C', 'Q', 'W', 'E', 'F'}));
+		ArrayList<Character> usedChars = new ArrayList<Character>(); 
+		
+		while(keys.hasNext()){
+			String label = keys.next();
+			if(shortcutChars.contains(label.charAt(0))){
+				AnnotationClass ac = map.get(label);
+				ac.setShortcut(SWT.MOD1 | SWT.MOD2 + label.charAt(0));
+				usedChars.add(label.charAt(0));
+			}
+		}
+		
+		for (int i = 0; i < usedChars.size(); i++) {
+			shortcutChars.remove(usedChars.get(i));
+		}
+		
+		Iterator<AnnotationClass> values = map.values().iterator();
+		int i = 0;
+		while(values.hasNext()){
+			AnnotationClass annotationClass = (AnnotationClass) values.next();
 			MenuItem menuAnnotationClass = new MenuItem(menuAnnotateRange, SWT.CASCADE);
 			menuAnnotationClass.addSelectionListener(new SelectionAdapter() {
 				@Override
@@ -377,18 +407,19 @@ public class BarMenu {
 		 	            messageBox.open();
 					 }
 					 				 
-					 MainWindow.getInstance().getControlSite().setFocus();				 
+					 MainWindow.getInstance().setFocusToControlSite();				 
 				}
 			});		
 			int shortcut = annotationClass.getShortcut();
 			if(shortcut < 0){
-				shortcut = AnnotationClass.generateShortcut(annotationClass.getLabel());
+				shortcut = SWT.MOD1 | SWT.MOD2 + shortcutChars.get(i);
 				annotationClass.setShortcut(shortcut);
 			}
 			menuAnnotationClass.setAccelerator(shortcut);
-			char ch = ((char) (shortcut - SWT.MOD1 - SWT.MOD2));
+			char ch = (char) (shortcut - SWT.MOD1 | SWT.MOD2);
 			menuAnnotationClass.setText(annotationClass.getLabel()+"\t Ctrl+Shift+"+ch);
 			
+			i++;
 		}	
 		return annotateRangeMenuItem;
 	}
@@ -681,7 +712,6 @@ public class BarMenu {
 			}
 		});	
 			
-		
 		return deleteMenuItem;
 	}
 

@@ -7,39 +7,30 @@ package de.tudresden.annotator.main;
 import java.io.File;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTError;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.FocusListener;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleControlSite;
-import org.eclipse.swt.ole.win32.OleEvent;
 import org.eclipse.swt.ole.win32.OleFrame;
 import org.eclipse.swt.ole.win32.OleListener;
-import org.eclipse.swt.ole.win32.Variant;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
-import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 /**
- * @author Elvis
- *
+ * 
+ * @author Elvis Koci
  */
 public class MainWindow {
 	
@@ -48,17 +39,20 @@ public class MainWindow {
 	// Event IDs
 	private final int SheetSelectionChange = 0x00000616;
 	private final int SheetActivate        = 0x00000619;
+	private final int WindowActivate       = 0x00000614;
+	private final int WindowDeactivate     = 0x00000615;
+	private final int WorkbookActivate     = 0x00000620;
+	private final int WorkbookDeactivate   = 0x00000621;
 		
-	private final Display display = new Display();;
+	private final Display display = new Display();
 	private final Shell shell = new Shell(display);
 	
 	private OleFrame oleFrame;
 	private OleControlSite controlSite;
 	
-	private OleAutomation excelApplication;
-	
 	private OleAutomation embeddedWorkbook;
 	private String embeddedWorkbookName;
+	
 	private String directoryPath;
 	private String fileName;
 	
@@ -81,88 +75,57 @@ public class MainWindow {
 	 * Create the window that will serve as the main Graphical User Interface (GUI) for user interaction
 	 * @param shell
 	 */
-	private void buildGUIWindow(Shell shell){
+	private void buildGUIWindow(){
+			
+		// this.display.addFilter(SWT.KeyDown, GUIListeners.createArrowButtonPressedEventListener());        		
+		// this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
 		
+		// shell properties
+		this.shell.setText("Annotator");
+	    this.shell.setLayout(new FillLayout());
+	    this.shell.setSize(1400, 550);
+	    
+	    // add listener for the close event ( user clicks the close button (X) )
+	    this.shell.addListener(SWT.Close, GUIListeners.createCloseApplicationEventListener());
+	    
+		// the colors to use for the gui
 		Color white = new Color (Display.getCurrent(), 255, 255, 255);
 		Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
-		// Color black = new Color (Display.getCurrent(), 0, 0, 0);
-		// Color lightBlue = new Color(Display.getCurrent(),229, 248, 255); 
 		
-		// Shell properties
-		shell.setText("Annotator");
-	    shell.setLayout(new FillLayout());
-	    shell.setSize(1500, 800);
-	    
-	    shell.addListener(SWT.Close, new Listener()
-	    {
-	        public void handleEvent(Event event)
-	        {	
-	        	if(controlSite!=null && controlSite.isDirty()){
-	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
-	        		MessageBox messageBox = new MessageBox(shell, style);
-	 	            messageBox.setMessage("Want to save your changes?");
-	 	            
-	 	            int response = messageBox.open();	 	 	            
-	 	            if( response== SWT.YES){	
-	 	            	
-	 	            	String filePath = directoryPath+"\\"+fileName;
-	 	            	boolean isSaved = FileManager.saveProgress(embeddedWorkbook, filePath);
-	 	            	
-	 	            	if(!isSaved){
-	 	            		System.err.println("Could not save progress!");
-	 	            		event.doit = false;
-	 	            	}
-	 	            	
-	 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-	 	            	disposeControlSite();
-	 	            	disposeShell();
-	 	            	event.doit = true;
-	 	            } 
-	 	            
-	 	            if(response == SWT.NO){
-	 	            	MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
-	 	            	event.doit = true;
-	 	            } 
-	 	            
-	 	            event.doit = false;
-	        	}
-	        }
-	    });
-	    
-	    // Split shell in two horizontal panels 
+	    // split shell in two horizontal panels 
 	    SashForm mainSash = new SashForm(shell, SWT.HORIZONTAL);
 		mainSash.setLayout(new FillLayout());
-		//mainSash.setBackground(greyShade);
 	
 		// the left panel will contain the folder explorer. That is a tree structure of files and folders.
 		Composite leftPanel = new Composite(mainSash, SWT.BORDER );
 		leftPanel.setLayout(new FillLayout());
-	
+		leftPanel.setVisible(true);
+		
 		Label leftPanelLabel = new Label(leftPanel, SWT.NONE);
 		leftPanelLabel.setText("Folder Explorer");
 		leftPanelLabel.setBackground(white);
-		
+			
 		// the right panel will be subdivided into two more panels
 		Composite rightPanel = new Composite(mainSash, SWT.BORDER);
 		rightPanel.setLayout(new FillLayout());
 		
 		mainSash.setWeights(new int[] {10,90});
 			
-		// Sub split the right panel 
+		// sub split the right panel 
 	    SashForm rightSash = new SashForm(rightPanel, SWT.VERTICAL);
 		rightSash.setLayout(new FillLayout());
 		
-		// Create the panel that will embed the excel application
+		// create the panel that will embed the excel application
 		Composite excelPanel =  new Composite(rightSash, SWT.BORDER );
 		excelPanel.setLayout(new FillLayout());
 		
 		setOleFrame(new OleFrame(excelPanel, SWT.NONE));
 		getOleFrame().setBackground(lightGreyShade);
 		
-		// Create the panel that will display the applied annotations for the current file
+		// create the panel that will display the applied annotations for the current file
 		Composite annotationsPanel =  new Composite(rightSash, SWT.BORDER );
 		annotationsPanel.setLayout(new FillLayout());
+		annotationsPanel.setVisible(true);
 		
 		Label bottomPanelLabel = new Label(annotationsPanel, SWT.NONE);
 		bottomPanelLabel.setText("Annotations Panel");
@@ -175,29 +138,68 @@ public class MainWindow {
 	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());		    
 	}
 	
-	private void setUpWorkbookDisplay(){
+	protected void setUpWorkbookDisplay( File excelFile){
 		
-		if(getControlSite()==null){
-			System.out.println("Control Site is null! Cannot proceed with the display set up.");
+		try {
+			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, "Excel.Sheet", excelFile));
+			
+			// activate and display excel workbook
+			getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
+	        
+		} catch (IllegalArgumentException iaEx) {
+			
+			int style = SWT.ICON_ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("ERROR: Control site could not be created. Illegal argument exception was thrown.");
+			message.open();
+			MainWindow.getInstance().disposeShell();
+			
+			// iaEx.printStackTrace();
+			System.exit(1);
+			
+		} catch (SWTException swtEx) {
+		
+			int style = SWT.ICON_ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("ERROR: could not embedd the excel workbook. SWT Exception was thrown");
+			message.open();
+			MainWindow.getInstance().disposeShell();
+			
+			// swtEx.printStackTrace();
+			System.exit(1);
+			
+		} catch (Exception ex) {
+			
+			int style = SWT.ICON_ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Something went wrong!!! Ensure that you have a version of Microsoft Office Excel"
+					+ " installed in your machine. Also, check that the file is not corrupted or wrong format.");
+			message.open();
+			MainWindow.getInstance().disposeShell();
+			
+			// ex.printStackTrace();
 			System.exit(1);
 		}
-	
+			       
+		setDirectoryPath(excelFile.getParent());
+		setFileName(excelFile.getName());
+		
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
 	    // TODO: suppress alerts
 	        
 	    // add event listeners
-	    OleListener sheetSelectionListener = createSheetSelectionEventListener(application);
+	    OleListener sheetSelectionListener = GUIListeners.createSheetSelectionEventListener();
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
         
-        OleListener sheetActivationlistener = createSheetActivationEventListener(application);
+        OleListener sheetActivationlistener = GUIListeners.createSheetActivationEventListener();
         getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
-            
+                
 		// minimize ribbon.	TODO: Try hiding individual CommandBars
 	    ApplicationUtils.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
-	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", true);
+	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", false);
 	    
 	    // hide menu on right click of user on a cell
 	    CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
@@ -219,137 +221,95 @@ public class MainWindow {
 	    setActiveWorksheetIndex(sheetIndex);
 	    
 	    setEmbeddedWorkbookName(workbookName);
-	    setExcelApplication(application);
 	    worksheet.dispose();
+	}
+				
+	/**
+	 * @return the display
+	 */
+	private Display getDisplay() {
+		return display;
 	}
 
 	/**
-	 * Open an excel file for annotation
+	 * @return the shell
 	 */
-	 public void fileOpen(){
-		
-		// Select the excel file
-		Shell shell = getOleFrame().getShell();
-		FileDialog dialog = new FileDialog(shell, SWT.OPEN);
-		String fileName = dialog.open();
-		
-		// if no file was selected, return
-		if (fileName == null) return;
-		
-		// dispose OleControlSite if it is not null. 
-		disposeControlSite();
-				
-	    if (getControlSite() == null) {
-			int index = fileName.lastIndexOf('.');
-			if (index != -1) {
-				String fileExtension = fileName.substring(index + 1); 
-				if (fileExtension.equalsIgnoreCase("xls") || fileExtension.equalsIgnoreCase("xlsx") || fileExtension.equalsIgnoreCase("xlsm")) { // including macro enabled ?	
-					
-					try {		    	
-				        
-						File excelFile = new File(fileName);
-						setDirectoryPath(excelFile.getParent());
-						setFileName(excelFile.getName());
-						
-						// create new OLE control site to open the specified excel file
-				        setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, "Excel.Sheet" ,excelFile));
-				        
-				        // activate and display excel workbook
-				        getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);	
-				        
-				        // set up the excel application user interface for the annotation task
-				        setUpWorkbookDisplay();
-				        
-				    } catch (SWTError e) {
-				        e.printStackTrace();
-				        System.out.println("Unable to open ActiveX Control");
-				        return;
-				    }	    	  
-				   
-				}else{
-					MessageBox msgbox = new MessageBox(shell,SWT.ICON_ERROR);
-					msgbox.setMessage("The selected file format is not recognized: ."+fileExtension);
-					msgbox.open();
-				}
-			}
-	    }
+	private Shell getShell() {
+		return shell;
 	}
-	
-	 
-	/**
-	 * Create a SheetSelection event listener
-	 * @param application
-	 * @return
-	 */
-	private OleListener createSheetSelectionEventListener(OleAutomation application){
-		
-		OleListener listener = new OleListener() {
-	        public void handleEvent (OleEvent e) {
-	        	
-	        	Variant[] args = e.arguments;
-	        	
-	            /*
-	             * the first argument is a Range object. Get the number and range of selected areas 
-	             */	        	
-	        	OleAutomation rangeAutomation = args[0].getAutomation();
-	        	setCurrentSelection(RangeUtils.getRangeAddress(rangeAutomation).split(","));
-	        	args[0].dispose();
-	        	rangeAutomation.dispose();	
-	        	
-				/*
-				 * the second argument is a Worksheet object. Get the name and index of the worksheet.
-				 */
-	        	OleAutomation worksheetAutomation = args[1].getAutomation();		        
-				setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
-				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
-				args[1].dispose();	
-				worksheetAutomation.dispose();
-						
-				MainWindow.getInstance().getShell().setFocus();
-				MainWindow.getInstance().getShell().setFocus();
-	        }
-	    };	       
-	    return listener;
-	}
-	
 	
 	/**
-	 * Create a SheetActivate event listener
-	 * @param application
-	 * @return
+	 * Dispose shell
 	 */
-	private OleListener createSheetActivationEventListener(OleAutomation application){
-		
-		OleListener listener = new OleListener() {
-	        public void handleEvent (OleEvent e) {
-	        	
-	        	Variant[] args = e.arguments;
-	        	
-	        	/*
-	             * This event returns only one argument, a Worksheet object. Get the name and index of the activated worksheet.
-	             */ 					
-				OleAutomation worksheetAutomation = args[0].getAutomation();        
-				setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
-				setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
-				args[0].dispose();
-				worksheetAutomation.dispose();
-				
-				MainWindow.getInstance().getControlSite().setFocus();
-	        }
-	    };	       
-	    return listener;
+	protected void disposeShell() {
+		if (this.shell != null){
+			this.shell.dispose();
+		}
 	}
-	 
 	
-    /**
-	 * Create message box using the "main" window (this class) shell 
-	 * @param style 
+	/**
+	 * give the keyboard focus to the shell
+	 */
+	protected void setFocusToShell(){
+		this.shell.setFocus();
+	}
+	
+	/**
+	 * force the keyboard focus to the shell
+	 */
+	protected void forceFocusToShell(){
+		this.shell.forceFocus();
+	}
+	
+	/**
+	 * Get OleFrame
 	 * @return
 	 */
-	public MessageBox createMessageBox(int style){
-		return new MessageBox(shell,style);
+	private OleFrame getOleFrame() {
+		return oleFrame;
+	}		
+	
+	/**
+	 * Set OleFrame
+	 * 
+	 * @param oleFrame
+	 */
+	private void setOleFrame(OleFrame oleFrame) {
+		this.oleFrame = oleFrame;
 	}
-			
+	
+	/**
+	 * Get OleControlSite
+	 * @return
+	 */
+	private OleControlSite getControlSite() {
+		return controlSite;
+	}
+	
+	/**
+	 * Set OleControlSite
+	 * @param controlSite
+	 */
+	private void setControlSite(OleControlSite controlSite) {
+		this.controlSite = controlSite;
+	}
+	
+	/**
+	 * give the keyboard focus to the controlsite
+	 */
+	protected void setFocusToControlSite(){
+		if(controlSite!=null)
+			this.controlSite.setFocus();
+	}
+	
+	/**
+	 * force the keyboard focus to the controlsite
+	 */
+	protected void forceFocusToControlSite(){
+		if(controlSite!=null)
+			this.controlSite.forceFocus();
+	}
+	
 	/**
 	 * Dispose control site 
 	 */
@@ -361,76 +321,21 @@ public class MainWindow {
 	}
 	
 	/**
-	 * Dispose shell
+	 * Check if control site is null
+	 * @return true if it is null, false otherwise
 	 */
-	protected void disposeShell() {
-		if (shell != null){
-			shell.dispose();
-		}
+	protected boolean isControlSiteNull(){
+		return controlSite == null;
 	}
 	
 	/**
-	 * @return the display
+	 * Check if control site is dirty
+	 * @return true if it is dirty, false otherwise
 	 */
-	protected Display getDisplay() {
-		return display;
-	}
-
-	/**
-	 * @return the shell
-	 */
-	protected Shell getShell() {
-		return shell;
-	}
-
-	/**
-	 * Get OleFrame
-	 * @return
-	 */
-	protected OleFrame getOleFrame() {
-		return oleFrame;
-	}
-		
-	
-	/**
-	 * Set OleFrame
-	 * 
-	 * @param oleFrame
-	 */
-	protected void setOleFrame(OleFrame oleFrame) {
-		this.oleFrame = oleFrame;
+	protected boolean isControlSiteDirty(){
+		return controlSite.isDirty();
 	}
 	
-	/**
-	 * Get OleControlSite
-	 * @return
-	 */
-	protected OleControlSite getControlSite() {
-		return controlSite;
-	}
-	
-	/**
-	 * Set OleControlSite
-	 * @param controlSite
-	 */
-	protected void setControlSite(OleControlSite controlSite) {
-		this.controlSite = controlSite;
-	}
-	
-	/**
-	 * @return the excelApplication
-	 */
-	protected OleAutomation getExcelApplication() {
-		return excelApplication;
-	}
-
-	/**
-	 * @param excelApplication the excelApplication to set
-	 */
-	protected void setExcelApplication(OleAutomation excelApplication) {
-		this.excelApplication = excelApplication;
-	}
-
 	/**
 	 * @return the embeddedWorkbook
 	 */
@@ -441,7 +346,7 @@ public class MainWindow {
 	/**
 	 * @param embeddedWorkbook the embeddedWorkbook to set
 	 */
-	protected void setEmbeddedWorkbook(OleAutomation embeddedWorkbook) {
+	private void setEmbeddedWorkbook(OleAutomation embeddedWorkbook) {
 		this.embeddedWorkbook = embeddedWorkbook;
 	}
 	
@@ -530,16 +435,34 @@ public class MainWindow {
 	}
 
 	/**
+	 * Create message box using the "main" window (this class) shell 
+	 * @param style one of the relevant SWT constants or their combination
+	 * @return a MessageBox object
+	 */
+	public MessageBox createMessageBox(int style){
+		return new MessageBox(this.shell, style);
+	}
+	
+	/**
+	 * Create a file dialog using the main shell
+	 * @param style one of the relevant SWT constants or their combination
+	 * @return FileDialog object
+	 */
+	public FileDialog createFileDialog(int style){
+		return  new FileDialog(this.shell, SWT.OPEN);
+	}
+	
+	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 
 		MainWindow main = MainWindow.getInstance(); 
-		
-	    main.buildGUIWindow(main.getShell());
+	
+	    main.buildGUIWindow();
 	    
   		main.getShell().open();
-  		
+  			 
   	    while (!main.getShell().isDisposed ()) {
   	        if (!main.getDisplay().readAndDispatch ()) main.getDisplay().sleep();
   	    }

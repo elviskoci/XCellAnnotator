@@ -3,7 +3,7 @@
  */
 package de.tudresden.annotator.annotations.utils;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.AnnotationTool;
@@ -14,10 +14,10 @@ import de.tudresden.annotator.oleutils.ColorFormatUtils;
  */
 public class ClassGenerator {
 	
-	private static final HashMap<String, AnnotationClass> annotationClasses;
+	private static final LinkedHashMap<String, AnnotationClass> annotationClasses;
 	
 	static{
-		annotationClasses = new HashMap<String, AnnotationClass>();
+		annotationClasses = new LinkedHashMap<String, AnnotationClass>();
 		AnnotationClass[] classes = createAnnotationClasses();
 		for (AnnotationClass annotationClass : classes) {
 			annotationClasses.put(annotationClass.getLabel(), annotationClass);
@@ -40,12 +40,14 @@ public class ClassGenerator {
 		
 		// table can contains all the other classes
 		classes[0] = createShapeAnnotationClass("Table", 1, 0, true, blue_accent5, 2, true, greyDark, true, false, false, null); 
-		classes[1] = createTextBoxAnnotationClass("Attributes", blue_accent1, true, greyLight, true, true, classes[0]);
-		classes[2] = createTextBoxAnnotationClass("Data", green_accent6,  true, greyLight, true, true, classes[0]);
-		classes[3] = createTextBoxAnnotationClass("Header", yellow,  true, greyLight, true, true, classes[0]);
-		// metadata can be outside of a table or inside. Tables can share metadata
-		classes[4] = createTextBoxAnnotationClass("Metadata", orange_accent2, true, greyLight, true, false, null); 
 		
+		// metadata can be outside of a table or inside. Tables can share metadata
+		classes[1] = createTextBoxAnnotationClass("Metadata", orange_accent2, true, greyLight, true, false, null); 
+		
+		classes[2] = createTextBoxAnnotationClass("Header", yellow,  true, greyLight, true, true, classes[0]);
+		classes[3] = createTextBoxAnnotationClass("Data", green_accent6,  true, greyLight, true, true, classes[0]);
+		classes[4] = createTextBoxAnnotationClass("Attributes", blue_accent1, true, greyLight, true, true, classes[0]);
+	
 		return classes;
 	}
 	
@@ -109,7 +111,7 @@ public class ClassGenerator {
 	/**
 	 * @return the annotationclasses
 	 */
-	public static HashMap<String, AnnotationClass> getAnnotationClasses() {
+	public static LinkedHashMap<String, AnnotationClass> getAnnotationClasses() {
 		return annotationClasses;
 	}
 	

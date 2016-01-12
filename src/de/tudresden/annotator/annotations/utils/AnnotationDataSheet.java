@@ -602,4 +602,14 @@ public class AnnotationDataSheet {
 		annotationDataSheet.dispose();
 		return result;
 	}
+
+
+	/**
+	 * @return the name
+	 */
+	public static String getName() {
+		return name;
+	}
+	
+	
 }

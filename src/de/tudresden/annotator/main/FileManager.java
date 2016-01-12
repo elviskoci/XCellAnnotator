@@ -7,11 +7,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTError;
 import org.eclipse.swt.ole.win32.OleAutomation;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.MessageBox;
 
-import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -23,6 +25,12 @@ public class FileManager {
 	
 	public static final String CurrentProgressFileName = "annotated"; 
 	
+	/**
+	 * 
+	 * @param embeddedWorkbook
+	 * @param filePath
+	 * @return
+	 */
 	public static boolean saveProgress(OleAutomation embeddedWorkbook, String filePath){
 		
 		boolean isSaved = WorkbookUtils.isWorkbookSaved(embeddedWorkbook);
@@ -70,7 +78,13 @@ public class FileManager {
 		return isSuccess;
 	}
 
-	
+	/**
+	 * 
+	 * @param directory
+	 * @param fileName
+	 * @param status
+	 * @return
+	 */
 	public static boolean markFileAsAnnotated(String directory, String fileName, int status){
 		
 		File file = new File(directory+"\\"+CurrentProgressFileName);
@@ -93,5 +107,51 @@ public class FileManager {
 		}
 		
 		return true;
+	}
+	
+	
+	/**
+	 * Open an excel file for annotation
+	 */
+	 public static void fileOpen(){
+		
+		MainWindow mw = MainWindow.getInstance();
+		
+		// Select the excel file
+		FileDialog dialog = mw.createFileDialog(SWT.OPEN);
+		String fileName = dialog.open();
+		
+		// if no file was selected, return
+		if (fileName == null) return;
+		
+		// dispose OleControlSite if it is not null. 
+		mw.disposeControlSite();
+				
+	    if (mw.isControlSiteNull()) {
+			int index = fileName.lastIndexOf('.');
+			if (index != -1) {
+				String fileExtension = fileName.substring(index + 1); 
+				if (fileExtension.equalsIgnoreCase("xls") || fileExtension.equalsIgnoreCase("xlsx") || fileExtension.equalsIgnoreCase("xlsm")) { // including macro enabled ?	
+					
+					try {		    	
+				        
+						File excelFile = new File(fileName);
+				        
+				        // set up the excel application user interface for the annotation task
+				        mw.setUpWorkbookDisplay(excelFile);
+				        
+				    } catch (SWTError e) {
+				        e.printStackTrace();
+				        System.out.println("Unable to open ActiveX Control");
+				        return;
+				    }	    	  
+				   
+				}else{
+					MessageBox msgbox = mw.createMessageBox(SWT.ICON_ERROR);
+					msgbox.setMessage("The selected file format is not recognized: ."+fileExtension);
+					msgbox.open();
+				}
+			}
+	    }
 	}
 }
