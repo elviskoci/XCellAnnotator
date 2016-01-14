@@ -254,7 +254,7 @@ public class AnnotationClass {
 	 */
 	public static int generateShortcut(String label){
 		char firstChar = label.charAt(0);
-		int  shortcut= SWT.MOD1 | SWT.MOD2 + firstChar;
+		int  shortcut= firstChar; //SWT.MOD1 | SWT.MOD2 + firstChar;
 		return shortcut;
 	}
 	

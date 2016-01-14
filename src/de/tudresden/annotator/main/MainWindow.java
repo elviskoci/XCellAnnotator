@@ -100,17 +100,19 @@ public class MainWindow {
 		// the left panel will contain the folder explorer. That is a tree structure of files and folders.
 		Composite leftPanel = new Composite(mainSash, SWT.BORDER );
 		leftPanel.setLayout(new FillLayout());
-		leftPanel.setVisible(false);
+		leftPanel.setVisible(true);
+		//leftPanel.setEnabled(false);
+		leftPanel.setBackground(lightGreyShade);
 		
-		Label leftPanelLabel = new Label(leftPanel, SWT.NONE);
-		leftPanelLabel.setText("Folder Explorer");
-		leftPanelLabel.setBackground(white);
-			
+		//Label leftPanelLabel = new Label(leftPanel, SWT.NONE);
+		//leftPanelLabel.setText("Folder Explorer");
+		//leftPanelLabel.setBackground(white);
+				
 		// the right panel will be subdivided into two more panels
 		Composite rightPanel = new Composite(mainSash, SWT.BORDER);
 		rightPanel.setLayout(new FillLayout());
 		
-		mainSash.setWeights(new int[] {10,90});
+		mainSash.setWeights(new int[] {0,100});
 			
 		// sub split the right panel 
 	    SashForm rightSash = new SashForm(rightPanel, SWT.VERTICAL);
@@ -127,12 +129,13 @@ public class MainWindow {
 		Composite annotationsPanel =  new Composite(rightSash, SWT.BORDER );
 		annotationsPanel.setLayout(new FillLayout());
 		annotationsPanel.setVisible(true);
+		annotationsPanel.setBackground(lightGreyShade);
 		
-		Label bottomPanelLabel = new Label(annotationsPanel, SWT.NONE);
+		//Label bottomPanelLabel = new Label(annotationsPanel, SWT.NONE);
 		//bottomPanelLabel.setText("Annotations Panel");
-		bottomPanelLabel.setBackground(white);
+		//bottomPanelLabel.setBackground(white);
 		
-		rightSash.setWeights(new int[] {99,1});
+		rightSash.setWeights(new int[] {100,0});
 		
 		// add a bar menu
 	    BarMenu  oleFrameMenuBar = new BarMenu(getOleFrame().getShell());

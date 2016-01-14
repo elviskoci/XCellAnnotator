@@ -243,33 +243,46 @@ public class BarMenu {
 		Menu menuAnnotateRange = new Menu(annotateRangeMenuItem);
 		annotateRangeMenuItem.setMenu(menuAnnotateRange);
 		annotateRangeMenuItem.setID(2010000);
-
 		
 		// using the leftmost characters to make it easier for the user to simultaneously handle the mouse and keyboard
 		LinkedHashMap<String, AnnotationClass> map =  ClassGenerator.getAnnotationClasses();
-		Iterator<String> keys = map.keySet().iterator();
-		
-		ArrayList<Character> shortcutChars  = new ArrayList<Character>();
-		shortcutChars.addAll(Arrays.asList(new Character[]{'A', 'S', 'D', 'X', 'Z', 'C', 'Q', 'W', 'E'}));
 		ArrayList<Character> usedChars = new ArrayList<Character>(); 
+		ArrayList<Character> shortcutChars  = new ArrayList<Character>();
 		
-		/* if the label of the annotation class starts with one of the characters 
-		 * in the shortcutChars list, use that character for creating the shortcut of this class
-		 * for classes who's name does not start with one of the considered characters
-		 * use the next available character in the list
-		 */
+		Iterator<String> keys = map.keySet().iterator();
 		while(keys.hasNext()){
 			String label = keys.next();
-			if(shortcutChars.contains(label.charAt(0))){
-				AnnotationClass ac = map.get(label);
-				ac.setShortcut(SWT.MOD1 | SWT.MOD2 + label.charAt(0));
+			if(!usedChars.contains(label.charAt(0))){
 				usedChars.add(label.charAt(0));
+				shortcutChars.add(label.charAt(0));
+			}else{
+				shortcutChars.add('?');
 			}
 		}
 		
-		for (int i = 0; i < usedChars.size(); i++) {
-			shortcutChars.remove(usedChars.get(i));
-		}
+//		Iterator<String> keys = map.keySet().iterator();
+//		
+//		ArrayList<Character> shortcutChars  = new ArrayList<Character>();
+//		shortcutChars.addAll(Arrays.asList(new Character[]{'A', 'S', 'D', 'X', 'Z', 'C', 'Q', 'W', 'E'}));
+//		ArrayList<Character> usedChars = new ArrayList<Character>(); 
+//		
+//		/* if the label of the annotation class starts with one of the characters 
+//		 * in the shortcutChars list, use that character for creating the shortcut of this class
+//		 * for classes who's name does not start with one of the considered characters
+//		 * use the next available character in the list
+//		 */
+//		while(keys.hasNext()){
+//			String label = keys.next();
+//			if(shortcutChars.contains(label.charAt(0))){
+//				AnnotationClass ac = map.get(label);
+//				ac.setShortcut(SWT.MOD1 | SWT.MOD2 + label.charAt(0));
+//				usedChars.add(label.charAt(0));
+//			}
+//		}
+//		
+//		for (int i = 0; i < usedChars.size(); i++) {
+//			shortcutChars.remove(usedChars.get(i));
+//		}
 		
 		/*
 		 * Iterate through the list of annotation classes, and
@@ -286,14 +299,25 @@ public class BarMenu {
 			menuAnnotationClass.addSelectionListener(
 					GUIListeners.createRangeAnnotationSelectionListener(annotationClass));
 			
-			int shortcut = annotationClass.getShortcut();
+			int shortcut = annotationClass.getShortcut();	
+			char c = 'A';
 			if(shortcut < 0){
-				shortcut = SWT.MOD1 | SWT.MOD2 + shortcutChars.get(i);
+				if(shortcutChars.get(i)=='?'){
+					while(true){
+						if (!usedChars.contains(c)) {
+							usedChars.add(c);
+							shortcutChars.set(i, c);
+							c++;
+							break;
+						}
+						c++;
+					}
+				}
+				shortcut =  shortcutChars.get(i); // SWT.MOD1 | SWT.MOD2 + shortcutChars.get(i);
 				annotationClass.setShortcut(shortcut);
 			}
 			menuAnnotationClass.setAccelerator(shortcut);
-			char ch = (char) (shortcut - SWT.MOD1 | SWT.MOD2);
-			menuAnnotationClass.setText(annotationClass.getLabel()+"\t Ctrl+Shift+"+ch);
+			menuAnnotationClass.setText(annotationClass.getLabel()+"\t"+shortcutChars.get(i)); //Ctrl+Shift+
 
 			i++;
 		}	
