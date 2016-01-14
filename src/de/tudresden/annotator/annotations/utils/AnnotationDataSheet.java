@@ -212,7 +212,6 @@ public class AnnotationDataSheet {
 		
 		validateHeaderRow(annotationDataSheet, topLeftRow, topLeftColumn, downRightColumn);
 	
-		AnnotationHandler.createBaseAnnotations(workbookAutomation);
 		WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 		for (int i = (topLeftRow + 1); i <=downRightRow; i++) {
 			RangeAnnotation annotation = readAnnotationDataRow(annotationDataSheet, i, topLeftColumn, downRightColumn);

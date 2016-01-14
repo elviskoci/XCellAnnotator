@@ -3,8 +3,6 @@
  */
 package de.tudresden.annotator.annotations;
 
-import org.json.JSONObject;
-
 /**
  * @author Elvis Koci
  */

@@ -49,6 +49,7 @@ public class MainWindow {
 	
 	private OleFrame oleFrame;
 	private OleControlSite controlSite;
+	private BarMenu menuBar;
 	
 	private OleAutomation embeddedWorkbook;
 	private String embeddedWorkbookName;
@@ -83,7 +84,7 @@ public class MainWindow {
 		// shell properties
 		this.shell.setText("Annotator");
 	    this.shell.setLayout(new FillLayout());
-	    this.shell.setSize(1400, 550);
+	    this.shell.setSize(1600, 800);
 	    
 	    // add listener for the close event ( user clicks the close button (X) )
 	    this.shell.addListener(SWT.Close, GUIListeners.createCloseApplicationEventListener());
@@ -99,7 +100,7 @@ public class MainWindow {
 		// the left panel will contain the folder explorer. That is a tree structure of files and folders.
 		Composite leftPanel = new Composite(mainSash, SWT.BORDER );
 		leftPanel.setLayout(new FillLayout());
-		leftPanel.setVisible(true);
+		leftPanel.setVisible(false);
 		
 		Label leftPanelLabel = new Label(leftPanel, SWT.NONE);
 		leftPanelLabel.setText("Folder Explorer");
@@ -128,14 +129,15 @@ public class MainWindow {
 		annotationsPanel.setVisible(true);
 		
 		Label bottomPanelLabel = new Label(annotationsPanel, SWT.NONE);
-		bottomPanelLabel.setText("Annotations Panel");
+		//bottomPanelLabel.setText("Annotations Panel");
 		bottomPanelLabel.setBackground(white);
 		
-		rightSash.setWeights(new int[] {80,20});
+		rightSash.setWeights(new int[] {99,1});
 		
 		// add a bar menu
 	    BarMenu  oleFrameMenuBar = new BarMenu(getOleFrame().getShell());
-	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());		    
+	    getOleFrame().setFileMenus(oleFrameMenuBar.getMenuItems());
+	    this.setMenuBar(oleFrameMenuBar);
 	}
 	
 	protected void setUpWorkbookDisplay( File excelFile){
@@ -208,6 +210,29 @@ public class MainWindow {
 	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
 	    setEmbeddedWorkbook(workbook);
 	    
+	    // protect the structure of the workbook if it is not yet protected
+		boolean isProtected = WorkbookUtils.protectWorkbook(workbook, true, false);		
+		if(!isProtected){
+			int style = SWT.ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("ERROR: Could not protect the workbook. Operation failed!");
+			message.open();
+			WorkbookUtils.closeEmbeddedWorkbook(workbook, false);
+			MainWindow.getInstance().disposeControlSite();
+			return;
+		}
+	    
+		boolean areProtected = WorkbookUtils.protectAllWorksheets(workbook);
+		if(!areProtected){
+			int style = SWT.ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("ERROR: Could not protect one or more sheets. Operation failed!");
+			message.open();
+			WorkbookUtils.closeEmbeddedWorkbook(workbook, false);
+			MainWindow.getInstance().disposeControlSite();
+			return;
+		}
+		
 	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
 	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
 	    
@@ -432,6 +457,20 @@ public class MainWindow {
 	 */
 	protected void setCurrentSelection(String[] currentSelection) {
 		this.currentSelection = currentSelection;
+	}
+
+	/**
+	 * @return the menuBar
+	 */
+	public BarMenu getMenuBar() {
+		return menuBar;
+	}
+
+	/**
+	 * @param menuBar the menuBar to set
+	 */
+	public void setMenuBar(BarMenu menuBar) {
+		this.menuBar = menuBar;
 	}
 
 	/**

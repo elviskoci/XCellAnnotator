@@ -6,29 +6,16 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
-import de.tudresden.annotator.annotations.WorkbookAnnotation;
-import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
-import de.tudresden.annotator.annotations.utils.AnnotationHandler;
-import de.tudresden.annotator.annotations.utils.AnnotationResult;
 import de.tudresden.annotator.annotations.utils.ClassGenerator;
-import de.tudresden.annotator.annotations.utils.ValidationResult;
-import de.tudresden.annotator.oleutils.ApplicationUtils;
-import de.tudresden.annotator.oleutils.WorkbookUtils;
-import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 public class BarMenu {
 	
-	private MenuItem[] menuItems = new MenuItem[4];
+	private MenuItem[] menuItems;
 	
 	public BarMenu(Shell oleShell){
 		
@@ -40,317 +27,212 @@ public class BarMenu {
 			shell.setMenuBar(menuBar);
 		}
 	
+		menuItems = new MenuItem[4];
 		menuItems[0] = addFileMenu(menuBar);
 		menuItems[1] = addAnnotationsMenu(menuBar);
 		menuItems[2] = addViewMenu(menuBar);
 		menuItems[3] = addPreferencesMenu(menuBar);
+		
+		setToolTipText(menuBar);
 	}
 	
 	
-	private MenuItem addFileMenu(Menu menuBar){
+	private  void setToolTipText(Menu cascadeMenu){
+		if(cascadeMenu!=null){
+			for (int i = 0; i < cascadeMenu.getItems().length; i++) {
+				setToolTipText(cascadeMenu.getItem(i).getMenu());
+				cascadeMenu.getItem(i).setToolTipText(""+cascadeMenu.getItem(i).getID());
+			}			
+		}else{
+			return;
+		}		
+	}
+	
+	/**
+	 * Create the "File" menu
+	 * @param menuBar the (parent) bar menu 
+	 * @return a menu item containing the "File" menu options
+	 */
+	private MenuItem addFileMenu(Menu menuBar){	
 		
 		MenuItem fileMenu = new MenuItem(menuBar, SWT.CASCADE);
+		fileMenu.setID(1000000);
 		fileMenu.setText("&File");
 		Menu menuFile = new Menu(fileMenu);
 		fileMenu.setMenu(menuFile);
 		
 		/*
-		 *  open file
+		 *  Open File menu item
 		 */
 		MenuItem menuFileOpen = new MenuItem(menuFile, SWT.CASCADE);
+		menuFileOpen.setID(1010000);
 		menuFileOpen.setText("Open... \tCtrl+O");
-		menuFileOpen.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				// open the files selection window
-				FileManager.fileOpen();
-				
-				// get the OleAutomation for the embedded workbook
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				if (workbookAutomation == null) {
-					return;
-				}
-				
-				boolean isProtected = WorkbookUtils.protectWorkbook(workbookAutomation, true, false);		
-				if(!isProtected){
-					int style = SWT.ERROR;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
-					message.setMessage("ERROR: Could not protect the workbook. Operation failed!");
-					message.open();
-					WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
-					MainWindow.getInstance().disposeControlSite();
-					return;
-				}
-				
-				
-				OleAutomation  annotationDataSheet = 
-						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, AnnotationDataSheet.getName()); 
-				
-				// protect the annotation data sheet if it is not protected already
-				if(annotationDataSheet!=null){
-					isProtected = WorksheetUtils.protectWorksheet(annotationDataSheet);
-					if(!isProtected){
-						int style = SWT.ERROR;
-						MessageBox message = MainWindow.getInstance().createMessageBox(style);
-						message.setMessage("ERROR: Could not protect annotation data sheet! ");
-						message.open();
-						WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
-						MainWindow.getInstance().disposeControlSite();
-						return;
-					}
-				}
-				
-				// show the annotation data sheet
-				// TODO: Check why it does not make visible
-				if(annotationDataSheet!=null)
-					WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
-				// read the annotation data and recreate inmemory structure
-				AnnotationDataSheet.readAnnotationData(workbookAutomation);
-				
-				// re-draw all the annotation in memory structure 
-				AnnotationHandler.drawAllAnnotations(workbookAutomation);
-								
-				// enable menu items (sub-menus) that are relevant  
-				MenuItem fileMenu = menuItems[0]; // File menu 
-				MenuItem[] fileSubmenus = fileMenu.getMenu().getItems();
-				for (MenuItem menuItem : fileSubmenus) {
-					if(!(menuItem.getText().compareTo("Open Prev")==0 || menuItem.getText().compareTo("Open Next")==0)){
-						menuItem.setEnabled(true);
-					}	
-				}
-					
-				MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-				MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-				for (MenuItem menuItem : annotationsSubmenus) {
-					menuItem.setEnabled(true);
-				}
-			}
-		});
 		menuFileOpen.setAccelerator(SWT.MOD1+'O');
+		menuFileOpen.addSelectionListener(GUIListeners.createFileOpenSelectionListener());
 		
 		/*
-		 *  open prev file
+		 *  Open Previous File menu item 
 		 */
 		MenuItem menuFileOpenPrevious = new MenuItem(menuFile, SWT.CASCADE);
+		menuFileOpenPrevious.setID(1020000);
 		menuFileOpenPrevious.setText("Open Prev");
-		menuFileOpenPrevious.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				System.out.println("Prev File");
-			}
-		});
 		menuFileOpenPrevious.setEnabled(false);
+	
 		
 		/*
-		 *  open next file
+		 *  Open Next File menu item 
 		 */
 		MenuItem menuFileOpenNext = new MenuItem(menuFile, SWT.CASCADE);
+		menuFileOpenNext.setID(1030000);
 		menuFileOpenNext.setText("Open Next");
-		menuFileOpenNext.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				System.out.println("Next File");
-			}
-		});
 		menuFileOpenNext.setEnabled(false);
-				
+		
 		/*
-		 *  save file
+		 *  Save File menu item 
 		 */
 		MenuItem menuFileSave = new MenuItem(menuFile, SWT.CASCADE);
+		menuFileSave.setID(1040000);
 		menuFileSave.setText("Save \tCtrl+S");
-		menuFileSave.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-				String fileName = MainWindow.getInstance().getFileName();
-				String directory = MainWindow.getInstance().getDirectoryPath();
-				String filePath = directory+"\\"+fileName;
-				
-				OleAutomation applicationAutomation = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
-				
-				ApplicationUtils.setDisplayAlerts(applicationAutomation, "False");		
-				boolean result = FileManager.saveProgress(embeddedWorkbook, filePath);
-				if(result){
-            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
-            		int style = SWT.ICON_INFORMATION;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
-					message.setMessage("The file was successfully saved.");
-					message.open();
-				}else{
-					int style = SWT.ICON_ERROR;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
-					message.setMessage("ERROR: The file could not be saved!");
-					message.open();
-				}
-				
-				ApplicationUtils.setDisplayAlerts(applicationAutomation, "True");	
-			}
-		});
 		menuFileSave.setEnabled(false);
 		menuFileSave.setAccelerator(SWT.MOD1 + 'S');
 		
 		/*
-		 *  export file
+		 *  Export File menu item 
 		 */
 		MenuItem menuFileExport = addExportMenu(menuFile);
+		menuFileExport.setID(1050000);
 		menuFileExport.setEnabled(false);
-		
+	
 		/*
-		 *  close file
+		 *  Close File menu item 
 		 */
 		MenuItem menuFileClose = new MenuItem(menuFile, SWT.CASCADE);
+		menuFileClose.setID(1060000);
 		menuFileClose.setText("Close");
-		menuFileClose.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
-				WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-				MainWindow.getInstance().disposeControlSite();
-			}
-		});		
 		menuFileClose.setEnabled(false);
-		
-		
+	
 		/*
-		 *  exit application
+		 *  Exit Application menu item 
 		 */
 		MenuItem menuFileExit = new MenuItem(menuFile, SWT.CASCADE);
+		menuFileExit.setID(1070000);
 		menuFileExit.setText("Exit \tCtrl+Q");
-		menuFileExit.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {	
-				
-				if( !MainWindow.getInstance().isControlSiteNull() && 
-						MainWindow.getInstance().isControlSiteDirty() &&
-						 	MainWindow.getInstance().getEmbeddedWorkbook()!=null){
-					
-					
-					System.out.println( AnnotationHandler.getWorkbookAnnotation().getWorksheetAnnotations());
-					
-	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
-	 	            messageBox.setMessage("Want to save your changes?");
-	 	            
-	 	            int response = messageBox.open();	 	 	            
-	 	            if( response== SWT.YES){	
-	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
-	 	            	boolean isSaved = FileManager.saveProgress(embeddedWorkbook, filePath);
-	 	            	
-	 	            	if(!isSaved){
-	 	            		int messageStyle = SWT.ICON_ERROR;
-	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
-	 						message.setMessage("ERROR: The file could not be saved!");
-	 						message.open();
-	 	            	}else{
-	 	            		String directory = MainWindow.getInstance().getDirectoryPath();
-	 	            		String fileName = MainWindow.getInstance().getFileName();
-	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
-	 	            		
-		 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-		 	            	MainWindow.getInstance().disposeControlSite();
-		 	            	MainWindow.getInstance().disposeShell();
-	 	            	}
-	 	            } 
-	 	            
-	 	            if(response == SWT.NO){
-	 	            	MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
-	 	            } 
-	        	}else{
-	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
-	 	            messageBox.setMessage("Do you want to close the application?");
-	 	            
-	 	            int response = messageBox.open();
-	 	            if( response== SWT.YES){
-	 	        	    MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
-	 	            }
-	        	}
-			}
-		});
 		menuFileExit.setAccelerator(SWT.MOD1 + 'Q');
 		
 		return fileMenu;
 	}
 	
+	
+	/**
+	 * 
+	 * @param menuBar
+	 * @return
+	 */
 	private MenuItem addAnnotationsMenu(Menu menuBar){
 		
 		MenuItem annotationsMenu = new MenuItem(menuBar, SWT.CASCADE);
 		annotationsMenu.setText("&Annotations");
 		Menu menuAnnotations = new Menu(annotationsMenu);
 		annotationsMenu.setMenu(menuAnnotations);
-				
+		annotationsMenu.setID(2000000);
+		
+		/*
+		 * Range annotations menu item  
+		 */
 		MenuItem menuItemRange = addAnnotateRangeMenu(menuAnnotations);
 		menuItemRange.setEnabled(false);
 		
+		/*
+		 * Worksheet annotations menu item  
+		 */
 		MenuItem menuItemSheet = addAnnotateWorksheetMenu(menuAnnotations);	
 		menuItemSheet.setEnabled(false);
 		
+		/*
+		 * Workbook annotations menu item  
+		 */
 		MenuItem menuItemBook = addAnnotateWorkbookMenu(menuAnnotations);
 		menuItemBook.setEnabled(false);
-				
+		
+		/*
+		 * Hide annotations menu item  
+		 */
 		MenuItem menuItemHide = addHideMenu(menuAnnotations);
 		menuItemHide.setEnabled(false);
 		
+		/*
+		 * Delete annotations menu item  
+		 */
 		MenuItem menuItemDelete = addDeleteMenu(menuAnnotations);
 		menuItemDelete.setEnabled(false);
 		
+		/*
+		 * Show Formulas menu item  
+		 */
 		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CASCADE);
 		menuItemShowFormulas.setText("Show Formulas");
-		menuItemShowFormulas.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//TODO: Implement as cascade menu having options such as Clear->All , Clear->Specific Annotation
-			}
-		});
 		menuItemShowFormulas.setEnabled(false);
+		menuItemShowFormulas.setID(2060000);
 		
+		/*
+		 * Show Annotations menu item  
+		 */
 		MenuItem menuItemShowAnnotations = new MenuItem(menuAnnotations, SWT.CASCADE);
 		menuItemShowAnnotations.setText("Show Annotations");
-		menuItemShowAnnotations.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				OleAutomation embeddedWorkbook =  MainWindow.getInstance().getEmbeddedWorkbook();
-				AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, true);
-				AnnotationDataSheet.setVisibility(embeddedWorkbook, true);
-			}
-		});
 		menuItemShowAnnotations.setEnabled(false);
+		menuItemShowAnnotations.setID(2070000);
 		
 		return annotationsMenu;
 	}
 	
-	
 	private MenuItem addViewMenu(Menu menuBar) {
+		
 		MenuItem viewMenu = new MenuItem(menuBar, SWT.CASCADE);
 		viewMenu.setText("&View");
 		Menu menuView = new Menu(viewMenu);
 		viewMenu.setMenu(menuView);
+		viewMenu.setID(3000000);
 		
+		/*
+		 * View Folder Explorer Panel menu item  
+		 */
 		MenuItem menuViewFolderExplorer = new MenuItem(menuView, SWT.CASCADE);
 		menuViewFolderExplorer.setText("Folder Explorer");
-		menuViewFolderExplorer.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//TODO: Hide/Show Folder Explorer Panel  
-			}
-		});
+		menuViewFolderExplorer.setID(3010000);
 		
+		/*
+		 * View Annotation Management Panel menu item  
+		 */
 		MenuItem menuViewAnnotationsPanel = new MenuItem(menuView, SWT.CASCADE);
 		menuViewAnnotationsPanel.setText("Annotations Panel");
-		menuViewAnnotationsPanel.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//TODO: Hide/Show Annotations Panel  
-			}
-		});
+		menuViewAnnotationsPanel.setID(3020000);
 		
 		return viewMenu;
+	}
+	
+	private MenuItem addPreferencesMenu(Menu menuBar){
+		
+		MenuItem preferencesMenu = new MenuItem(menuBar, SWT.CASCADE);
+		preferencesMenu.setText("&Preferences");
+		Menu menuPreferences = new Menu(preferencesMenu);
+		preferencesMenu.setMenu(menuPreferences);
+		preferencesMenu.setID(4000000);
+		
+		/*
+		 * Formatting Preferences menu item 
+		 */
+		MenuItem menuPreferencesFormatting = new MenuItem(menuPreferences, SWT.CASCADE);
+		menuPreferencesFormatting.setText("Formatting");
+		menuPreferencesFormatting.setID(4010000);
+		
+		/*
+		 * Annotation Classes Preferences menu item 
+		 */
+		MenuItem menuPreferencesAnnotationClasses = new MenuItem(menuPreferences, SWT.CASCADE);
+		menuPreferencesAnnotationClasses.setText("Annotation Classes");
+		menuPreferencesAnnotationClasses.setID(4020000);
+		
+		return preferencesMenu;
 	}
 
 	
@@ -360,15 +242,22 @@ public class BarMenu {
 		annotateRangeMenuItem.setText("&Range as");
 		Menu menuAnnotateRange = new Menu(annotateRangeMenuItem);
 		annotateRangeMenuItem.setMenu(menuAnnotateRange);
+		annotateRangeMenuItem.setID(2010000);
+
 		
+		// using the leftmost characters to make it easier for the user to simultaneously handle the mouse and keyboard
 		LinkedHashMap<String, AnnotationClass> map =  ClassGenerator.getAnnotationClasses();
 		Iterator<String> keys = map.keySet().iterator();
 		
-		// using the leftmost characters to make it easier for the user to simultaneously handle the mouse and keyboard
 		ArrayList<Character> shortcutChars  = new ArrayList<Character>();
-		shortcutChars.addAll(Arrays.asList(new Character[]{'A', 'S', 'D', 'X', 'Z', 'C', 'Q', 'W', 'E', 'F'}));
+		shortcutChars.addAll(Arrays.asList(new Character[]{'A', 'S', 'D', 'X', 'Z', 'C', 'Q', 'W', 'E'}));
 		ArrayList<Character> usedChars = new ArrayList<Character>(); 
 		
+		/* if the label of the annotation class starts with one of the characters 
+		 * in the shortcutChars list, use that character for creating the shortcut of this class
+		 * for classes who's name does not start with one of the considered characters
+		 * use the next available character in the list
+		 */
 		while(keys.hasNext()){
 			String label = keys.next();
 			if(shortcutChars.contains(label.charAt(0))){
@@ -382,34 +271,21 @@ public class BarMenu {
 			shortcutChars.remove(usedChars.get(i));
 		}
 		
+		/*
+		 * Iterate through the list of annotation classes, and
+		 * for each one create a menu item based on its properties
+		 */
 		Iterator<AnnotationClass> values = map.values().iterator();
 		int i = 0;
 		while(values.hasNext()){
+			
 			AnnotationClass annotationClass = (AnnotationClass) values.next();
 			MenuItem menuAnnotationClass = new MenuItem(menuAnnotateRange, SWT.CASCADE);
-			menuAnnotationClass.addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(SelectionEvent e) {
-					 
-					 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-					 
-					 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-					 int sheetIndex = MainWindow.getInstance().getActiveWorksheetIndex();
-					 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-
-					 AnnotationResult  result=  
-							 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
-					 		 currentSelection, annotationClass);				 
-					 
-					 if(result.getValidationResult()!=ValidationResult.OK){
-		        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
-		 	            messageBox.setMessage(result.getMessage());
-		 	            messageBox.open();
-					 }
-					 				 
-					 MainWindow.getInstance().setFocusToControlSite();				 
-				}
-			});		
+			
+			menuAnnotationClass.setID(annotateRangeMenuItem.getID()+((i+1)*100));			
+			menuAnnotationClass.addSelectionListener(
+					GUIListeners.createRangeAnnotationSelectionListener(annotationClass));
+			
 			int shortcut = annotationClass.getShortcut();
 			if(shortcut < 0){
 				shortcut = SWT.MOD1 | SWT.MOD2 + shortcutChars.get(i);
@@ -418,7 +294,7 @@ public class BarMenu {
 			menuAnnotationClass.setAccelerator(shortcut);
 			char ch = (char) (shortcut - SWT.MOD1 | SWT.MOD2);
 			menuAnnotationClass.setText(annotationClass.getLabel()+"\t Ctrl+Shift+"+ch);
-			
+
 			i++;
 		}	
 		return annotateRangeMenuItem;
@@ -427,103 +303,26 @@ public class BarMenu {
 	private MenuItem addAnnotateWorksheetMenu(Menu menu){
 		
 		MenuItem annotateWorksheetMenuItem = new MenuItem(menu, SWT.CASCADE);
+		annotateWorksheetMenuItem.setID(2020000);
 		annotateWorksheetMenuItem.setText("&Sheet as");
 		Menu menuAnnotateWorksheet = new Menu(annotateWorksheetMenuItem);
 		annotateWorksheetMenuItem.setMenu(menuAnnotateWorksheet);
 		
+		/*
+		 * Worksheet Not Applicable menu item
+		 */
 		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorksheet, SWT.CASCADE);
+		menuItemNotApplicable.setID(2020100);
 		menuItemNotApplicable.setText("Not Applicable");
-		menuItemNotApplicable.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				WorksheetAnnotation sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
-							
-				String strMessage = ""; 
-				if(sheetAnnotation.isNotApplicable()){
-					sheetAnnotation.setNotApplicable(false);
-					strMessage = "The \"Not Applicable\" status was removed for sheet \""+sheetName+"\". The sheet can now be annotated";
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();				
-					for (MenuItem menuItem : annotationsSubmenus) {
-							menuItem.setEnabled(true);
-					}
-					annotateWorksheetMenuItem.getMenu().getItem(1).setEnabled(true); // enable "Completed" menu item. 
-						
-				}else{
-					sheetAnnotation.setNotApplicable(true);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();				
-					for (MenuItem menuItem : annotationsSubmenus) {
-						if(menuItem.getText().compareTo("&Range as")==0 || menuItem.getText().compareTo("&Delete")==0 ||
-							menuItem.getText().compareTo("&Hide")==0 || menuItem.getText().compareTo("Show Annotations")==0){
-							
-							menuItem.setEnabled(false);
-						}else{
-							menuItem.setEnabled(true);
-						}
-					}
-					annotateWorksheetMenuItem.getMenu().getItem(1).setEnabled(false); // disable "Completed" menu item. 
-					
-					strMessage = "The worksheet \""+sheetName+"\" was marked as \"Not Applicable\"";
-				}
-				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				mb.setMessage(strMessage); 
-				mb.open();
-			}
-		});	
+		menuItemNotApplicable.addSelectionListener(GUIListeners.createSheetNotApplicableSelectionListener());
 		
+		/*
+		 * Worksheet Completed menu item
+		 */
 		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorksheet, SWT.CASCADE);
+		menuItemCompleted.setID(2020200);
 		menuItemCompleted.setText("Completed");
-		menuItemCompleted.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				WorksheetAnnotation sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
-				
-				String strMessage = ""; 
-				if(sheetAnnotation.isCompleted()){
-					sheetAnnotation.setCompleted(false);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-					for (MenuItem menuItem : annotationsSubmenus) {
-							menuItem.setEnabled(true);
-					}
-					annotateWorksheetMenuItem.getMenu().getItem(0).setEnabled(true); // enable "NotApplicable" menu item.					
-					strMessage = "The status for the sheet \""+sheetName+"\" was changed back to \"Not Completed\"";
-					
-				}else{
-					
-					sheetAnnotation.setCompleted(true);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-					for (MenuItem menuItem : annotationsSubmenus) {
-						if(menuItem.getText().compareTo("&Range as")==0 || menuItem.getText().compareTo("&Delete")==0){
-							menuItem.setEnabled(false);
-						}else{
-							menuItem.setEnabled(true);
-						}
-					}
-					annotateWorksheetMenuItem.getMenu().getItem(0).setEnabled(false); // disable "NotApplicable" menu item.
-					
-					strMessage = "The sheet \""+sheetName+"\" was marked completed";
-				}
-				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				mb.setMessage(strMessage); 
-				mb.open();
-			}
-		});	
+		menuItemCompleted.addSelectionListener(GUIListeners.createSheetCompletedSelectionListener());
 		
 		return annotateWorksheetMenuItem;
 	}
@@ -532,106 +331,27 @@ public class BarMenu {
 	private MenuItem addAnnotateWorkbookMenu(Menu menu){
 		
 		MenuItem annotateWorkbookMenuItem = new MenuItem(menu, SWT.CASCADE);
+		annotateWorkbookMenuItem.setID(2030000);
 		annotateWorkbookMenuItem.setText("&File as");
 		Menu menuAnnotateWorkbook = new Menu(annotateWorkbookMenuItem);
 		annotateWorkbookMenuItem.setMenu(menuAnnotateWorkbook);
 		
-		MenuItem menuItemIrrelevant = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
-		menuItemIrrelevant.setText("Not Applicable");
-		menuItemIrrelevant.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				String fileName = MainWindow.getInstance().getFileName();
-				
-				String strMessage = ""; 
-				if(workbookAnnotation.isNotApplicable()){
-					workbookAnnotation.setNotApplicable(false);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-					for (MenuItem menuItem : annotationsSubmenus) {
-							menuItem.setEnabled(true);
-					}
-					annotateWorkbookMenuItem.getMenu().getItem(1).setEnabled(true); // enable "Completed" menu item.
-					
-					strMessage = "The \"Not Applicable\" status was removed for file \""+fileName+"\". "
-							+ "You can now proceed with the annotations.";
-				}else{
-					workbookAnnotation.setNotApplicable(true);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-					for (MenuItem menuItem : annotationsSubmenus) {
-						if(menuItem.getText().compareTo("&File as")!=0){
-							menuItem.setEnabled(false);
-						}else{
-							menuItem.setEnabled(true);
-						}
-					}
-					annotateWorkbookMenuItem.getMenu().getItem(1).setEnabled(false); // disable "Completed" menu item.
-					
-					strMessage = "The file \""+fileName+"\" was marked as \"Not Applicable\"";
-				}
-				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				mb.setMessage(strMessage); 
-				mb.open();
-				
-			}
-		});	
+		/*
+		 * Workbook Not Applicable menu item
+		 */
+		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
+		menuItemNotApplicable.setID(2030100);
+		menuItemNotApplicable.setText("Not Applicable");
+		menuItemNotApplicable.addSelectionListener(GUIListeners.createFileNotApplicableSelectionListener());
 		
+		
+		/*
+		 * Workbook Completed menu item 
+		 */
 		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
+		menuItemCompleted.setID(2030200);
 		menuItemCompleted.setText("Completed");
-		menuItemCompleted.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				String fileName = MainWindow.getInstance().getFileName();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				WorksheetAnnotation wa =workbookAnnotation.getWorksheetAnnotations().get(sheetName);
-				
-				
-				String strMessage = ""; 
-				if(workbookAnnotation.isCompleted()){
-					workbookAnnotation.setCompleted(false);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-					for (MenuItem menuItem : annotationsSubmenus) {
-						menuItem.setEnabled(true);
-					}
-					annotateWorkbookMenuItem.getMenu().getItem(0).setEnabled(true); // enable "Not Applicable" menu item.
-					
-					strMessage = "The status for the file \""+fileName+"\" was changed back to \"Not Completed\"";
-				}else{
-					workbookAnnotation.setCompleted(true);
-					
-					MenuItem annotationsMenu = menuItems[1]; // Annotations menu 
-					MenuItem[] annotationsSubmenus = annotationsMenu.getMenu().getItems();
-					for (MenuItem menuItem : annotationsSubmenus) {
-						if(menuItem.getText().compareTo("&Range as")==0 || 
-						   menuItem.getText().compareTo("&Sheet as")==0 ||
-						   menuItem.getText().compareTo("&Delete")==0	){
-								
-								menuItem.setEnabled(false);
-						}else{
-								menuItem.setEnabled(true);
-						}
-					}
-					annotateWorkbookMenuItem.getMenu().getItem(0).setEnabled(false); // disable "Not Applicable" menu item.
-					
-					strMessage = "The file \""+fileName+"\" was marked as \"Completed\"";
-				}
-				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				mb.setMessage(strMessage); 
-				mb.open();
-			}
-		});	
+		menuItemCompleted.addSelectionListener(GUIListeners.createFileCompletedSelectionListener());
 		
 		return annotateWorkbookMenuItem;
 	}
@@ -642,29 +362,22 @@ public class BarMenu {
 		hideMenuItem.setText("&Hide");
 		Menu menuHide = new Menu(hideMenuItem);
 		hideMenuItem.setMenu(menuHide);
+		hideMenuItem.setID(2040000);
 		
+		/*
+		 * Hide All menu item
+		 */
 		MenuItem menuItemClearAll = new MenuItem(menuHide, SWT.CASCADE);
 		menuItemClearAll.setText("All");
-		menuItemClearAll.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
-				AnnotationHandler.setVisilityForShapeAnnotations(workbookAutomation, false);
-			}
-		});	
-			
+		menuItemClearAll.setID(2040100);
+		
+		/*
+		 * Hide In Sheet menu item
+		 */
 		MenuItem menuItemClearInSheet = new MenuItem(menuHide, SWT.CASCADE);
 		menuItemClearInSheet.setText("In Sheet");
-		menuItemClearInSheet.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				AnnotationHandler.setVisibilityForWorksheetShapeAnnotations(workbookAutomation, sheetName, false);
-			}
-		});	
-				
+		menuItemClearInSheet.setID(2040200);
+	
 		return hideMenuItem;
 	}
 	
@@ -675,123 +388,53 @@ public class BarMenu {
 		deleteMenuItem.setText("&Delete");
 		Menu menuDelete = new Menu(deleteMenuItem);
 		deleteMenuItem.setMenu(menuDelete);
+		deleteMenuItem.setID(2050000);
 		
-		
+		/*
+		 * Delete All menu item
+		 */
 		MenuItem menuItemDeleteAll = new MenuItem(menuDelete, SWT.CASCADE);
 		menuItemDeleteAll.setText("All");
-		menuItemDeleteAll.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
-
-				AnnotationHandler.deleteAllShapeAnnotations(workbookAutomation);
-				
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				workbookAnnotation.removeAllAnnotations();
-				
-				AnnotationDataSheet.deleteAllAnnotationData(workbookAutomation);
-			}
-		});	
+		menuItemDeleteAll.setID(2050100);
 		
-		
+		/*
+		 * Hide In Sheet menu item
+		 */
 		MenuItem menuItemDeleteInSheet = new MenuItem(menuDelete, SWT.CASCADE);
 		menuItemDeleteInSheet.setText("In Sheet");
-		menuItemDeleteInSheet.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e){
-				//OleAutomation applicationAutomation = MainWindow.getInstance().getExcelApplication();
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				
-				AnnotationHandler.deleteShapeAnnotationsFromWorksheet(workbookAutomation, sheetName);
-				
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
-				
-				AnnotationDataSheet.deleteAnnotationDataForWorksheet(workbookAutomation, sheetName, false);			
-			}
-		});	
-			
+		menuItemDeleteInSheet.setID(2050200);
+		
 		return deleteMenuItem;
 	}
-
-		
-	private MenuItem addPreferencesMenu(Menu menu){
-		MenuItem preferencesMenu = new MenuItem(menu, SWT.CASCADE);
-		preferencesMenu.setText("&Preferences");
-		Menu menuPreferences = new Menu(preferencesMenu);
-		preferencesMenu.setMenu(menuPreferences);
-		
-		MenuItem menuPreferencesFormatting = new MenuItem(menuPreferences, SWT.CASCADE);
-		menuPreferencesFormatting.setText("Formatting");
-		menuPreferencesFormatting.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//TODO: Create a window that will allow the user to change the color, width, and 
-				// other formatting characteristics for each annotation class 
-			}
-		});
-		
-		MenuItem menuPreferencesAnnotationClasses = new MenuItem(menuPreferences, SWT.CASCADE);
-		menuPreferencesAnnotationClasses.setText("Annotation Classes");
-		menuPreferencesAnnotationClasses.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//TODO: Create, modify, remove annotation classes (Ex: metadata, header) 
-			}
-		});
-		
-		return preferencesMenu;
-	}
 	
-
 	private MenuItem addExportMenu(Menu menu){
 		
 		MenuItem exportMenuItem = new MenuItem(menu, SWT.CASCADE);
 		exportMenuItem.setText("&Export as");
 		Menu menuExport = new Menu(exportMenuItem);
 		exportMenuItem.setMenu(menuExport);
+		exportMenuItem.setID(2060000);
 		
+		/*
+		 * Export As CSV menu item
+		 */
 		MenuItem menuItemExportCSV = new MenuItem(menuExport, SWT.CASCADE);
 		menuItemExportCSV.setText("CSV");
-		menuItemExportCSV.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String directoryPath = MainWindow.getInstance().getDirectoryPath();
-				String fileName = MainWindow.getInstance().getFileName();				
-				boolean isSuccess = AnnotationDataSheet.exportAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
-				
-				if(isSuccess){
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
-					messageBox.setText("Information");
-		            messageBox.setMessage("The annotation data were successfully exported at:\n"+directoryPath);
-		            messageBox.open();
-				}else{
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
-					messageBox.setText("Error Message");
-		            messageBox.setMessage("An error occured. Could not export the annotation data as csv.");
-		            messageBox.open();
-				}
-			}
-		});	
+		menuItemExportCSV.setID(2060100);
 		
+		/*
+		 * Export As Workbook menu item
+		 */
 		MenuItem menuItemExcelWorkbook = new MenuItem(menuExport, SWT.CASCADE);
 		menuItemExcelWorkbook.setText("Workbook");
-		menuItemExcelWorkbook.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
-					messageBox.setText("Information");
-		            messageBox.setMessage("This option is not implemented yet");
-			}
-		});	
-		
+		menuItemExcelWorkbook.setID(2060200);
 		
 		return exportMenuItem;
 	}
 	
-	
+	/**
+	 * @return the menuItems
+	 */
 	public MenuItem[] getMenuItems() {
 		return menuItems;
 	}

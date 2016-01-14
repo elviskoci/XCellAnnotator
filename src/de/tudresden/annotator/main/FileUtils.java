@@ -21,7 +21,7 @@ import de.tudresden.annotator.oleutils.WorkbookUtils;
 /**
  * @author Elvis Koci
  */
-public class FileManager {
+public class FileUtils {
 	
 	public static final String CurrentProgressFileName = "annotated"; 
 	
