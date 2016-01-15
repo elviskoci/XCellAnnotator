@@ -361,16 +361,17 @@ public class AnnotationHandler {
 		
 		boolean areUnprotected = WorkbookUtils.unprotectAllWorksheets(workbookAutomation);
 		if(!areUnprotected){		
+			// TODO: Convert the following to error message box
 			System.out.println("ERROR: Could not unprotect all worksheets. Operation failed!");
 			return;
 		}
 			
 		ArrayList<RangeAnnotation> allAnnotations = 
 				new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
-		for (RangeAnnotation rangeAnnotation : allAnnotations) {
+		for (int i=0; i<allAnnotations.size();i++) {
+			RangeAnnotation rangeAnnotation = allAnnotations.get(i);
 			AnnotationHandler.drawAnnotation(workbookAutomation, rangeAnnotation);
 		}
-		
 		boolean areProtected = WorkbookUtils.protectAllWorksheets(workbookAutomation);
 		if(!areProtected){
 			System.out.println("ERROR: Could not protect all worksheets. Operation failed!");

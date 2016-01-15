@@ -246,8 +246,8 @@ public class BarMenuOLD {
 	 						message.setMessage("ERROR: The file could not be saved!");
 	 						message.open();
 	 	            	}else{
-	 	            		String directory = MainWindow.getInstance().getDirectoryPath();
-	 	            		String fileName = MainWindow.getInstance().getFileName();
+	 	            		//String directory = MainWindow.getInstance().getDirectoryPath();
+	 	            		//String fileName = MainWindow.getInstance().getFileName();
 	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
 	 	            		
 		 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);

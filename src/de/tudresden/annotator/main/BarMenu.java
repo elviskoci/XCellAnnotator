@@ -1,7 +1,6 @@
 package de.tudresden.annotator.main;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
@@ -32,22 +31,8 @@ public class BarMenu {
 		menuItems[1] = addAnnotationsMenu(menuBar);
 		menuItems[2] = addViewMenu(menuBar);
 		menuItems[3] = addPreferencesMenu(menuBar);
-		
-		setToolTipText(menuBar);
 	}
-	
-	
-	private  void setToolTipText(Menu cascadeMenu){
-		if(cascadeMenu!=null){
-			for (int i = 0; i < cascadeMenu.getItems().length; i++) {
-				setToolTipText(cascadeMenu.getItem(i).getMenu());
-				cascadeMenu.getItem(i).setToolTipText(""+cascadeMenu.getItem(i).getID());
-			}			
-		}else{
-			return;
-		}		
-	}
-	
+
 	/**
 	 * Create the "File" menu
 	 * @param menuBar the (parent) bar menu 
@@ -95,6 +80,7 @@ public class BarMenu {
 		menuFileSave.setText("Save \tCtrl+S");
 		menuFileSave.setEnabled(false);
 		menuFileSave.setAccelerator(SWT.MOD1 + 'S');
+		menuFileSave.addSelectionListener(GUIListeners.createFileSaveSelectionListener());
 		
 		/*
 		 *  Export File menu item 
@@ -110,7 +96,8 @@ public class BarMenu {
 		menuFileClose.setID(1060000);
 		menuFileClose.setText("Close");
 		menuFileClose.setEnabled(false);
-	
+		menuFileClose.addSelectionListener(GUIListeners.createFileCloseSelectionListener());
+		
 		/*
 		 *  Exit Application menu item 
 		 */
@@ -118,6 +105,7 @@ public class BarMenu {
 		menuFileExit.setID(1070000);
 		menuFileExit.setText("Exit \tCtrl+Q");
 		menuFileExit.setAccelerator(SWT.MOD1 + 'Q');
+		menuFileExit.addSelectionListener(GUIListeners.createFileExitSelectionListener());
 		
 		return fileMenu;
 	}
@@ -383,24 +371,26 @@ public class BarMenu {
 	private MenuItem addHideMenu(Menu menu){
 		
 		MenuItem hideMenuItem = new MenuItem(menu, SWT.CASCADE);
+		hideMenuItem.setID(2040000);
 		hideMenuItem.setText("&Hide");
 		Menu menuHide = new Menu(hideMenuItem);
 		hideMenuItem.setMenu(menuHide);
-		hideMenuItem.setID(2040000);
 		
 		/*
 		 * Hide All menu item
 		 */
-		MenuItem menuItemClearAll = new MenuItem(menuHide, SWT.CASCADE);
-		menuItemClearAll.setText("All");
-		menuItemClearAll.setID(2040100);
+		MenuItem menuItemHideAll = new MenuItem(menuHide, SWT.CASCADE);
+		menuItemHideAll.setID(2040100);
+		menuItemHideAll.setText("All");
+		menuItemHideAll.addSelectionListener(GUIListeners.createHideAllAnnotationsSelectionListener());
 		
 		/*
 		 * Hide In Sheet menu item
 		 */
-		MenuItem menuItemClearInSheet = new MenuItem(menuHide, SWT.CASCADE);
-		menuItemClearInSheet.setText("In Sheet");
-		menuItemClearInSheet.setID(2040200);
+		MenuItem menuItemHideInSheet = new MenuItem(menuHide, SWT.CASCADE);
+		menuItemHideInSheet.setID(2040200);
+		menuItemHideInSheet.setText("In Sheet");
+		menuItemHideInSheet.addSelectionListener(GUIListeners.createHideInSheetAnnotationsSelectionListener());
 	
 		return hideMenuItem;
 	}
@@ -409,24 +399,26 @@ public class BarMenu {
 	private MenuItem addDeleteMenu(Menu menu){
 		
 		MenuItem deleteMenuItem = new MenuItem(menu, SWT.CASCADE);
+		deleteMenuItem.setID(2050000);
 		deleteMenuItem.setText("&Delete");
 		Menu menuDelete = new Menu(deleteMenuItem);
 		deleteMenuItem.setMenu(menuDelete);
-		deleteMenuItem.setID(2050000);
 		
 		/*
 		 * Delete All menu item
 		 */
 		MenuItem menuItemDeleteAll = new MenuItem(menuDelete, SWT.CASCADE);
-		menuItemDeleteAll.setText("All");
 		menuItemDeleteAll.setID(2050100);
+		menuItemDeleteAll.setText("All");
+		menuItemDeleteAll.addSelectionListener(GUIListeners.createDeleteAllAnnotationsSelectionListener());
 		
 		/*
 		 * Hide In Sheet menu item
 		 */
 		MenuItem menuItemDeleteInSheet = new MenuItem(menuDelete, SWT.CASCADE);
-		menuItemDeleteInSheet.setText("In Sheet");
 		menuItemDeleteInSheet.setID(2050200);
+		menuItemDeleteInSheet.setText("In Sheet");
+		menuItemDeleteInSheet.addSelectionListener(GUIListeners.createDeleteInSheetAnnotationsSelectionListener());
 		
 		return deleteMenuItem;
 	}
@@ -434,24 +426,26 @@ public class BarMenu {
 	private MenuItem addExportMenu(Menu menu){
 		
 		MenuItem exportMenuItem = new MenuItem(menu, SWT.CASCADE);
+		exportMenuItem.setID(2060000);
 		exportMenuItem.setText("&Export as");
 		Menu menuExport = new Menu(exportMenuItem);
 		exportMenuItem.setMenu(menuExport);
-		exportMenuItem.setID(2060000);
 		
 		/*
 		 * Export As CSV menu item
 		 */
 		MenuItem menuItemExportCSV = new MenuItem(menuExport, SWT.CASCADE);
-		menuItemExportCSV.setText("CSV");
 		menuItemExportCSV.setID(2060100);
+		menuItemExportCSV.setText("CSV");
+		menuItemExportCSV.addSelectionListener(GUIListeners.createExportAsCSVSelectionListener());
 		
 		/*
 		 * Export As Workbook menu item
 		 */
 		MenuItem menuItemExcelWorkbook = new MenuItem(menuExport, SWT.CASCADE);
-		menuItemExcelWorkbook.setText("Workbook");
 		menuItemExcelWorkbook.setID(2060200);
+		menuItemExcelWorkbook.setText("Workbook");
+		menuItemExcelWorkbook.addSelectionListener(GUIListeners.createExportAsWorkbookSelectionListener());
 		
 		return exportMenuItem;
 	}

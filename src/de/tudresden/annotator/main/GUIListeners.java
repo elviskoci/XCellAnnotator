@@ -3,8 +3,6 @@
  */
 package de.tudresden.annotator.main;
 
-import java.util.HashMap;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -24,6 +22,7 @@ import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.AnnotationResult;
 import de.tudresden.annotator.annotations.utils.ValidationResult;
+import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
@@ -48,7 +47,7 @@ public class GUIListeners {
 	    {
 	        public void handleEvent(Event event)
 	        {	
-	        	if(!wm.isControlSiteNull() && wm.isControlSiteDirty()){
+	        	if(!wm.isControlSiteNull() && wm.isControlSiteDirty() && embeddedWorkbook!=null){
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
 	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Want to save your changes?");
@@ -60,7 +59,9 @@ public class GUIListeners {
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
 	 	            	
 	 	            	if(!isSaved){
-	 	            		System.err.println("Could not save progress!");
+	 	            		int styleError = SWT.ICON_ERROR;
+	 		        		MessageBox errorMessageBox = MainWindow.getInstance().createMessageBox(styleError);
+	 		        		errorMessageBox.setMessage("ERROR: Could not save the file!");
 	 	            		event.doit = false;
 	 	            	}
 	 	            	
@@ -76,6 +77,18 @@ public class GUIListeners {
 	 	            	event.doit = true;
 	 	            } 
 	 	            
+	 	            event.doit = false;
+	        	}else{
+	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Do you want to close the application?");
+	 	            
+	 	            int response = messageBox.open();
+	 	            if( response== SWT.YES){
+	 	        	    MainWindow.getInstance().disposeControlSite();
+	 	            	MainWindow.getInstance().disposeShell();
+	 	            	event.doit = true;
+	 	            }
 	 	            event.doit = false;
 	        	}
 	        }
@@ -202,45 +215,225 @@ public class GUIListeners {
 				// get the OleAutomation for the embedded workbook
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				if (workbookAutomation == null) {
-					return; // there is no embedded workbook
+					return; // there is no embedded workbook (file)
 				}
 				
+				
+				// clear all existing annotations in memory structure, 
+				// if they exist from the previously opened file 
+				AnnotationHandler.getWorkbookAnnotation().removeAllAnnotations();
+		
 				// create the base in memory structure for storing annotation data
 				AnnotationHandler.createBaseAnnotations(workbookAutomation);
-						
-				// check if there is a "Annotation Data" sheet
-				// if yes read the annotation data stored in this sheet
-				// and update the in memory structure. Also, re-draw all 
-				// range annotations in their corresponding sheets. 
-				OleAutomation  annotationDataSheet = 
-					WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, AnnotationDataSheet.getName()); 
+											
+				// read the annotation data and recreate in memory structure
+				AnnotationDataSheet.readAnnotationData(workbookAutomation);
 				
-				if(annotationDataSheet!=null){
-					
-					// read the annotation data and recreate in memory structure
-					AnnotationDataSheet.readAnnotationData(workbookAutomation);
-					
-					// re-draw all the annotation in memory structure 
-					AnnotationHandler.drawAllAnnotations(workbookAutomation);								
-					
-					// protect the annotation data sheet if it is not protected already
-					boolean isProtected = WorksheetUtils.protectWorksheet(annotationDataSheet);
-					if(!isProtected){
-						int style = SWT.ERROR;
-						MessageBox message = MainWindow.getInstance().createMessageBox(style);
-						message.setMessage("ERROR: Could not protect annotation data sheet!");
-						message.open();
-						WorkbookUtils.closeEmbeddedWorkbook(workbookAutomation, false);
-						MainWindow.getInstance().disposeControlSite();
-						return;
-					}
-		
-					// show the annotation data sheet
-					// TODO: Check why it does not make visible
-					WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
-				}
-						
+				// re-draw all the annotation in memory structure 
+				AnnotationHandler.drawAllAnnotations(workbookAutomation);								
+				
+				// adjust the menu items in the menu bar for the file that was just openned
 				MenuUtils.adjustBarMenuForOpennedFile();
+			}
+		};
+	}
+		
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createFileSaveSelectionListener(){
+		
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				
+				OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+				String fileName = MainWindow.getInstance().getFileName();
+				String directory = MainWindow.getInstance().getDirectoryPath();
+				String filePath = directory+"\\"+fileName;
+				
+				OleAutomation applicationAutomation = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
+				
+				ApplicationUtils.setDisplayAlerts(applicationAutomation, "False");		
+				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath);
+				if(result){		
+					// TODO: Mark Annotated Files. 
+            		// FileUtils.markFileAsAnnotated(directory, fileName, 1);
+            		int style = SWT.ICON_INFORMATION;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("The file was successfully saved.");
+					message.open();
+				}else{
+					int style = SWT.ICON_ERROR;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("ERROR: The file could not be saved!");
+					message.open();
+				}				
+				ApplicationUtils.setDisplayAlerts(applicationAutomation, "True");	
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createFileCloseSelectionListener(){
+		
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				
+				if( !MainWindow.getInstance().isControlSiteNull() && 
+						MainWindow.getInstance().isControlSiteDirty() &&
+						 	MainWindow.getInstance().getEmbeddedWorkbook()!=null){
+									
+	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Want to save your changes?");
+	 	            
+	 	            int response = messageBox.open();	 	 	            
+	 	            if( response== SWT.YES){	
+	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	
+	 	            	if(!isSaved){
+	 	            		int messageStyle = SWT.ICON_ERROR;
+	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						message.setMessage("ERROR: The file could not be saved!");
+	 						message.open();
+	 	            	}else{					
+	 	            		//String directory = MainWindow.getInstance().getDirectoryPath();
+	 	            		//String fileName = MainWindow.getInstance().getFileName();
+	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
+	 	            	}
+	 	            } 
+	 	            
+	 	            if(response == SWT.NO || response == SWT.YES){
+	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
+	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+	 					MainWindow.getInstance().disposeControlSite();
+	 	            } 
+				}else{
+					
+	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Are you sure you want to close the file?");
+	 	            
+	 	            int response = messageBox.open();
+	 	            if( response== SWT.YES){
+	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
+	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+	 					MainWindow.getInstance().disposeControlSite();
+	 	            }
+	        	}			
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createExportAsCSVSelectionListener(){
+		
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String directoryPath = MainWindow.getInstance().getDirectoryPath();
+				String fileName = MainWindow.getInstance().getFileName();				
+				boolean isSuccess = AnnotationDataSheet.exportAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
+				
+				if(isSuccess){
+					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
+					messageBox.setText("Information");
+		            messageBox.setMessage("The annotation data were successfully exported at:\n"+directoryPath);
+		            messageBox.open();
+				}else{
+					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+					messageBox.setText("Error Message");
+		            messageBox.setMessage("An error occured. Could not export the annotation data as csv.");
+		            messageBox.open();
+				}
+			}
+		};
+	}
+	
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createExportAsWorkbookSelectionListener(){
+		
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
+					messageBox.setText("Information");
+		            messageBox.setMessage("This option is not implemented yet");
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createFileExitSelectionListener(){
+		
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {	
+				
+				if( !MainWindow.getInstance().isControlSiteNull() && 
+						MainWindow.getInstance().isControlSiteDirty() &&
+						 	MainWindow.getInstance().getEmbeddedWorkbook()!=null){
+								
+	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Want to save your changes?");
+	 	            
+	 	            int response = messageBox.open();	 	 	            
+	 	            if( response== SWT.YES){	
+	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	
+	 	            	if(!isSaved){
+	 	            		int messageStyle = SWT.ICON_ERROR;
+	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						message.setMessage("ERROR: The file could not be saved!");
+	 						message.open();
+	 	            	}else{
+	 	            		//String directory = MainWindow.getInstance().getDirectoryPath();
+	 	            		//String fileName = MainWindow.getInstance().getFileName();
+	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
+	 	            		
+		 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+		 	            	MainWindow.getInstance().disposeControlSite();
+		 	            	MainWindow.getInstance().disposeShell();
+	 	            	}
+	 	            } 
+	 	            
+	 	            if(response == SWT.NO){
+	 	            	MainWindow.getInstance().disposeControlSite();
+	 	            	MainWindow.getInstance().disposeShell();
+	 	            } 
+	        	}else{
+	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Do you want to close the application?");
+	 	            
+	 	            int response = messageBox.open();
+	 	            if( response== SWT.YES){
+	 	        	    MainWindow.getInstance().disposeControlSite();
+	 	            	MainWindow.getInstance().disposeShell();
+	 	            }
+	        	}
 			}
 		};
 	}
@@ -337,6 +530,12 @@ public class GUIListeners {
 		};
 	}
 	
+	
+	/**
+	 * 
+	 * @param annotationClass
+	 * @return
+	 */
 	protected static SelectionListener createRangeAnnotationSelectionListener(AnnotationClass annotationClass){
 		
 		return new SelectionAdapter() {
@@ -360,6 +559,77 @@ public class GUIListeners {
 				 }
 				 				 
 				 MainWindow.getInstance().setFocusToControlSite();				 
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createHideAllAnnotationsSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
+				AnnotationHandler.setVisilityForShapeAnnotations(workbookAutomation, false);
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createHideInSheetAnnotationsSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				AnnotationHandler.setVisibilityForWorksheetShapeAnnotations(workbookAutomation, sheetName, false);
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createDeleteAllAnnotationsSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
+
+				AnnotationHandler.deleteAllShapeAnnotations(workbookAutomation);
+				
+				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
+				workbookAnnotation.removeAllAnnotations();
+				
+				AnnotationDataSheet.deleteAllAnnotationData(workbookAutomation);
+			}
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createDeleteInSheetAnnotationsSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				
+				AnnotationHandler.deleteShapeAnnotationsFromWorksheet(workbookAutomation, sheetName);
+				
+				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
+				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
+				
+				AnnotationDataSheet.deleteAnnotationDataForWorksheet(workbookAutomation, sheetName, false);		
 			}
 		};
 	}

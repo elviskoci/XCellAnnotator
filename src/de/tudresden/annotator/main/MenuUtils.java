@@ -70,10 +70,10 @@ public class MenuUtils {
 				}
 			}
 			
-			int style = SWT.ICON_INFORMATION;
-			MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-			mb.setMessage("The sheet was marked as \"Completed\""); 
-			mb.open();
+//			int style = SWT.ICON_INFORMATION;
+//			MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+//			mb.setMessage("The sheet was marked as \"Completed\""); 
+//			mb.open();
 			
 			
 		}else{
@@ -100,10 +100,10 @@ public class MenuUtils {
 					}
 				}
 				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				mb.setMessage("The sheet was marked as \"Not Applicable\""); 
-				mb.open();
+//				int style = SWT.ICON_INFORMATION;
+//				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+//				mb.setMessage("The sheet was marked as \"Not Applicable\""); 
+//				mb.open();
 				
 			}else{
 				enableAllSubMenus(annotationsMenu.getMenu());				

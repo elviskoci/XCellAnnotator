@@ -95,12 +95,10 @@ public class WorksheetUtils {
 	 */
 	public static boolean setWorksheetVisibility(OleAutomation worksheetAutomation, boolean visible){
 		
-		int[] visiblePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Visible"});	
-		if (visiblePropertyIds == null){			
-			System.out.println("\"Visible\" property not found for \"Worksheet\" object!");
+		if(worksheetAutomation==null)
 			return false;
-		}		
 		
+		int[] visiblePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Visible"});			
 		Variant visiblePropertyVariant = new Variant(visible); 
 		boolean isSuccess = worksheetAutomation.setProperty(visiblePropertyIds[0], visiblePropertyVariant);
 		visiblePropertyVariant.dispose();
