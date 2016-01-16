@@ -10,6 +10,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -19,10 +20,10 @@ import org.eclipse.swt.ole.win32.OleListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
+import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -39,10 +40,10 @@ public class MainWindow {
 	// Event IDs
 	private final int SheetSelectionChange = 0x00000616;
 	private final int SheetActivate        = 0x00000619;
-	private final int WindowActivate       = 0x00000614;
-	private final int WindowDeactivate     = 0x00000615;
-	private final int WorkbookActivate     = 0x00000620;
-	private final int WorkbookDeactivate   = 0x00000621;
+//	private final int WindowActivate       = 0x00000614;
+//	private final int WindowDeactivate     = 0x00000615;
+//	private final int WorkbookActivate     = 0x00000620;
+//	private final int WorkbookDeactivate   = 0x00000621;
 		
 	private final Display display = new Display();
 	private final Shell shell = new Shell(display);
@@ -61,6 +62,14 @@ public class MainWindow {
 	private int activeWorksheetIndex;
 	
 	private String currentSelection[];
+	
+	private SashForm mainSash;
+	private SashForm rightSash;
+	private Composite folderExplorerPanel;
+	private Composite rightPanel;
+	private Composite annotationsPanel;
+	private Composite excelPanel;
+	
 		
 	private static MainWindow instance = null;
 	private MainWindow(){}
@@ -79,7 +88,7 @@ public class MainWindow {
 	private void buildGUIWindow(){
 			
 		// this.display.addFilter(SWT.KeyDown, GUIListeners.createArrowButtonPressedEventListener());        		
-		// this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
+		this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
 		
 		// shell properties
 		this.shell.setText("Annotator");
@@ -90,43 +99,47 @@ public class MainWindow {
 	    this.shell.addListener(SWT.Close, GUIListeners.createCloseApplicationEventListener());
 	    
 		// the colors to use for the gui
-		Color white = new Color (Display.getCurrent(), 255, 255, 255);
+		// Color white = new Color (Display.getCurrent(), 255, 255, 255);
 		Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
 		
 	    // split shell in two horizontal panels 
-	    SashForm mainSash = new SashForm(shell, SWT.HORIZONTAL);
+	    mainSash = new SashForm(shell, SWT.HORIZONTAL);
 		mainSash.setLayout(new FillLayout());
 	
 		// the left panel will contain the folder explorer. That is a tree structure of files and folders.
-		Composite leftPanel = new Composite(mainSash, SWT.BORDER );
-		leftPanel.setLayout(new FillLayout());
-		leftPanel.setVisible(true);
+		folderExplorerPanel = new Composite(mainSash, SWT.BORDER );
+		folderExplorerPanel.setLayout(new FillLayout());
+		folderExplorerPanel.setVisible(true);
 		//leftPanel.setEnabled(false);
-		leftPanel.setBackground(lightGreyShade);
+		folderExplorerPanel.setBackground(lightGreyShade);
 		
 		//Label leftPanelLabel = new Label(leftPanel, SWT.NONE);
 		//leftPanelLabel.setText("Folder Explorer");
 		//leftPanelLabel.setBackground(white);
 				
 		// the right panel will be subdivided into two more panels
-		Composite rightPanel = new Composite(mainSash, SWT.BORDER);
+		rightPanel = new Composite(mainSash, SWT.BORDER);
 		rightPanel.setLayout(new FillLayout());
 		
 		mainSash.setWeights(new int[] {0,100});
 			
 		// sub split the right panel 
-	    SashForm rightSash = new SashForm(rightPanel, SWT.VERTICAL);
+	    rightSash = new SashForm(rightPanel, SWT.VERTICAL);
 		rightSash.setLayout(new FillLayout());
 		
 		// create the panel that will embed the excel application
-		Composite excelPanel =  new Composite(rightSash, SWT.BORDER );
-		excelPanel.setLayout(new FillLayout());
+		excelPanel =  new Composite(rightSash, SWT.BORDER );
+		FillLayout excelPanelLayout = new FillLayout();
+		excelPanelLayout.marginHeight = 4;
+		excelPanelLayout.marginWidth = 4;
+		excelPanel.setLayout(excelPanelLayout);
+	
 		
 		setOleFrame(new OleFrame(excelPanel, SWT.NONE));
 		getOleFrame().setBackground(lightGreyShade);
 		
 		// create the panel that will display the applied annotations for the current file
-		Composite annotationsPanel =  new Composite(rightSash, SWT.BORDER );
+		annotationsPanel =  new Composite(rightSash, SWT.BORDER );
 		annotationsPanel.setLayout(new FillLayout());
 		annotationsPanel.setVisible(true);
 		annotationsPanel.setBackground(lightGreyShade);
@@ -146,7 +159,7 @@ public class MainWindow {
 	protected void setUpWorkbookDisplay( File excelFile){
 		
 		try {
-			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, "Excel.Sheet", excelFile));
+			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
 			
 			// activate and display excel workbook
 			getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
@@ -185,13 +198,25 @@ public class MainWindow {
 			// ex.printStackTrace();
 			System.exit(1);
 		}
-			       
+			      		
 		setDirectoryPath(excelFile.getParent());
 		setFileName(excelFile.getName());
 		
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
-	    // TODO: suppress alerts
+	    if(application==null){
+	    	int style = SWT.ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Something went wrong!!! Please take the following actions. "
+					+ "If there is another opened excel file outiside of this application, ensure that "
+					+ "there is no window or message box asking for the user input. "
+					+ "Also, check if an instance of this application is already running.");		
+			message.open();
+			MainWindow.getInstance().disposeControlSite();
+			MainWindow.getInstance().disposeShell();
+			return;
+	    }
+	    // TODO: suppress application alerts
 	        
 	    // add event listeners
 	    OleListener sheetSelectionListener = GUIListeners.createSheetSelectionEventListener();
@@ -213,6 +238,11 @@ public class MainWindow {
 	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
 	    setEmbeddedWorkbook(workbook);
 	    
+	    // show the annotation_data_sheet if it exists
+	    OleAutomation  annotationDataSheet = 
+			WorkbookUtils.getWorksheetAutomationByName(workbook, AnnotationDataSheet.getName()); 
+		WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
+				
 	    // protect the structure of the workbook if it is not yet protected
 		boolean isProtected = WorkbookUtils.protectWorkbook(workbook, true, false);		
 		if(!isProtected){
@@ -225,6 +255,7 @@ public class MainWindow {
 			return;
 		}
 	    
+		// protect all the worksheet in the embedded workbook 
 		boolean areProtected = WorkbookUtils.protectAllWorksheets(workbook);
 		if(!areProtected){
 			int style = SWT.ERROR;
@@ -250,6 +281,11 @@ public class MainWindow {
 	    
 	    setEmbeddedWorkbookName(workbookName);
 	    worksheet.dispose();
+	    
+	    //Color green1 = new Color (Display.getCurrent(), 169, 208, 142);
+	    Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
+	    this.excelPanel.setBackground(green2);
+
 	}
 				
 	/**
@@ -280,6 +316,11 @@ public class MainWindow {
 	 */
 	protected void setFocusToShell(){
 		this.shell.setFocus();
+		
+		// Color red = new Color (Display.getCurrent(), 255, 0, 0);
+		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
+		// Color blue = new  Color (Display.getCurrent(), 125, 176, 223);
+		excelPanel.setBackground(lightRed);
 	}
 	
 	/**
@@ -287,6 +328,10 @@ public class MainWindow {
 	 */
 	protected void forceFocusToShell(){
 		this.shell.forceFocus();
+		// Color red = new Color (Display.getCurrent(), 255, 0, 0);
+		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
+		// Color blue = new  Color (Display.getCurrent(), 125, 176, 223);
+		excelPanel.setBackground(lightRed);
 	}
 	
 	/**
@@ -328,6 +373,10 @@ public class MainWindow {
 	protected void setFocusToControlSite(){
 		if(controlSite!=null)
 			this.controlSite.setFocus();
+		
+		Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
+		//Color green = new Color (Display.getCurrent(), 51, 204, 51);
+		excelPanel.setBackground(green2);
 	}
 	
 	/**
@@ -336,6 +385,14 @@ public class MainWindow {
 	protected void forceFocusToControlSite(){
 		if(controlSite!=null)
 			this.controlSite.forceFocus();
+		
+		Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
+		//Color green = new Color (Display.getCurrent(), 51, 204, 51);
+		excelPanel.setBackground(green2);
+	}
+	
+	protected boolean isControlSiteFocusControl(){
+		return this.controlSite.isFocusControl();
 	}
 	
 	/**
