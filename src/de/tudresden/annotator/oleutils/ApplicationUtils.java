@@ -19,24 +19,36 @@ public class ApplicationUtils {
 	 */
 	public static OleAutomation getApplicationAutomation(OleControlSite controlSite){
 		
-	    OleAutomation excelClient = new OleAutomation(controlSite);
-		int[] dispIDs = excelClient.getIDsOfNames(new String[] {"Application"});
+		OleAutomation excelClient = null;
+		try {
+			excelClient = new OleAutomation(controlSite);
+		} catch (IllegalArgumentException iaEx) {
+			System.err.println("Illegal argument exception on creation of application OleAutomation");
+		} catch (Exception e) {
+			System.err.println("A genereric exception was thrown on creation of application OleAutomation");
+		} 
 		
-		if(dispIDs==null){	
-			System.out.println("\"Application\" object not found!");
-			return null;
+		OleAutomation application = null;
+		if(excelClient!=null){
+			
+			int[] dispIDs = excelClient.getIDsOfNames(new String[] {"Application"});
+			
+			if(dispIDs==null){	
+				System.out.println("\"Application\" object not found!");
+				return null;
+			}
+			
+			Variant pVarResult = excelClient.getProperty(dispIDs[0]);
+			if(pVarResult==null){	
+				System.out.println("\"Application\" object is null!");
+				return null;
+			}
+			
+			application = pVarResult.getAutomation();
+			
+			pVarResult.dispose();
+			excelClient.dispose();
 		}
-		
-		Variant pVarResult = excelClient.getProperty(dispIDs[0]);
-		if(pVarResult==null){	
-			System.out.println("\"Application\" object is null!");
-			return null;
-		}
-		
-		OleAutomation application = pVarResult.getAutomation();
-		
-		pVarResult.dispose();
-		excelClient.dispose();
 		
 		return application;
 	}
