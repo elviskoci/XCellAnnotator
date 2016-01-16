@@ -37,16 +37,17 @@ public class GUIListeners {
 	 * @return
 	 */
 	protected static Listener createCloseApplicationEventListener(){
-		
-		MainWindow wm = MainWindow.getInstance();
-		String directoryPath = MainWindow.getInstance().getDirectoryPath();
-		String fileName = MainWindow.getInstance().getFileName();
-		OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-		
+				
 		return new Listener()
 	    {
 	        public void handleEvent(Event event)
 	        {	
+	        	
+	    		MainWindow wm = MainWindow.getInstance();
+	    		String directoryPath = wm.getDirectoryPath();
+	    		String fileName = wm.getFileName();
+	    		OleAutomation embeddedWorkbook = wm.getEmbeddedWorkbook();
+
 	        	if(!wm.isControlSiteNull() && wm.isControlSiteDirty() && embeddedWorkbook!=null){
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
 	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
@@ -194,7 +195,7 @@ public class GUIListeners {
 		return new Listener() {
 			@Override
 			public void handleEvent(Event e) {
-				MainWindow.getInstance().setFocusToControlSite();
+					MainWindow.getInstance().setFocusToControlSite();
 			}		
 		};
 	}
@@ -558,7 +559,8 @@ public class GUIListeners {
 	 	            messageBox.open();
 				 }
 				 				 
-				 MainWindow.getInstance().setFocusToControlSite();				 
+				 MainWindow.getInstance().setFocusToShell();
+				 // MainWindow.getInstance().setFocusToControlSite();				 
 			}
 		};
 	}

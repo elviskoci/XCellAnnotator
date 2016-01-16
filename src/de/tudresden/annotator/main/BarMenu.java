@@ -187,6 +187,7 @@ public class BarMenu {
 		MenuItem menuViewFolderExplorer = new MenuItem(menuView, SWT.CASCADE);
 		menuViewFolderExplorer.setText("Folder Explorer");
 		menuViewFolderExplorer.setID(3010000);
+		menuViewFolderExplorer.setEnabled(false);
 		
 		/*
 		 * View Annotation Management Panel menu item  
@@ -194,6 +195,7 @@ public class BarMenu {
 		MenuItem menuViewAnnotationsPanel = new MenuItem(menuView, SWT.CASCADE);
 		menuViewAnnotationsPanel.setText("Annotations Panel");
 		menuViewAnnotationsPanel.setID(3020000);
+		menuViewAnnotationsPanel.setEnabled(false);
 		
 		return viewMenu;
 	}
@@ -212,6 +214,7 @@ public class BarMenu {
 		MenuItem menuPreferencesFormatting = new MenuItem(menuPreferences, SWT.CASCADE);
 		menuPreferencesFormatting.setText("Formatting");
 		menuPreferencesFormatting.setID(4010000);
+		menuPreferencesFormatting.setEnabled(false);
 		
 		/*
 		 * Annotation Classes Preferences menu item 
@@ -219,6 +222,7 @@ public class BarMenu {
 		MenuItem menuPreferencesAnnotationClasses = new MenuItem(menuPreferences, SWT.CASCADE);
 		menuPreferencesAnnotationClasses.setText("Annotation Classes");
 		menuPreferencesAnnotationClasses.setID(4020000);
+		menuPreferencesAnnotationClasses.setEnabled(false);
 		
 		return preferencesMenu;
 	}
@@ -235,6 +239,8 @@ public class BarMenu {
 		// using the leftmost characters to make it easier for the user to simultaneously handle the mouse and keyboard
 		LinkedHashMap<String, AnnotationClass> map =  ClassGenerator.getAnnotationClasses();
 		ArrayList<Character> usedChars = new ArrayList<Character>(); 
+		usedChars.add('W'); // sheet completed
+		usedChars.add('E'); // sheet not applicable
 		ArrayList<Character> shortcutChars  = new ArrayList<Character>();
 		
 		Iterator<String> keys = map.keySet().iterator();
@@ -325,16 +331,22 @@ public class BarMenu {
 		 */
 		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorksheet, SWT.CASCADE);
 		menuItemNotApplicable.setID(2020100);
-		menuItemNotApplicable.setText("Not Applicable");
+		// menuItemNotApplicable.setText("Not Applicable \tCtrl+E");
+		menuItemNotApplicable.setText("Not Applicable \tE");
 		menuItemNotApplicable.addSelectionListener(GUIListeners.createSheetNotApplicableSelectionListener());
+		menuItemNotApplicable.setAccelerator('E');
+		// menuItemNotApplicable.setAccelerator(SWT.MOD1+'E');
 		
 		/*
 		 * Worksheet Completed menu item
 		 */
 		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorksheet, SWT.CASCADE);
 		menuItemCompleted.setID(2020200);
-		menuItemCompleted.setText("Completed");
+		// menuItemCompleted.setText("Completed \tCtrl+W");
+		menuItemCompleted.setText("Completed \tW");
 		menuItemCompleted.addSelectionListener(GUIListeners.createSheetCompletedSelectionListener());
+		menuItemCompleted.setAccelerator('W');
+		// menuItemCompleted.setAccelerator(SWT.MOD1+'W');
 		
 		return annotateWorksheetMenuItem;
 	}
@@ -347,15 +359,16 @@ public class BarMenu {
 		annotateWorkbookMenuItem.setText("&File as");
 		Menu menuAnnotateWorkbook = new Menu(annotateWorkbookMenuItem);
 		annotateWorkbookMenuItem.setMenu(menuAnnotateWorkbook);
-		
+			
 		/*
 		 * Workbook Not Applicable menu item
 		 */
 		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
 		menuItemNotApplicable.setID(2030100);
 		menuItemNotApplicable.setText("Not Applicable");
+		// menuItemNotApplicable.setText("Not Applicable \tCtrl+Shift+E");
 		menuItemNotApplicable.addSelectionListener(GUIListeners.createFileNotApplicableSelectionListener());
-		
+		// menuItemNotApplicable.setAccelerator(SWT.MOD1+SWT.MOD2+'E');
 		
 		/*
 		 * Workbook Completed menu item 
@@ -363,8 +376,9 @@ public class BarMenu {
 		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
 		menuItemCompleted.setID(2030200);
 		menuItemCompleted.setText("Completed");
+		// menuItemCompleted.setText("Completed \tCtrl+Shift+W");
 		menuItemCompleted.addSelectionListener(GUIListeners.createFileCompletedSelectionListener());
-		
+		// menuItemCompleted.setAccelerator(SWT.MOD1+SWT.MOD2+'W');
 		return annotateWorkbookMenuItem;
 	}
 	
