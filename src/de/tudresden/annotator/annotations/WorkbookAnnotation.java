@@ -15,8 +15,13 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	/**
 	 * The name of the workbook that is embedded in the application
+	 * This name can be different from the file name;
 	 */
 	private String workbookName;
+	
+	/*
+	 * This two attributes mentain the status of the annotation for the workbook
+	 */
 	boolean isCompleted = false;
 	boolean isNotApplicable = false;
 	

@@ -147,7 +147,7 @@ public class AnnotationHandler {
 			drawAnnotation(sheetAutomation, rangeAutomation, annotationClass, annotationName);
 			
 			// save on the AnnotationDataSheet metadata about the annotation 
-			AnnotationDataSheet.saveAnnotationData(workbookAutomation, ra);	
+			RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);	
 			
 			// add the annotation object in memory data structure
 			workbookAnnotation.addRangeAnnotation(ra);
@@ -534,7 +534,7 @@ public class AnnotationHandler {
 	public static void setVisibilityForWorksheetShapeAnnotations(OleAutomation workbookAutomation, String sheetName, boolean visible ){
 		
 		// worksheet that stores the annotation (meta-)data does not have annotation shapes 
-		if(sheetName.compareTo(AnnotationDataSheet.name)==0)
+		if(sheetName.compareTo(RangeAnnotationsSheet.name)==0)
 			return;
 		
 		// get the OleAutomation object for the worksheet using the given name
@@ -612,7 +612,7 @@ public class AnnotationHandler {
 	public static void deleteShapeAnnotationsFromWorksheet(OleAutomation workbookAutomation, String sheetName ){
 		
 		// can not apply this method to the worksheet that stores the annotation (meta-)data, as it does not contain any shapes 
-		if(sheetName.compareTo(AnnotationDataSheet.name)==0)
+		if(sheetName.compareTo(RangeAnnotationsSheet.name)==0)
 			return;
 		
 		// get the OleAutomation object for the active worksheet using its name

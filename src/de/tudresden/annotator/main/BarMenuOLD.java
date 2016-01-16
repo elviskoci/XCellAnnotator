@@ -17,7 +17,7 @@ import org.eclipse.swt.widgets.Shell;
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
+import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.AnnotationResult;
 import de.tudresden.annotator.annotations.utils.ClassGenerator;
@@ -85,7 +85,7 @@ public class BarMenuOLD {
 				
 				
 				OleAutomation  annotationDataSheet = 
-						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, AnnotationDataSheet.getName()); 
+						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, RangeAnnotationsSheet.getName()); 
 				
 				// protect the annotation data sheet if it is not protected already
 				if(annotationDataSheet!=null){
@@ -106,7 +106,7 @@ public class BarMenuOLD {
 				if(annotationDataSheet!=null)
 					WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
 				// read the annotation data and recreate inmemory structure
-				AnnotationDataSheet.readAnnotationData(workbookAutomation);
+				RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
 				
 				// re-draw all the annotation in memory structure 
 				AnnotationHandler.drawAllAnnotations(workbookAutomation);
@@ -317,7 +317,7 @@ public class BarMenuOLD {
 			public void widgetSelected(SelectionEvent e) {
 				OleAutomation embeddedWorkbook =  MainWindow.getInstance().getEmbeddedWorkbook();
 				AnnotationHandler.setVisilityForShapeAnnotations(embeddedWorkbook, true);
-				AnnotationDataSheet.setVisibility(embeddedWorkbook, true);
+				RangeAnnotationsSheet.setVisibility(embeddedWorkbook, true);
 			}
 		});
 		menuItemShowAnnotations.setEnabled(false);
@@ -689,7 +689,7 @@ public class BarMenuOLD {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				workbookAnnotation.removeAllAnnotations();
 				
-				AnnotationDataSheet.deleteAllAnnotationData(workbookAutomation);
+				RangeAnnotationsSheet.deleteAllRangeAnnotations(workbookAutomation);
 			}
 		});	
 		
@@ -708,7 +708,7 @@ public class BarMenuOLD {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
 				
-				AnnotationDataSheet.deleteAnnotationDataForWorksheet(workbookAutomation, sheetName, false);			
+				RangeAnnotationsSheet.deleteRangeAnnotationsForWorksheet(workbookAutomation, sheetName, false);			
 			}
 		});	
 			
@@ -760,7 +760,7 @@ public class BarMenuOLD {
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				String directoryPath = MainWindow.getInstance().getDirectoryPath();
 				String fileName = MainWindow.getInstance().getFileName();				
-				boolean isSuccess = AnnotationDataSheet.exportAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
+				boolean isSuccess = RangeAnnotationsSheet.exportRangeAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
 				
 				if(isSuccess){
 					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);

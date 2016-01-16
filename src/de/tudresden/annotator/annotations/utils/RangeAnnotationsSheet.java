@@ -3,7 +3,6 @@
  */
 package de.tudresden.annotator.annotations.utils;
 
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -11,7 +10,6 @@ import java.util.LinkedHashMap;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.MessageBox;
-import org.w3c.dom.ranges.Range;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.RangeAnnotation;
@@ -26,9 +24,9 @@ import de.tudresden.annotator.oleutils.WorksheetUtils;
 /**
  * @author Elvis Koci
  */
-public class AnnotationDataSheet {
+public class RangeAnnotationsSheet {
 	
-	protected static final String name = "Annotation_Data_Sheet";
+	protected static final String name = "Range_Annotations_Data";
 	private static String startColumn = "A";
 	private static int startRow = 1; 
 	
@@ -53,12 +51,12 @@ public class AnnotationDataSheet {
 	 * @param workbookAutomation an OleAutomation to access the embedded workbook
 	 * @param annotation a RangeAnnotation object that maintains (contains) the annotation data to be saved
 	 */
-	public static void saveAnnotationData(OleAutomation workbookAutomation, RangeAnnotation annotation){
+	public static void saveRangeAnnotationData(OleAutomation workbookAutomation, RangeAnnotation annotation){
 			
 		OleAutomation annotationDataSheet =  WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
 		
 		if(annotationDataSheet==null){		
-			annotationDataSheet = createAnnotationDataSheet(workbookAutomation);	
+			annotationDataSheet = createRangeAnnotationsSheet(workbookAutomation);	
 		}
 		
 		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheet);		
@@ -69,7 +67,7 @@ public class AnnotationDataSheet {
 		int endRow = Integer.valueOf(cells[1].replaceAll("[^0-9]+",""));
 		int row = endRow + 1;
 					
-		writeNewRow(annotationDataSheet, row, annotation);		
+		writeNewDataRow(annotationDataSheet, row, annotation);		
 		annotationDataSheet.dispose();
 	}
 	
@@ -79,7 +77,7 @@ public class AnnotationDataSheet {
 	 * @param workbookAutomation an OleAutomation to access the embedded workbook
 	 * @return the OleAutomation of the created worksheet
 	 */
-	private static OleAutomation createAnnotationDataSheet(OleAutomation workbookAutomation){
+	private static OleAutomation createRangeAnnotationsSheet(OleAutomation workbookAutomation){
 		
 		WorkbookUtils.unprotectWorkbook(workbookAutomation);
 		
@@ -111,7 +109,7 @@ public class AnnotationDataSheet {
 	 * @param row an integer that represents the index of the row to write the data
 	 * @param annotation a RangeAutomation object that maintains (contains) the annotation data to write  
 	 */
-	private static void writeNewRow(OleAutomation annotationDataSheet, int row, RangeAnnotation annotation){		
+	private static void writeNewDataRow(OleAutomation annotationDataSheet, int row, RangeAnnotation annotation){		
 		
 		WorksheetUtils.unprotectWorksheet(annotationDataSheet);
 		
@@ -161,7 +159,7 @@ public class AnnotationDataSheet {
 	 * @param workbookAutomation an OleAutomation that provides access to the embedded workbook
 	 * @return true if annotation data were successfully read, false otherwise
 	 */
-	public static void readAnnotationData(OleAutomation workbookAutomation){
+	public static void readRangeAnnotations(OleAutomation workbookAutomation){
 		
 		
 		// get the OleAutomation object for the sheet that stores 
@@ -214,7 +212,7 @@ public class AnnotationDataSheet {
 	
 		WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 		for (int i = (topLeftRow + 1); i <=downRightRow; i++) {
-			RangeAnnotation annotation = readAnnotationDataRow(annotationDataSheet, i, topLeftColumn, downRightColumn);
+			RangeAnnotation annotation = readDataRow(annotationDataSheet, i, topLeftColumn, downRightColumn);
 			workbookAnnotation.addRangeAnnotation(annotation);
 		}
 	}
@@ -291,7 +289,7 @@ public class AnnotationDataSheet {
 	 * @param endColumn a string that represents the column to end the reading
 	 * @return a RangeAnnotation object that is created using the data read from the row
 	 */
-	protected static RangeAnnotation readAnnotationDataRow(OleAutomation annotationDataSheet, int row, String startColumn, String endColumn){		
+	protected static RangeAnnotation readDataRow(OleAutomation annotationDataSheet, int row, String startColumn, String endColumn){		
 		
 		// get the values of the cells in the given row, bounded by the start and the end column.   
 		String topLeftCell = startColumn+row;
@@ -360,7 +358,7 @@ public class AnnotationDataSheet {
 	 * @param sheetName the name of the worksheet where the annotation are placed (drawn)
 	 * @param permanentDelete if true the annotation data will be deleted permanently, otherwise they will just be hidden  
 	 */
-	public static void deleteAnnotationDataForWorksheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
+	public static void deleteRangeAnnotationsForWorksheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
 		
 		// the sheet that stores the annotation metadata is excluded from this process
 		if(sheetName.compareTo(name)==0)
@@ -462,7 +460,7 @@ public class AnnotationDataSheet {
 	 * where the annotation data are stored, except of the header row. 
 	 * @param workbookAutomation
 	 */
-	public static void deleteAllAnnotationData(OleAutomation workbookAutomation){
+	public static void deleteAllRangeAnnotations(OleAutomation workbookAutomation){
 		
 		// get the OleAutomation object for the sheet that stores the annotation metadata (a.k.a. annotation data sheet) 
 		OleAutomation annotationDataSheetBeforeDelete = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
@@ -505,7 +503,7 @@ public class AnnotationDataSheet {
 	 * @param fileName
 	 * @return
 	 */
-	public static boolean exportAnnotationsAsCSV(OleAutomation workbookAutomation, String directoryPath, String fileName){
+	public static boolean exportRangeAnnotationsAsCSV(OleAutomation workbookAutomation, String directoryPath, String fileName){
 		
 		// get the OleAutomation object for the worksheet where the annotation data are stored
 		OleAutomation annotationDataSheet = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);

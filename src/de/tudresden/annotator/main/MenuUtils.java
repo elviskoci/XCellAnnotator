@@ -10,7 +10,7 @@ import org.eclipse.swt.widgets.MessageBox;
 
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
+import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 
 /**
@@ -41,7 +41,7 @@ public class MenuUtils {
 		// if sheet annotation does not exist, do the same.
 		// normally sheet annotation should always exist, but when the annotation data sheet is initially
 		// created its name is random. It is after creation that its name is updated to "Annotation_Data_Sheet"
-		if(sheetAnnotation==null || sheetName.compareTo(AnnotationDataSheet.getName())==0){
+		if(sheetAnnotation==null || sheetName.compareTo(RangeAnnotationsSheet.getName())==0){
 			for (MenuItem menuItem : annotationsMenuItems) {
 				menuItem.setEnabled(false);
 			}

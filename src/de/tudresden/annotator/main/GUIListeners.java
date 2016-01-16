@@ -18,9 +18,10 @@ import org.eclipse.swt.widgets.MessageBox;
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
+import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.AnnotationResult;
+import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
 import de.tudresden.annotator.annotations.utils.ValidationResult;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
@@ -225,10 +226,12 @@ public class GUIListeners {
 				AnnotationHandler.getWorkbookAnnotation().removeAllAnnotations();
 		
 				// create the base in memory structure for storing annotation data
-				AnnotationHandler.createBaseAnnotations(workbookAutomation);
-											
+				// AnnotationHandler.createBaseAnnotations(workbookAutomation);
+				
+				AnnotationStatusSheet.readAnnotationStatuses(workbookAutomation);
+				
 				// read the annotation data and recreate in memory structure
-				AnnotationDataSheet.readAnnotationData(workbookAutomation);
+				RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
 				
 				// re-draw all the annotation in memory structure 
 				AnnotationHandler.drawAllAnnotations(workbookAutomation);								
@@ -346,7 +349,7 @@ public class GUIListeners {
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				String directoryPath = MainWindow.getInstance().getDirectoryPath();
 				String fileName = MainWindow.getInstance().getFileName();				
-				boolean isSuccess = AnnotationDataSheet.exportAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
+				boolean isSuccess = RangeAnnotationsSheet.exportRangeAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
 				
 				if(isSuccess){
 					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
@@ -609,7 +612,7 @@ public class GUIListeners {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				workbookAnnotation.removeAllAnnotations();
 				
-				AnnotationDataSheet.deleteAllAnnotationData(workbookAutomation);
+				RangeAnnotationsSheet.deleteAllRangeAnnotations(workbookAutomation);
 			}
 		};
 	}
@@ -631,7 +634,7 @@ public class GUIListeners {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
 				
-				AnnotationDataSheet.deleteAnnotationDataForWorksheet(workbookAutomation, sheetName, false);		
+				RangeAnnotationsSheet.deleteRangeAnnotationsForWorksheet(workbookAutomation, sheetName, false);		
 			}
 		};
 	}

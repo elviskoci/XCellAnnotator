@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
-import de.tudresden.annotator.annotations.utils.AnnotationDataSheet;
+import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -240,7 +240,7 @@ public class MainWindow {
 	    
 	    // show the annotation_data_sheet if it exists
 	    OleAutomation  annotationDataSheet = 
-			WorkbookUtils.getWorksheetAutomationByName(workbook, AnnotationDataSheet.getName()); 
+			WorkbookUtils.getWorksheetAutomationByName(workbook, RangeAnnotationsSheet.getName()); 
 		WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
 				
 	    // protect the structure of the workbook if it is not yet protected
@@ -522,14 +522,14 @@ public class MainWindow {
 	/**
 	 * @return the menuBar
 	 */
-	public BarMenu getMenuBar() {
+	protected BarMenu getMenuBar() {
 		return menuBar;
 	}
 
 	/**
 	 * @param menuBar the menuBar to set
 	 */
-	public void setMenuBar(BarMenu menuBar) {
+	protected void setMenuBar(BarMenu menuBar) {
 		this.menuBar = menuBar;
 	}
 
