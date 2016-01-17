@@ -249,7 +249,7 @@ public class ApplicationUtils {
 	 * @param display true to display alerts, false to suppress them 
 	 * @return true if the operation was successful, false otherwise
 	 */
-	public static boolean setDisplayAlerts(OleAutomation applicationAutomation, String display){
+	public static boolean setDisplayAlerts(OleAutomation applicationAutomation, boolean display){
 		
 		// get the OleAutomation object for the selected range 
 		int[] displayAlertsPropertyIds = applicationAutomation.getIDsOfNames(new String[]{"DisplayAlerts"});

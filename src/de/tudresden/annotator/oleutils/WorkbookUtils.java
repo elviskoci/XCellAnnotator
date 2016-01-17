@@ -28,6 +28,60 @@ public class WorkbookUtils {
 		return workbookName;
 	}
 	
+	/**
+	 * Protect the structure of the active workbook 
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @return true if operation succeeded, false otherwise
+	 */
+	public static boolean protectWorkbook(OleAutomation workbookAutomation, boolean structure, boolean windows){
+		
+		// invoke the "Protect" method for the given workbook
+		int[] protectMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Protect", "Structure", "Windows"});
+		if (protectMethodIds == null) {
+			System.out.println("Method \"Protect\" not found for \"Workbook\" object!");
+			return false;
+		}else{
+			Variant[] args = new Variant[2];
+			args[0] = new Variant(structure);
+			args[1] = new Variant(windows);
+			
+			int argsIds[] = Arrays.copyOfRange(protectMethodIds, 1, protectMethodIds.length);
+			Variant result = workbookAutomation.invoke(protectMethodIds[0], args, argsIds);	
+			
+			for (Variant arg: args) {
+				arg.dispose();
+			}
+			
+			if(result==null)
+				return false;
+		
+			result.dispose();
+		}		
+		return true;
+	}
+		
+   /**
+	 * Unprotect the structure of the active workbook
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
+	 * @return true if operation succeeded, false otherwise
+	 */
+	public static boolean unprotectWorkbook(OleAutomation workbookAutomation){
+		
+		// invoke the "Unprotect" method for the given workbook
+		int[] unprotectMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Unprotect"});
+		if (unprotectMethodIds == null) {
+			System.out.println("Method \"Unprotect\" not found for \"Workbook\" object!");
+			return false;
+		}else{			
+			Variant result = workbookAutomation.invoke(unprotectMethodIds[0]);	
+			
+			if(result==null)
+				return false;
+		
+			result.dispose();
+		}
+		return true;
+	}
 	
 	/**
 	 * Get the Application automation from the embedded workbook
@@ -44,7 +98,6 @@ public class WorkbookUtils {
 		return applicationAutomation;
 	}
 	
-
 	/**
 	 * Get the Worksheets automation
 	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the Workbook OLE object 
@@ -74,8 +127,7 @@ public class WorkbookUtils {
 		
 		return worksheetAutomation;
 	}
-	
-	
+		
 	/**
 	 * Get the worksheet automation from the embedded workbook based on the given name  
 	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
@@ -153,64 +205,6 @@ public class WorkbookUtils {
 		
 		return newWorksheet;
 	}
-	
-	
-	/**
-	 * Protect the structure of the active workbook 
-	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
-	 * @return true if operation succeeded, false otherwise
-	 */
-	public static boolean protectWorkbook(OleAutomation workbookAutomation, boolean structure, boolean windows){
-		
-		// invoke the "Protect" method for the given workbook
-		int[] protectMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Protect", "Structure", "Windows"});
-		if (protectMethodIds == null) {
-			System.out.println("Method \"Protect\" not found for \"Workbook\" object!");
-			return false;
-		}else{
-			Variant[] args = new Variant[2];
-			args[0] = new Variant(structure);
-			args[1] = new Variant(windows);
-			
-			int argsIds[] = Arrays.copyOfRange(protectMethodIds, 1, protectMethodIds.length);
-			Variant result = workbookAutomation.invoke(protectMethodIds[0], args, argsIds);	
-			
-			for (Variant arg: args) {
-				arg.dispose();
-			}
-			
-			if(result==null)
-				return false;
-		
-			result.dispose();
-		}		
-		return true;
-	}
-	
-	
-   /**
-	 * Unprotect the structure of the active workbook
-	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object
-	 * @return true if operation succeeded, false otherwise
-	 */
-	public static boolean unprotectWorkbook(OleAutomation workbookAutomation){
-		
-		// invoke the "Unprotect" method for the given workbook
-		int[] unprotectMethodIds = workbookAutomation.getIDsOfNames(new String[]{"Unprotect"});
-		if (unprotectMethodIds == null) {
-			System.out.println("Method \"Unprotect\" not found for \"Workbook\" object!");
-			return false;
-		}else{			
-			Variant result = workbookAutomation.invoke(unprotectMethodIds[0]);	
-			
-			if(result==null)
-				return false;
-		
-			result.dispose();
-		}
-		return true;
-	}
-
 	
 	/**
 	 * Protect all worksheets that are part of the given workbook
@@ -292,8 +286,7 @@ public class WorkbookUtils {
 		worksheetsAutomation.dispose();
 		return true;
 	}
-	
-	
+		
 	/**
 	 * Save the embedded workbook
 	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of a Workbook OLE object

@@ -18,12 +18,11 @@ import org.eclipse.swt.widgets.MessageBox;
 import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.AnnotationResult;
 import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
+import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.annotations.utils.ValidationResult;
-import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
@@ -257,9 +256,6 @@ public class GUIListeners {
 				String directory = MainWindow.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
-				OleAutomation applicationAutomation = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
-				
-				ApplicationUtils.setDisplayAlerts(applicationAutomation, "False");		
 				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath);
 				if(result){		
 					// TODO: Mark Annotated Files. 
@@ -274,7 +270,6 @@ public class GUIListeners {
 					message.setMessage("ERROR: The file could not be saved!");
 					message.open();
 				}				
-				ApplicationUtils.setDisplayAlerts(applicationAutomation, "True");	
 			}
 		};
 	}

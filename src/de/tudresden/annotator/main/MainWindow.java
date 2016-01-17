@@ -159,11 +159,7 @@ public class MainWindow {
 	protected void setUpWorkbookDisplay( File excelFile){
 		
 		try {
-			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
-			
-			// activate and display excel workbook
-			getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
-	        
+			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));        
 		} catch (IllegalArgumentException iaEx) {
 			
 			int style = SWT.ICON_ERROR;
@@ -198,7 +194,14 @@ public class MainWindow {
 			// ex.printStackTrace();
 			System.exit(1);
 		}
-			      		
+		
+		// suppress alerts for excel application
+	    OleAutomation applicationBeforeActivation = ApplicationUtils.getApplicationAutomation(getControlSite());
+	    ApplicationUtils.setDisplayAlerts(applicationBeforeActivation, false);
+	    
+		// activate and display excel workbook
+		getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
+		
 		setDirectoryPath(excelFile.getParent());
 		setFileName(excelFile.getName());
 		

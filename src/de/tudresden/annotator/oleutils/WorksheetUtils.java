@@ -468,4 +468,25 @@ public class WorksheetUtils {
 		
 		return true;
 	}
+	
+//	/**
+//	 * Delete the specified worksheet
+//	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+//	 * @return true if the worksheet was successfully deleted, false otherwise
+//	 */
+//	public static boolean deleteWorksheet(OleAutomation worksheetAutomation){
+//		
+//		int[] deleteMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Delete"});
+//		Variant result = worksheetAutomation.invoke(deleteMethodIds[0]);
+//		
+//		if(result!=null){		
+//			boolean isSuccess = result.getBoolean();
+//			result.dispose();
+//
+//			return isSuccess;
+//		}else{
+//			return false;
+//		}
+//	}
+
 }

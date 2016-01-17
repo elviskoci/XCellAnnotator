@@ -40,19 +40,18 @@ public class AnnotationStatusSheet {
 			annotationStatusSheet = createAnnotationStatusSheet(workbookAutomation);	
 		}else{
 			
+			WorksheetUtils.unprotectWorksheet(annotationStatusSheet);
+			
 			// delete all the existing data from the worksheet. 
-			// do not delete the header row.
+			// by removing all existing data we ensure that the "new" data will have
+			// the right format. So, they are not effected by the existing data.
 			OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationStatusSheet);		
-			String usedAddress = RangeUtils.getRangeAddress(usedRange);
+			RangeUtils.deleteRange(usedRange);	
 			usedRange.dispose();
 			
-			int pos = usedAddress.indexOf(":");
-			String downRightCell = usedAddress.substring(pos+1);
-			String topLeftCell = "$"+startColumnChar+"$"+(startRow+1);
-			
-			OleAutomation dataRange = WorksheetUtils.getRangeAutomation(annotationStatusSheet, topLeftCell, downRightCell);
-			RangeUtils.deleteRange(dataRange);	
-			dataRange.dispose();
+			// re-create the header
+			createHeaderRow(annotationStatusSheet);
+			WorksheetUtils.protectWorksheet(annotationStatusSheet);	
 		}
 		
 		writeStatuses(annotationStatusSheet);		
@@ -65,6 +64,10 @@ public class AnnotationStatusSheet {
 		OleAutomation annotationStatusSheet =  WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
 		AnnotationHandler.createBaseAnnotations(workbookAutomation);
 		if(annotationStatusSheet==null){		
+			return;
+		}
+		
+		if(!validateAnnotationStatusSheet(annotationStatusSheet)){
 			return;
 		}
 		
@@ -88,23 +91,33 @@ public class AnnotationStatusSheet {
 		
 		OleAutomation annotationStatusSheet = WorkbookUtils.addWorksheetAsLast(workbookAutomation);
 		WorksheetUtils.setWorksheetName(annotationStatusSheet, name);
-						
-		OleAutomation field1 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex);
-		RangeUtils.setValue(field1, "Name");
-		field1.dispose();
 		
-		OleAutomation field2 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex+1);
-		RangeUtils.setValue(field2, "isCompleted");
-		field2.dispose();
-		
-		OleAutomation field3 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex+2);
-		RangeUtils.setValue(field3, "isNotApplicable");
-		field3.dispose();
+		createHeaderRow(annotationStatusSheet);
 		
 		WorksheetUtils.setWorksheetVisibility(annotationStatusSheet, false);
 		WorkbookUtils.protectWorkbook(workbookAutomation, true, false);
 		
 		return annotationStatusSheet;
+	}
+	
+	
+	/**
+	 * Create (write) the header row that contains the field names 
+	 * @param annotationStatusSheet  an OleAutomation that provides access to the sheet that maintains annotation status data
+	 */
+	private static void createHeaderRow(OleAutomation annotationStatusSheet){
+		
+		OleAutomation field1 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex);
+		RangeUtils.setValue(field1, "Name");
+		field1.dispose();
+		
+		OleAutomation field2 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex+1);
+		RangeUtils.setValue(field2, "Completed");
+		field2.dispose();
+		
+		OleAutomation field3 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex+2);
+		RangeUtils.setValue(field3, "NotApplicable");
+		field3.dispose();
 	}
 	
 	
@@ -210,11 +223,68 @@ public class AnnotationStatusSheet {
 	}
 	
 	/**
+	 * Validate the "Annotation_Status" sheet to ensure that the data are in the expected format. 
+	 * @param annotationStatusSheet an OleAutomation that provides access to the sheet that maintains the annotation status data
+	 * @return true if the status data are in the expected format, false otherwise
+	 */
+	private static boolean validateAnnotationStatusSheet(OleAutomation annotationStatusSheet){
+		
+		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationStatusSheet);
+		if(usedRange==null){
+			int style = SWT.ICON_WARNING;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Could not recover the annotation status from the previous session. "
+					+ "The \"Annotation_Status\" sheet is empty.");
+			message.open();
+			return false;
+		}
+		
+		
+		OleAutomation rangeColumns = RangeUtils.getRangeColumns(usedRange);
+		int countColumns = CollectionsUtils.countItemsInCollection(rangeColumns);
+		rangeColumns.dispose();
+		
+		if(countColumns!=3){
+			usedRange.dispose();
+						
+			int style = SWT.ICON_WARNING;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Could not recover the annotation status from the previous session. "
+					+ "The annotation status data are not in the expected format. "
+					+ "The expected number of columns is 3. Instead, the application found "+countColumns+" column/s.");
+			message.open();	
+			return false;
+		}
+				
+		OleAutomation rangeRows = RangeUtils.getRangeRows(usedRange);
+		OleAutomation headerRow = CollectionsUtils.getItemByIndex(rangeRows, 1, false);
+		rangeRows.dispose();
+		usedRange.dispose();
+		
+		String values[] = RangeUtils.getRangeValues(headerRow);
+		
+		if(!(values[0].compareToIgnoreCase("Name")==0 &&
+			values[1].compareToIgnoreCase("Completed")==0 &&
+			values[2].compareToIgnoreCase("NotApplicable")==0)){
+			
+			int style = SWT.ICON_WARNING;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Could not recover the annotation status from the previous session. "
+					+ "The header row does not contain the expected fields.");
+			message.open();
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
 	 * Read the workbook annotation status data
 	 * @param annotationStatusSheet an OleAutomation that provides access to the sheet that maintains the annotation status data
 	 * @return true if the status data were successfully read, false otherwise
 	 */
-	public static boolean readWorkbookAnnotationStatus(OleAutomation annotationStatusSheet){
+	private static boolean readWorkbookAnnotationStatus(OleAutomation annotationStatusSheet){
 		
 		WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
 		String topLeftCell = "$"+startColumnChar+"$"+(startRow+1);
@@ -243,21 +313,9 @@ public class AnnotationStatusSheet {
 	 * @param annotationStatusSheet an OleAutomation that provides access to the sheet that maintains the annotation status data
 	 * @return true if the status data were successfully read, false otherwise
 	 */
-	public static boolean readWorksheetAnnotationsStatuses(OleAutomation annotationStatusSheet){
+	private static boolean readWorksheetAnnotationsStatuses(OleAutomation annotationStatusSheet){
 		
-		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationStatusSheet);
-		OleAutomation usedAreas = RangeUtils.getAreas(usedRange);
-		int countAreas = CollectionsUtils.countItemsInCollection(usedAreas);
-		usedAreas.dispose();
-		
-		if(countAreas!=1){
-			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setMessage("Could not read the annotation status data. They are not in the expected format!");
-			message.open();
-			return false;
-		}
-		
+		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationStatusSheet);		
 		OleAutomation rangeRows = RangeUtils.getRangeRows(usedRange);
 		int countRows = CollectionsUtils.countItemsInCollection(rangeRows);		
 		usedRange.dispose();
@@ -300,12 +358,13 @@ public class AnnotationStatusSheet {
 	 * @param data an array of string values that were read from the worksheet range - row
 	 * @return true if the data pass all the validation tests, false otherwise.
 	 */
-	public static boolean validateRowData(String data[]){
+	private static boolean validateRowData(String data[]){
 		
 		if(data.length!=3){
 			int style = SWT.ICON_WARNING;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setMessage("Could not read the annotation status data. They are not in the expected format!");
+			message.setMessage("Could not recover the annotation status from the previous session. "
+					+ "The data are not in the expected format!");
 			message.open();
 			return false;
 		}
@@ -314,7 +373,7 @@ public class AnnotationStatusSheet {
 	
 			int style = SWT.ICON_WARNING;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setMessage("Skipped reading the annotation status data. "
+			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "Could not recognize one or more values of the field \"isCompleted\"");
 			message.open();
 			return false;
@@ -324,7 +383,7 @@ public class AnnotationStatusSheet {
 	
 			int style = SWT.ICON_WARNING;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setMessage("Skipped reading the annotation status data. "
+			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "Could not recognize one or more values of the field \"isNotApplicable\"");
 			message.open();
 			return false;

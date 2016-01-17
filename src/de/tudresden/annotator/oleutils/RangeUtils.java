@@ -107,8 +107,12 @@ public class RangeUtils {
 		int[] valuePropertyIds = rangeAutomation.getIDsOfNames(new String[]{"Value"});
 		
 		Variant valueVariant =  rangeAutomation.getProperty(valuePropertyIds[0]);
-		String value =  valueVariant.getString();
-		valueVariant.dispose();
+			
+		String value = "";
+		if(valueVariant!=null && valueVariant.getType() != 0){
+			value= valueVariant.getString();
+			valueVariant.dispose();
+		}		
 		
 		return value;
 	}
