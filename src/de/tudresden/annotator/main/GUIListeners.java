@@ -629,7 +629,7 @@ public class GUIListeners {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
 				
-				RangeAnnotationsSheet.deleteRangeAnnotationsForWorksheet(workbookAutomation, sheetName, false);		
+				RangeAnnotationsSheet.deleteRangeAnnotationsForWorksheet(workbookAutomation, sheetName, true);		
 			}
 		};
 	}

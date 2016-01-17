@@ -3,7 +3,6 @@
  */
 package de.tudresden.annotator.annotations.utils;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.eclipse.swt.SWT;
