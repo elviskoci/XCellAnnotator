@@ -149,26 +149,45 @@ public class BarMenu {
 		menuItemHide.setEnabled(false);
 		
 		/*
+		 * Show Annotations menu item  
+		 */
+		MenuItem menuItemShowAnnotations = new MenuItem(menuAnnotations, SWT.CASCADE);
+		menuItemShowAnnotations.setID(2070000);
+		menuItemShowAnnotations.setText("Show...");
+		menuItemShowAnnotations.setEnabled(false);
+		
+		
+		/*
 		 * Delete annotations menu item  
 		 */
 		MenuItem menuItemDelete = addDeleteMenu(menuAnnotations);
 		menuItemDelete.setEnabled(false);
 		
-		/*
-		 * Show Formulas menu item  
-		 */
-		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CASCADE);
-		menuItemShowFormulas.setText("Show Formulas");
-		menuItemShowFormulas.setEnabled(false);
-		menuItemShowFormulas.setID(2060000);
-		
+//		/*
+//		 * Show Formulas menu item  
+//		 */
+//		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CASCADE);
+//		menuItemShowFormulas.setID(2060000);
+//		menuItemShowFormulas.setText("Show Formulas");
+//		menuItemShowFormulas.setEnabled(false);
+//		
+			
 		/*
 		 * Show Annotations menu item  
 		 */
-		MenuItem menuItemShowAnnotations = new MenuItem(menuAnnotations, SWT.CASCADE);
-		menuItemShowAnnotations.setText("Show Annotations");
-		menuItemShowAnnotations.setEnabled(false);
-		menuItemShowAnnotations.setID(2070000);
+		MenuItem menuItemUndo = new MenuItem(menuAnnotations, SWT.CASCADE);
+		menuItemUndo.setID(2080000);
+		menuItemUndo.setText("Undo Annotation\tCtrl+Z");
+		menuItemUndo.setEnabled(false);
+		menuItemUndo.addSelectionListener(GUIListeners.createUndoLastAnnotationSelectionListener());
+		menuItemUndo.setAccelerator(SWT.MOD1+'Z');
+		
+		MenuItem menuItemRedo = new MenuItem(menuAnnotations, SWT.CASCADE);
+		menuItemRedo.setID(2090000);
+		menuItemRedo.setText("Redo Annotation\tCtrl+Y");
+		menuItemRedo.setEnabled(false);
+		menuItemRedo.addSelectionListener(GUIListeners.createRedoLastAnnotationSelectionListener());
+		menuItemRedo.setAccelerator(SWT.MOD1+'Y');
 		
 		return annotationsMenu;
 	}
@@ -329,7 +348,7 @@ public class BarMenu {
 		/*
 		 * Worksheet Not Applicable menu item
 		 */
-		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorksheet, SWT.CASCADE);
+		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorksheet, SWT.CHECK);
 		menuItemNotApplicable.setID(2020100);
 		// menuItemNotApplicable.setText("Not Applicable \tCtrl+E");
 		menuItemNotApplicable.setText("Not Applicable \tE");
@@ -340,7 +359,7 @@ public class BarMenu {
 		/*
 		 * Worksheet Completed menu item
 		 */
-		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorksheet, SWT.CASCADE);
+		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorksheet, SWT.CHECK);
 		menuItemCompleted.setID(2020200);
 		// menuItemCompleted.setText("Completed \tCtrl+W");
 		menuItemCompleted.setText("Completed \tW");
@@ -363,7 +382,7 @@ public class BarMenu {
 		/*
 		 * Workbook Not Applicable menu item
 		 */
-		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
+		MenuItem menuItemNotApplicable = new MenuItem(menuAnnotateWorkbook, SWT.CHECK);
 		menuItemNotApplicable.setID(2030100);
 		menuItemNotApplicable.setText("Not Applicable");
 		// menuItemNotApplicable.setText("Not Applicable \tCtrl+Shift+E");
@@ -373,7 +392,7 @@ public class BarMenu {
 		/*
 		 * Workbook Completed menu item 
 		 */
-		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorkbook, SWT.CASCADE);
+		MenuItem menuItemCompleted = new MenuItem(menuAnnotateWorkbook, SWT.CHECK);
 		menuItemCompleted.setID(2030200);
 		menuItemCompleted.setText("Completed");
 		// menuItemCompleted.setText("Completed \tCtrl+Shift+W");

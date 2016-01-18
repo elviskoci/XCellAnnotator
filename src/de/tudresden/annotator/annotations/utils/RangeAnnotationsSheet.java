@@ -6,6 +6,7 @@ package de.tudresden.annotator.annotations.utils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -45,7 +46,7 @@ public class RangeAnnotationsSheet {
 		fields.put("Annotation.Parent", 5); // required
     }
 	
-
+	
 	/**
 	 * Save new annotation data
 	 * @param workbookAutomation an OleAutomation to access the embedded workbook
@@ -350,45 +351,26 @@ public class RangeAnnotationsSheet {
 	}
 	
 	
-	/**
-	 * Delete the annotation data for the worksheet with the given name 
-	 * This method will clear all the rows in the annotation (meta-)data sheet 
-	 * that are associated with the specified worksheet  
-	 * @param workbookAutomation an OleAumation for accessing the functionalities of the embedded workbook
-	 * @param sheetName the name of the worksheet where the annotation are placed (drawn)
-	 * @param permanentDelete if true the annotation data will be deleted permanently, otherwise they will just be hidden  
-	 */
-	public static void deleteRangeAnnotationsForWorksheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
-		
-		// the sheet that stores the annotation metadata is excluded from this process
-		if(sheetName.compareTo(name)==0)
-			return;
-			
+	public static void deleteDataRows(OleAutomation workbookAutomation, String fieldToFilter, String value, boolean permanentDelete){
+					
 		// get the OleAutomation object for the sheet that stores the annotation metadata (a.k.a. annotation data sheet) 
 		OleAutomation annotationDataSheetBeforeFilter = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
 		
 		// unprotect the annotation data sheet
 		boolean isUnprotected= WorksheetUtils.unprotectWorksheet(annotationDataSheetBeforeFilter);
-		if(!isUnprotected){
-			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setMessage("Annotation Data Sheet could not be unprotected!");
-			message.open();
-			return;
-		}
 		
-		// determine the position of the field that represents the name of the sheet
+		// determine the position of the field that represents the name of the annotation
 		OleAutomation topLeftCellAuto = WorksheetUtils.getRangeAutomation(annotationDataSheetBeforeFilter, startColumn+""+startRow, null);
 		int columnIndex = RangeUtils.getFirstColumnIndex(topLeftCellAuto);
 		topLeftCellAuto.dispose();
-		int fieldRelativePosition = fields.get("Sheet.Name");
+		int fieldRelativePosition = fields.get(fieldToFilter);
 		int fieldIndex = columnIndex + fieldRelativePosition;
 		
 		// get the range that contains the annotation data together with the header row
 		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheetBeforeFilter);
 		
 		// filter this range to get only those rows relevant to the specified sheet 
-		RangeUtils.filterRange(usedRange, fieldIndex, sheetName); 
+		RangeUtils.filterRange(usedRange, fieldIndex, value); 
 				
 		// get the range OleAutomation for the filtered results. This range still includes the header row.  
 		OleAutomation filteredRange = RangeUtils.getSpecialCells(usedRange, 12); // xlCellTypeVisible = 12  (visible cells)
@@ -398,7 +380,7 @@ public class RangeAnnotationsSheet {
 		OleAutomation areasAuto = RangeUtils.getAreas(filteredRange);
 		filteredRange.dispose();
 		int countAreas = CollectionsUtils.countItemsInCollection(areasAuto);
-		
+				
 		// get all rows (indices) in the filtered range. exclude the header row 
 		ArrayList<Integer> filteredRows = new ArrayList<Integer>();
 		for (int j = 1; j <=countAreas; j++) {
@@ -451,9 +433,32 @@ public class RangeAnnotationsSheet {
 			message.setMessage("Annotation Data Sheet could not be protected!");
 			message.open();
 		}
-		annotationDataSheetAfterFilter.dispose();		
+		annotationDataSheetAfterFilter.dispose();
 	}
 	
+	
+	/**
+	 * Delete the annotation data for the worksheet with the given name 
+	 * This method will clear all the rows in the annotation (meta-)data sheet 
+	 * that are associated with the specified worksheet  
+	 * @param workbookAutomation an OleAumation for accessing the functionalities of the embedded workbook
+	 * @param sheetName the name of the worksheet where the annotation are placed (drawn)
+	 * @param permanentDelete if true the annotation data will be deleted permanently, otherwise they will just be hidden  
+	 */
+	public static void deleteRangeAnnotationsInSheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
+		deleteDataRows(workbookAutomation, "Sheet.Name", sheetName, permanentDelete);
+	}
+	
+	
+	/**
+	 * Delete the data row from the sheet for the specified range annotation 
+	 * @param workbookAutomation an OleAumation for accessing the functionalities of the embedded workbook
+	 * @param annotation the range annotation for which the data need to be deleted  
+	 * @param permanentDelete if true the annotation data will be deleted permanently, otherwise they will just be hidden  
+	 */
+	public static void deleteRangeAnnotationData(OleAutomation workbookAutomation, RangeAnnotation annotation, boolean permanentDelete){		
+		deleteDataRows(workbookAutomation, "Annotation.Name", annotation.getName(), permanentDelete);
+	}
 	
 	/**
 	 * Delete all annotation data. This method clears all the values from the sheet 

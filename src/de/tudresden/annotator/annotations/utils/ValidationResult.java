@@ -11,7 +11,8 @@ public enum ValidationResult {
 	OK (1),
 	EMPTY (2),
 	OVERLAPPING (3), 
-	NOTCONTAINED (4);
+	NOTCONTAINED (4),
+	NOSELECTION (5);
 
 	private final int code;
     

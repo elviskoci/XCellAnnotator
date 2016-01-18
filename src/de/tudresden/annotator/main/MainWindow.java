@@ -10,6 +10,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -92,8 +93,8 @@ public class MainWindow {
 		// shell properties
 		this.shell.setText("Annotator");
 	    this.shell.setLayout(new FillLayout());
-	    this.shell.setSize(1600, 800);
-	    
+	    //this.shell.setSize(1600, 800);
+	    this.shell.setSize(1400, 600);
 	    // add listener for the close event ( user clicks the close button (X) )
 	    this.shell.addListener(SWT.Close, GUIListeners.createCloseApplicationEventListener());
 	    
@@ -194,8 +195,24 @@ public class MainWindow {
 			System.exit(1);
 		}
 		
-		// suppress alerts for excel application
+		
 	    OleAutomation applicationBeforeActivation = ApplicationUtils.getApplicationAutomation(getControlSite());
+	    if(applicationBeforeActivation==null){
+	    	int style = SWT.ERROR;
+			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			message.setMessage("Something went wrong!!! Please take the following actions.\n\n"
+					+ "1. Check if an instance of this application is already running.\n\n"
+					+ "2. Ensure that the excel file you are trying to open it is not used by another application.\n\n"
+					+ "3. If there is another excel file oppened outiside of this application, ensure that "
+					+ "there are no pending windows or message boxes asking for the user input.\n\n"
+					+ "4. Open task manager and check if there is any excel process running in the background. "
+					+ "If there is such process, end it.");		
+			message.open();
+			MainWindow.getInstance().disposeControlSite();
+			MainWindow.getInstance().disposeShell();
+			return;
+	    }
+	    // suppress alerts for excel application
 	    ApplicationUtils.setDisplayAlerts(applicationBeforeActivation, false);
 	    
 		// activate and display excel workbook
@@ -206,20 +223,7 @@ public class MainWindow {
 		
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
-	    if(application==null){
-	    	int style = SWT.ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
-			message.setMessage("Something went wrong!!! Please take the following actions. "
-					+ "If there is another opened excel file outiside of this application, ensure that "
-					+ "there is no window or message box asking for the user input. "
-					+ "Also, check if an instance of this application is already running.");		
-			message.open();
-			MainWindow.getInstance().disposeControlSite();
-			MainWindow.getInstance().disposeShell();
-			return;
-	    }
-	    // TODO: suppress application alerts
-	        
+	         
 	    // add event listeners
 	    OleListener sheetSelectionListener = GUIListeners.createSheetSelectionEventListener();
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
@@ -337,6 +341,14 @@ public class MainWindow {
 	}
 	
 	/**
+	 * Check if the shell has the focus
+	 * @return true if the shell has the focus, false otherwise
+	 */
+	protected boolean isShellFocusControl(){
+		return this.shell.isFocusControl();
+	}
+	
+	/**
 	 * Get OleFrame
 	 * @return
 	 */
@@ -393,6 +405,10 @@ public class MainWindow {
 		excelPanel.setBackground(green2);
 	}
 	
+	/**
+	 * Check if the control site has the focus
+	 * @return true if the control site has the focus, false otherwise
+	 */
 	protected boolean isControlSiteFocusControl(){
 		return this.controlSite.isFocusControl();
 	}
@@ -551,6 +567,27 @@ public class MainWindow {
 	 */
 	public FileDialog createFileDialog(int style){
 		return  new FileDialog(this.shell, SWT.OPEN);
+	}
+	
+	
+	/**
+	 * Create an image using the main display as device
+	 * @param fileName the name of the image file 
+	 * @return an object that represents an SWT image
+	 */
+	public Image createImage(String fileName){
+		return new Image(this.display, fileName);
+	}
+	
+	
+	/**
+	 * Get a copy of the given image. The appearance
+	 * of the image might be differ according to 
+	 * the specified flag 
+	 * @return an object that represents an SWT image
+	 */
+	public Image adjustImageByFlag(Image srcImage, int flag){
+		return new Image(this.display, srcImage, flag);
 	}
 	
 	/**

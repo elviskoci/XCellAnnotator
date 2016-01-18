@@ -41,7 +41,7 @@ public class FileUtils {
 //		}
 		
 		//delete all shape annotations
-		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
+		AnnotationHandler.deleteAllAnnotations(embeddedWorkbook);
 		
 		// save the status of all worksheet annotations and the workbook annotation 
 		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);

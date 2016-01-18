@@ -175,6 +175,11 @@ public class WorksheetUtils {
 		}
 		
 		Variant rangeVariant = worksheetAutomation.getProperty(rangePropertyIds[0],args);
+		
+		if(rangeVariant==null || rangeVariant.getType()==0){
+			return null;
+		}
+			
 		OleAutomation rangeAutomation = rangeVariant.getAutomation();
 		for (Variant arg : args) {
 			arg.dispose();
@@ -383,8 +388,10 @@ public class WorksheetUtils {
 	public static boolean protectWorksheet(OleAutomation worksheetAutomation){
 		
 		// get the id of the "Protect" method and the considered parameters
-		// you can find the documentation of this OLE method here https://msdn.microsoft.com/EN-US/library/ff840611.aspx
-		int[] protectMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Protect", "AllowFormattingColumns", "AllowFormattingRows"});
+		// you can find the documentation of this OLE method at 
+		// https://msdn.microsoft.com/EN-US/library/ff840611.aspx
+		int[] protectMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Protect", 
+				"AllowFormattingColumns", "AllowFormattingRows"});
 		
 		if (protectMethodIds == null) {
 			System.out.println("Method \"Protect\" of \"Worksheet\" OLE Object is not found!");
@@ -399,6 +406,7 @@ public class WorksheetUtils {
 			Variant result = worksheetAutomation.invoke(protectMethodIds[0], args, argsIds);	
 			if(result==null){
 				System.err.println("The worksheet.protect method returned null");
+				System.err.println(WorksheetUtils.getWorksheetName(worksheetAutomation));
 				System.exit(1);
 				// return false;
 			}
@@ -431,7 +439,10 @@ public class WorksheetUtils {
 		Variant result = worksheetAutomation.invoke(unprotectMethodIds[0]);
 
 		if(result==null){
-			return false;
+			System.err.println("The worksheet.unprotect method returned null");
+			System.err.println(WorksheetUtils.getWorksheetName(worksheetAutomation));
+			System.exit(1);
+			//return false;
 		}	
 		
 		result.dispose();
@@ -456,7 +467,8 @@ public class WorksheetUtils {
 		Variant result = worksheetAutomation.invoke(saveAsMethodIds[0], args, argsIds);
 		
 		if(result==null){
-			System.err.println("The worksheet.unprotect method returned null");
+			System.err.println("The Worksheet.SaveAs method returned null");
+			System.err.println(WorksheetUtils.getWorksheetName(worksheetAutomation));
 			System.exit(1);
 			// return false;
 		}

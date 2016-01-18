@@ -5,6 +5,7 @@ package de.tudresden.annotator.annotations.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -42,16 +43,11 @@ public class AnnotationHandler {
 	 * This object stores and provides access to all annotations that are created in the embedded workbook  
 	 */
 	private static final WorkbookAnnotation workbookAnnotation = new WorkbookAnnotation();
-	
 
-	/**
-	 * @return the workbookannotation
-	 */
-	public static WorkbookAnnotation getWorkbookAnnotation() {
-		return workbookAnnotation;
-	}
+	private static final LinkedList<RangeAnnotation> undoList = new LinkedList<RangeAnnotation>();
+	private static final LinkedList<RangeAnnotation> redoList = new LinkedList<RangeAnnotation>();
 
-	
+		
 	/**
 	 * Set up the structure for keeping the annotation data in memory. This means having a WorkbookAnnotation 
 	 * object for the embedded workbook, as well as an WorksheetAnnotation object for each sheet in the workbook.  
@@ -96,18 +92,26 @@ public class AnnotationHandler {
 	 */
 	public static AnnotationResult annotate(OleAutomation workbookAutomation, String sheetName, int sheetIndex,
 								String selectedAreas[], AnnotationClass annotationClass) {
-
+	
+		if(selectedAreas==null){
+			return new AnnotationResult(ValidationResult.NOSELECTION, "You have not selected a range!");
+		}
+		
 		// get the OleAutomation object for the worksheet using its name
 		OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
 
 		// unprotect the worksheet in order to create the annotations
 		WorksheetUtils.unprotectWorksheet(sheetAutomation);
-				
+							
 		// for each area in the range create an annotation
 		for (String selectedArea : selectedAreas) {
 			
 			// ensure that the range contains data (i.e., range not empty)
 			OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, selectedArea);
+			if(selectedAreaAuto==null){
+				continue;
+			}
+				
 			OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(workbookAutomation);
 			OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAuto);
 			
@@ -117,6 +121,7 @@ public class AnnotationHandler {
 			result.dispose();
 			if(notEmpty==0){
 				return new AnnotationResult(ValidationResult.EMPTY, "The selected range does not contain any value!");
+				
 			}
 				
 			// create annotation object			
@@ -151,6 +156,7 @@ public class AnnotationHandler {
 			
 			// add the annotation object in memory data structure
 			workbookAnnotation.addRangeAnnotation(ra);
+			addToUndoList(ra);
 		}		
 		
 		// protect the worksheet to prevent user from modifying the annotations
@@ -170,6 +176,7 @@ public class AnnotationHandler {
 	 * @return a string that represents the annotation name
 	 */
 	public static String generateAnnotationName(String sheetName, String classLabel, String rangeAddress){	
+		 
 		 String startOfAnnotationName = getStartOfAnnotationName(sheetName);
 		 String endofAnnotationName = classLabel+"_"+rangeAddress.replace("$", "").replace(":", "_");
 		 String formatedName = startOfAnnotationName+"_"+endofAnnotationName;
@@ -510,7 +517,7 @@ public class AnnotationHandler {
 	 * @param workbookAutomation an OleAutomation to access the functionalities of the embedded workbook
 	 * @param visible true to make annotation shapes visible, false to hide them
 	 */
-	public static void setVisilityForShapeAnnotations(OleAutomation workbookAutomation, boolean visible){
+	public static void setVisilityForAllAnnotations(OleAutomation workbookAutomation, boolean visible){
 		
 		OleAutomation worksheets = WorkbookUtils.getWorksheetsAutomation(workbookAutomation);
 		int count = CollectionsUtils.countItemsInCollection(worksheets);
@@ -518,7 +525,7 @@ public class AnnotationHandler {
 		// indexing starts from 1 
 		for (int i = 1; i < count; i++) {
 			OleAutomation sheet = CollectionsUtils.getItemByIndex(worksheets, i, false);
-			setVisibilityForWorksheetShapeAnnotations(sheet, visible);
+			setVisibilityForAnnotationsInSheet(sheet, visible);
 		}		
 	}
 	
@@ -531,7 +538,7 @@ public class AnnotationHandler {
 	 * @param sheetName the name of the worksheet for which the action will be performed
 	 * @param visible true to make annotation shapes visible, false to hide them
 	 */
-	public static void setVisibilityForWorksheetShapeAnnotations(OleAutomation workbookAutomation, String sheetName, boolean visible ){
+	public static void setVisibilityForAnnotationsInSheet(OleAutomation workbookAutomation, String sheetName, boolean visible ){
 		
 		// worksheet that stores the annotation (meta-)data does not have annotation shapes 
 		if(sheetName.compareTo(RangeAnnotationsSheet.name)==0)
@@ -539,7 +546,7 @@ public class AnnotationHandler {
 		
 		// get the OleAutomation object for the worksheet using the given name
 		OleAutomation worksheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
-		setVisibilityForWorksheetShapeAnnotations(worksheetAutomation, visible);
+		setVisibilityForAnnotationsInSheet(worksheetAutomation, visible);
 	}
 	
 	
@@ -550,7 +557,7 @@ public class AnnotationHandler {
 	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the worksheet that action will be applied on
 	 * @param visible true to make annotation shapes visible, false to hide them
 	 */
-	public static void setVisibilityForWorksheetShapeAnnotations(OleAutomation worksheetAutomation,  boolean visible){
+	public static void setVisibilityForAnnotationsInSheet(OleAutomation worksheetAutomation,  boolean visible){
 		
 		String sheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
 		
@@ -591,7 +598,7 @@ public class AnnotationHandler {
 	 * Delete all shapes in the embedded workbook that are used for annotating ranges of cells
 	 * @param workbookAutomation an OleAutomation to access the functionalities of the embedded workbook
 	 */
-	public static void deleteAllShapeAnnotations(OleAutomation workbookAutomation){
+	public static void deleteAllAnnotations(OleAutomation workbookAutomation){
 		
 		OleAutomation worksheets = WorkbookUtils.getWorksheetsAutomation(workbookAutomation);	
 		int i =1; 
@@ -599,7 +606,7 @@ public class AnnotationHandler {
 			OleAutomation sheet = CollectionsUtils.getItemByIndex(worksheets, i++, false);
 			if(sheet==null)
 				break;
-			deleteShapeAnnotationsFromWorksheet(sheet);
+			deleteAnnotationsFromSheet(sheet);
 		}
 	}
 	
@@ -609,7 +616,7 @@ public class AnnotationHandler {
 	 * @param workbookAutomation an OleAutomation to access the functionalities of the embedded workbook
 	 * @param sheetName the name of the worksheet for which the annotation shapes will be deleted
 	 */
-	public static void deleteShapeAnnotationsFromWorksheet(OleAutomation workbookAutomation, String sheetName ){
+	public static void deleteAnnotationsFromSheet(OleAutomation workbookAutomation, String sheetName ){
 		
 		// can not apply this method to the worksheet that stores the annotation (meta-)data, as it does not contain any shapes 
 		if(sheetName.compareTo(RangeAnnotationsSheet.name)==0)
@@ -617,7 +624,7 @@ public class AnnotationHandler {
 		
 		// get the OleAutomation object for the active worksheet using its name
 		OleAutomation worksheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
-		deleteShapeAnnotationsFromWorksheet(worksheetAutomation);
+		deleteAnnotationsFromSheet(worksheetAutomation);
 	}
 
 	
@@ -625,7 +632,7 @@ public class AnnotationHandler {
 	 * Delete all the shapes used for annotations in the given worksheet 
 	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the worksheet that action will be applied on
 	 */
-	public static void deleteShapeAnnotationsFromWorksheet(OleAutomation worksheetAutomation){
+	public static void deleteAnnotationsFromSheet(OleAutomation worksheetAutomation){
 		
 		String sheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
 		
@@ -665,5 +672,92 @@ public class AnnotationHandler {
 		// protect the worksheet from further user manipulation 
 		WorksheetUtils.protectWorksheet(worksheetAutomation);
 		worksheetAutomation.dispose();	
+	}
+		
+	public static boolean deleteAnnotationFromSheet(OleAutomation workbookAutomation, RangeAnnotation annotation){
+		
+		OleAutomation worksheetAutomation = 
+				WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, annotation.getSheetName());
+		
+		// unprotect the worksheet
+		WorksheetUtils.unprotectWorksheet(worksheetAutomation);
+
+		// delete all shapes that are used for annotating ranges of cells
+		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(worksheetAutomation);
+		
+		OleAutomation shapeAutomation = CollectionsUtils.getItemByName(shapesAutomation, annotation.getName(), true);	 
+		
+		boolean result = false; 
+		if(shapeAutomation!=null)
+			result = ShapeUtils.deleteShape(shapeAutomation);
+		
+		// protect the worksheet from further user manipulation 
+		WorksheetUtils.protectWorksheet(worksheetAutomation);
+				
+		shapeAutomation.dispose();
+		shapesAutomation.dispose();
+		worksheetAutomation.dispose();
+		
+		return result;
+	}
+	
+	public static void addToUndoList(RangeAnnotation annotation){
+		undoList.addLast(annotation);
+		if(undoList.size()>10)
+			undoList.removeFirst();
+	}
+	
+	public static void addToRedoList(RangeAnnotation annotation){
+		redoList.addLast(annotation);
+		if(redoList.size()>10)
+			redoList.removeFirst();
+	}
+	
+	public static void removeLastFromUndoList(){
+		RangeAnnotation annotation = undoList.removeLast();
+
+		if(annotation!=null){
+			workbookAnnotation.removeRangeAnnotation(annotation);
+		}
+	}
+	
+	public static RangeAnnotation getLastFromUndoList(){
+		if(!undoList.isEmpty()){
+			return undoList.getLast();
+		}else{
+			return null;
+		}
+	}
+		
+	public static void removeLastFromRedoList(){
+		RangeAnnotation annotation = redoList.removeLast();
+
+		if(annotation!=null){
+			workbookAnnotation.addRangeAnnotation(annotation);
+		}
+	}
+		
+	public static RangeAnnotation getLastFromRedoList(){
+		if(!redoList.isEmpty()){
+			return redoList.getLast();
+		}else{
+			return null;
+		}
+	}
+
+	public static void clearRedoList(){
+		redoList.clear();
+	}
+	
+	public static void clearUndoList(){
+		undoList.clear();
+	}
+	
+	
+	/**
+	 * @return the workbookannotation
+	 */
+	public static WorkbookAnnotation getWorkbookAnnotation() {
+		return workbookAnnotation;
 	}
 }
