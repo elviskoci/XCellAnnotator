@@ -107,7 +107,7 @@ public class WorksheetAnnotation extends DependentAnnotation<WorkbookAnnotation>
 	@Override 
 	public String toString() {
 		// JSONObject json = new JSONObject(this.allAnnotations);
-		return this.allAnnotations.toString(); 
+		return this.getSheetName()+" = "+this.allAnnotations.values(); 
 	}
 
 	

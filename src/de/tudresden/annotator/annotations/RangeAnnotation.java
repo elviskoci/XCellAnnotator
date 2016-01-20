@@ -105,13 +105,13 @@ public class RangeAnnotation extends DependentAnnotation<DependentAnnotation<?>>
 
 		
 	public static String generateKey(String sheetName, String classLabel, String rangeAddress) {
+		// TODO: Remove this method
 		return AnnotationHandler.getStartOfRangeAnnotationName(sheetName)+"_"+classLabel+"_"+rangeAddress;
 	}
 	
 	@Override 
-	public String toString() { 
-		//JSONObject json = new JSONObject(new ArrayList<RangeAnnotation>(this.getAllAnnotations()));
-		return this.allAnnotations.toString(); 
+	public String toString() {
+			return this.name+" = "+this.allAnnotations.values().toString();
 	}
 
 //	@Override

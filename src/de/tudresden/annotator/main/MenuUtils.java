@@ -223,6 +223,7 @@ public class MenuUtils {
 							menuItem.setEnabled(false);
 					}else{
 						if(menuItem.getID() == 2030000 ){ // File as
+							menuItem.setEnabled(true);
 							MenuItem[] submenus = menuItem.getMenu().getItems();
 							for (int i = 0; i < submenus.length; i++){
 								if(submenus[i].getID()==2030100){ // Not Applicable
@@ -297,6 +298,32 @@ public class MenuUtils {
 			}	
 		}		
 		adjustBarMenuForWorkbook();
+	}
+	
+	protected static void adjustBarMenuForFileClose(){
+		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		MenuItem[] menuItems = menuBar.getMenuItems();
+		
+		MenuItem fileMenu = null;
+		for (MenuItem menuItem : menuItems) {
+			
+			if(menuItem.getID()==1000000){ // file menu
+				fileMenu = menuItem;
+				fileMenu.setEnabled(true);
+			}else{
+				menuItem.setEnabled(true);
+				disableAllSubMenus(menuItem.getMenu());
+			}		
+		}
+		
+		MenuItem[] fileMenuItems = fileMenu.getMenu().getItems();
+		for (MenuItem menuItem : fileMenuItems) {
+			if(menuItem.getID() == 1010000 || menuItem.getID() == 1070000){ // Open and Exit
+				menuItem.setEnabled(true);
+			}else{
+				menuItem.setEnabled(false);
+			}
+		}
 	}
 	
 	private static void enableAllSubMenus(Menu cascadeMenu){

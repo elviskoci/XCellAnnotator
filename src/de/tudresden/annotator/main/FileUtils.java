@@ -35,19 +35,13 @@ public class FileUtils {
 	 * @return
 	 */
 	public static boolean saveProgress(OleAutomation embeddedWorkbook, String filePath){
-		
-//		boolean isSaved = WorkbookUtils.isWorkbookSaved(embeddedWorkbook);
-//		if(isSaved){
-//			System.out.println("There are no changes since last save");
-//			return false;
-//		}
-		
-		//delete all shape annotations
-		AnnotationHandler.deleteAllAnnotations(embeddedWorkbook);
-		
+				 
 		// save the status of all worksheet annotations and the workbook annotation 
 		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);
-				
+		
+		//delete all shape annotations
+		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
+						
 		//unprotect the workbook structure and all the worksheets
 		WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
 		WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
@@ -63,14 +57,15 @@ public class FileUtils {
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
-		
-		// make range_annotations sheet again visible
-		RangeAnnotationsSheet.setVisibility(embeddedWorkbook, true);
+			
 		// draw again the range annotations  
 		Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
 		RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
 		AnnotationHandler.drawManyRangeAnnotations(embeddedWorkbook, rangeAnnotations);
 		
+		// make range_annotations sheet again visible
+		RangeAnnotationsSheet.setVisibility(embeddedWorkbook, true);
+
 		// protect again the workbook structure and the individual sheets
 		WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);
 		WorkbookUtils.protectAllWorksheets(embeddedWorkbook);
@@ -104,8 +99,7 @@ public class FileUtils {
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
-		}
-		
+		}	
 		return true;
 	}
 	

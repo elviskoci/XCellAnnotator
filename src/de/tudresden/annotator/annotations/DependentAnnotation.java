@@ -5,6 +5,7 @@ package de.tudresden.annotator.annotations;
 
 /**
  * @author Elvis Koci
+ * @param <P> The class of the object that acts as the Parent Annotation 
  */
 public abstract class DependentAnnotation< P extends Annotation<?>> extends Annotation<RangeAnnotation>{
 

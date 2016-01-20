@@ -157,10 +157,10 @@ public class RangeAnnotationsSheet {
 	/**
 	 * Read all annotation data from the "Annotation Data" Sheet 
 	 * @param workbookAutomation an OleAutomation that provides access to the embedded workbook
-	 * @return null if the range annotations data could not be read, otherwise the WorkbookAnnotation 
-	 * that maintains all retrieved annotations and their dependences 
+	 * @return null if the range annotations data could not be read, otherwise an array of 
+	 * all recovered range annotations and their dependences 
 	 */
-	public static WorkbookAnnotation readRangeAnnotations(OleAutomation workbookAutomation){
+	public static RangeAnnotation[] readRangeAnnotations(OleAutomation workbookAutomation){
 		
 		// get the OleAutomation object for the sheet that stores 
 		// the annotation metadata (a.k.a. annotation data sheet) 
@@ -171,7 +171,8 @@ public class RangeAnnotationsSheet {
 		if(annotationDataSheet==null)
 			return null;
 		
-		// get the range that has data 
+		// TODO: Use special cells instead
+		// get the range that has data. check that it is not empty
 		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheet);
 		if(usedRange==null){
 			int style = SWT.ICON_ERROR;
@@ -182,7 +183,7 @@ public class RangeAnnotationsSheet {
 			return null;
 		}
 		
-		// get used areas 
+		// get used areas. check that there is only one such area
 		OleAutomation usedAreas = RangeUtils.getAreas(usedRange);
 		int countAreas = CollectionsUtils.countItemsInCollection(usedAreas);
 		usedAreas.dispose();
@@ -196,7 +197,8 @@ public class RangeAnnotationsSheet {
 			message.open();
 			return null;
 		}
-			
+		
+		// get the bounding rows and columns 
 		String usedRangeAddress = RangeUtils.getRangeAddress(usedRange);
 		usedRange.dispose();
 		
@@ -208,26 +210,49 @@ public class RangeAnnotationsSheet {
 		String downRightColumn = downRightCell.replaceAll("[0-9\\$]+","");
 		int downRightRow = Integer.valueOf(downRightCell.replaceAll("[^0-9]+",""));
 		
+		// ensure that the header row contains all the expected fields
+		// if all required fields are present, save their order
 		validateHeaderRow(annotationDataSheet, topLeftRow, topLeftColumn, downRightColumn);
 		
-		// create a temporary copy of the WorkbookAnnotation from AnnotationHandler class 
+		// read all the data rows and re-create the range annotations and their dependencies
+		LinkedHashMap<String, RangeAnnotation> rangeAnnotations = new LinkedHashMap<String, RangeAnnotation>();	
 		WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
-		WorkbookAnnotation temp = new WorkbookAnnotation();
-		temp.setWorkbookName(wa.getWorkbookName());
-		temp.getWorksheetAnnotations().putAll(wa.getWorksheetAnnotations());
-
 		for (int i = (topLeftRow + 1); i <=downRightRow; i++) {
-			RangeAnnotation ra = readDataRow(annotationDataSheet, temp, i, topLeftColumn, downRightColumn);
-			temp.addRangeAnnotation(ra);
+			
+			String[] rangeAnnotationData = readDataRow(annotationDataSheet, i, topLeftColumn, downRightColumn);
+			
+			//re-create the range annotation object
+			AnnotationClass annotationClass = ClassGenerator.getAnnotationClasses().get(rangeAnnotationData[2]);	
+			RangeAnnotation annotation = new RangeAnnotation(rangeAnnotationData[0], Integer.valueOf(rangeAnnotationData[1]), 
+									annotationClass, rangeAnnotationData[3], rangeAnnotationData[4]); 
+			
+			// set the parent annotation
+			boolean hasParent = false;
+			RangeAnnotation parentAnnotation = rangeAnnotations.get(rangeAnnotationData[5]);
+			if(parentAnnotation != null){
+				annotation.setParent(parentAnnotation);
+				hasParent = true;
+			}else{
+				WorksheetAnnotation sa = wa.getWorksheetAnnotations().get(annotation.getSheetName());
+				if(sa!=null){
+					annotation.setParent(sa);
+					hasParent = true;
+				}
+			}
+			
+			// if parent not found, discard the range annotation
+			if(hasParent){
+				rangeAnnotations.put(annotation.getName(), annotation);
+			}
 		}
-		
-		return temp;
+			
+		return rangeAnnotations.values().toArray(new RangeAnnotation[rangeAnnotations.size()]);
 	}
 	
 	
 	/**
 	 * Validate header row. It should contain all the expected (predefined) fields  
-	 * @param annotationDataSheet an OleAutomation to access the functionalities of the worksheet that stores the annotation data
+	 * @param annotationDataSheet an OleAutomation to access the functionalities of the sheet that stores the annotation data
 	 * @param topLeftRow an integer that represents the address of the top left row
 	 * @param topLeftColumn a string that represents the address of the column on the top left
 	 * @param downRightColumn a string that represents the address of the column on the down right
@@ -289,16 +314,14 @@ public class RangeAnnotationsSheet {
 	
 	
 	/**
-	 * Read a row of annotation data and re-create the RangeAnnotation object
+	 * Read a row of range annotation data.
 	 * @param annotationDataSheet an OleAutomation to access the functionalities of the worksheet that stores the annotation data
-	 * @param workbookAnnotation a WorkbookAnnotation object that holds all the annotations and their dependencies
 	 * @param row an integer that represents the row to be read
 	 * @param startColumn a string that represents the column to start the reading
 	 * @param endColumn a string that represents the column to end the reading
-	 * @return a RangeAnnotation object that is created using the data read from the row
+	 * @return an array of string values that represent the range annotation data in the standard order.
 	 */
-	protected static RangeAnnotation readDataRow(OleAutomation annotationDataSheet, WorkbookAnnotation workbookAnnotation,
-																				int row, String startColumn, String endColumn){		
+	protected static String[] readDataRow(OleAutomation annotationDataSheet, int row, String startColumn, String endColumn){		
 		
 		// get the values of the cells in the given row, bounded by the start and the end column.   
 		String topLeftCell = startColumn+row;
@@ -306,55 +329,19 @@ public class RangeAnnotationsSheet {
 		OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(annotationDataSheet, topLeftCell, downRightCell);
 		String values[] = RangeUtils.getRangeValues(rangeAutomation);
 		rangeAutomation.dispose();
+	
+		// create an array of values in the standard order
+		String [] rangeAnnotationData = new String[fields.size()];
 		
-		// create a RangeAnnotation object from the annotation data in the row.
-		String sheetName = values[fields.get("Sheet.Name")];
-		int sheetIndex = Integer.valueOf(values[fields.get("Sheet.Index")]);
-		String annotationLabel = values[fields.get("Annotation.Label")];
-		String annotationName = values[fields.get("Annotation.Name")];
-		String rangeAddress =  values[ fields.get("Annotation.Range")];
-		String parent = values[ fields.get("Annotation.Parent")];				
+		rangeAnnotationData[0] = values[fields.get("Sheet.Name")];
+		rangeAnnotationData[1] = values[fields.get("Sheet.Index")];
+		rangeAnnotationData[2] = values[fields.get("Annotation.Label")];
+		rangeAnnotationData[3] = values[fields.get("Annotation.Name")];
+		rangeAnnotationData[4] = values[fields.get("Annotation.Range")];
+		rangeAnnotationData[5] = values[fields.get("Annotation.Parent")];
 		
-		AnnotationClass annotationClass = ClassGenerator.getAnnotationClasses().get(annotationLabel);		
-		RangeAnnotation annotation = new RangeAnnotation(sheetName, sheetIndex, annotationClass, annotationName, rangeAddress); 
-		
-		// set the parent of the RangeAutomation object 
-		if(!annotationClass.isContainable()){	
-			WorksheetAnnotation worksheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(parent);
-			if(worksheetAnnotation == null){
-				workbookAnnotation.getWorksheetAnnotations().put(sheetName, new WorksheetAnnotation(sheetName, sheetIndex));
-			}
-			annotation.setParent(worksheetAnnotation);
-		}else{		
-			if(annotationClass.isDependent()){
-				AnnotationClass parentClass = annotationClass.getContainer();
-				for (RangeAnnotation ra : workbookAnnotation.getSheetAnnotationsByClass(sheetName, parentClass.getLabel())){
-					if(ra.getName().compareTo(parent)==0){
-						annotation.setParent(ra);
-						break;
-					}
-				}
-			}else{
-				WorksheetAnnotation worksheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(parent);
-				if(worksheetAnnotation == null){
-					Iterator<AnnotationClass> itr = ClassGenerator.getAnnotationClasses().values().iterator();
-					while (itr.hasNext()) {
-						AnnotationClass ac = (AnnotationClass) itr.next();
-						if(ac.isContainer()){
-							for (RangeAnnotation ra : workbookAnnotation.getSheetAnnotationsByClass(sheetName, ac.getLabel())){
-								if(ra.getName().compareTo(parent)==0){
-									annotation.setParent(ra);
-									break;
-								}
-							}								
-						}
-					}
-				}else{
-					annotation.setParent(worksheetAnnotation);	
-				}
-			}
-		}		
-		return annotation;
+		return rangeAnnotationData;
+	
 	}
 	
 	/**

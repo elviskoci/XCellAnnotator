@@ -5,11 +5,11 @@ package de.tudresden.annotator.annotations;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 /**
  * This class represents an abstract annotation in a spreadsheet  
  * @author Elvis Koci
- * @param <P> The class of the object that acts as the Parent Annotation 
  * @param <T> The class of the objects that act as children (dependent) Annotations  
  */
 public abstract class Annotation < T extends Annotation<?>>{
@@ -17,18 +17,18 @@ public abstract class Annotation < T extends Annotation<?>>{
 	/*
 	 * A hash map that organizes (buckets) annotations by class label 
 	 */
-	protected HashMap <String, HashMap<String, T>> annotationsByClass ; 
+	protected HashMap <String, LinkedHashMap<String, T>> annotationsByClass ; 
 	
 	/*
-	 * A hashmap that stores all the annotations that are contained by this annotation
-	 * In other words, all annotations in the hashmap depend on this annotation object.  
+	 * A linkedhashmap that stores all the annotations that are contained by this annotation
+	 * In other words, all annotations in the linkedhashmap depend on this annotation object.  
 	 */
-	protected HashMap <String, T> allAnnotations;
+	protected LinkedHashMap <String, T> allAnnotations;
 	
 	
 	public Annotation(){
-		this.annotationsByClass =  new HashMap<String, HashMap<String, T>>();
-		this.allAnnotations =  new HashMap<String, T>();
+		this.annotationsByClass =  new HashMap<String, LinkedHashMap<String, T>>();
+		this.allAnnotations =  new LinkedHashMap<String, T>();
 	}
 	
 	/**
@@ -89,9 +89,9 @@ public abstract class Annotation < T extends Annotation<?>>{
 	 * @param annotation an object that represents the annotation to add
 	 */
 	public void addAnnotationToBucket(String classLabel, String key, T annotation){
-		HashMap<String, T>  map = annotationsByClass.get(classLabel);
+		LinkedHashMap<String, T>  map = annotationsByClass.get(classLabel);
 		if(map == null){
-			map = new HashMap<String, T>();
+			map = new LinkedHashMap<String, T>();
 		}
 		
 		map.put(key, annotation);
@@ -121,7 +121,7 @@ public abstract class Annotation < T extends Annotation<?>>{
 	 */
 	public void removeAllAnnotationsOfClass(String classLabel){
 		
-		HashMap<String, T>  map = annotationsByClass.get(classLabel);
+		LinkedHashMap<String, T>  map = annotationsByClass.get(classLabel);
 		
 		if(map == null)
 			return;

@@ -172,6 +172,11 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 		sheetAnnotation.removeAnnotation(rangeAnnotation.getName());
 		sheetAnnotation.removeAnnotationFromBucket(classLabel, rangeAnnotation.getName());
 		
+		if(rangeAnnotation.getParent() instanceof RangeAnnotation){
+			rangeAnnotation.getParent().removeAnnotation(rangeAnnotation.getName());
+			rangeAnnotation.getParent().removeAnnotationFromBucket(classLabel, rangeAnnotation.getName());
+		}
+		
 		this.removeAnnotation(rangeAnnotation.getName());
 		this.removeAnnotationFromBucket(classLabel, rangeAnnotation.getName());
 	}
@@ -188,6 +193,14 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 		
 		if(sheetAnnotation==null)
 			return;
+		
+		DependentAnnotation<?> parent = sheetAnnotation.getAnnotation(annotationKey).getParent();
+		
+		if(parent instanceof RangeAnnotation){	
+			parent = (RangeAnnotation) parent;
+			parent.removeAnnotation(annotationKey);
+			parent.removeAnnotationFromBucket(classLabel, annotationKey);
+		}
 		
 		sheetAnnotation.removeAnnotation(annotationKey);
 		sheetAnnotation.removeAnnotationFromBucket(classLabel, annotationKey);
@@ -209,6 +222,13 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 			return;
 		
 		String classLabel = sheetAnnotation.getAnnotation(rangeAnnotationKey).getAnnotationClass().getLabel();
+		DependentAnnotation<?> parent = sheetAnnotation.getAnnotation(rangeAnnotationKey).getParent();
+		
+		if(parent instanceof RangeAnnotation){	
+			RangeAnnotation parentAnnotation = (RangeAnnotation) parent;
+			parentAnnotation.removeAnnotation(rangeAnnotationKey);
+			parentAnnotation.removeAnnotationFromBucket(classLabel, rangeAnnotationKey);
+		}
 		
 		sheetAnnotation.removeAnnotation(rangeAnnotationKey);
 		sheetAnnotation.removeAnnotationFromBucket(classLabel, rangeAnnotationKey);
@@ -319,7 +339,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	@Override
 	public String toString() {
 		//JSONObject json = new JSONObject(worksheetAnnotations);
-		return this.worksheetAnnotations.toString();
+		return this.worksheetAnnotations.values().toString();
 	}
 	
 	
