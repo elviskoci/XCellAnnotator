@@ -3,6 +3,10 @@
  */
 package de.tudresden.annotator.main;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -20,10 +24,8 @@ import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
-import de.tudresden.annotator.annotations.utils.AnnotationResult;
 import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
 import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
-import de.tudresden.annotator.annotations.utils.ValidationResult;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
@@ -155,17 +157,24 @@ public class GUIListeners {
 				String sheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
 				int sheetIndex = WorksheetUtils.getWorksheetIndex(worksheetAutomation);
 
-				
+				// update the information about the active sheet
 				MainWindow.getInstance().setActiveWorksheetName(sheetName);
 				MainWindow.getInstance().setActiveWorksheetIndex(sheetIndex);
+				// should not remember selection from previous sheet
+				MainWindow.getInstance().setCurrentSelection(null); 
 				args[0].dispose();
 				worksheetAutomation.dispose();
+								
+				// Redo and Undo per sheet
+				AnnotationHandler.clearRedoList();
+				AnnotationHandler.clearUndoList();
 				
-				// adjust the bar menu according to the properties of this worksheet
-				MenuUtils.adjustBarMenuForSheet(sheetName);		
+				// adjust the bar menu according to the properties of the workbook and the active sheet
+				MenuUtils.adjustBarMenuForWorkbook();		
 								
 				// return the focus to the embedded excel workbook, if it does not have it already
-				MainWindow.getInstance().setFocusToControlSite();	
+				if(!MainWindow.getInstance().isControlSiteFocusControl())
+					MainWindow.getInstance().setFocusToControlSite();	
 	        }
 	    };	       
 	    return listener;
@@ -219,23 +228,37 @@ public class GUIListeners {
 				if (workbookAutomation == null) {
 					return; // there is no embedded workbook (file)
 				}
-				
-				
+								
 				// clear all existing annotations in memory structure, 
 				// if they exist from the previously opened file 
 				AnnotationHandler.getWorkbookAnnotation().removeAllAnnotations();
 		
 				// create the base in memory structure for storing annotation data
-				// AnnotationHandler.createBaseAnnotations(workbookAutomation);
-				
+				// retrieve the annotation statuses from previous session
 				AnnotationStatusSheet.readAnnotationStatuses(workbookAutomation);
 				
 				// read the annotation data and recreate in memory structure
-				RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
+				WorkbookAnnotation temp = RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
+				if(temp!=null){	
+					Collection<RangeAnnotation> collection = temp.getAllAnnotations();
+					// ArrayList<RangeAnnotation> list = new ArrayList<RangeAnnotation>(collection);
+					System.out.println("from collection\n"); 
+					for (RangeAnnotation rangeAnnotation : collection) {
+						System.out.println(rangeAnnotation.getName());
+					}
+					return;
 				
-				// re-draw all the annotation in memory structure 
-				AnnotationHandler.drawAllAnnotations(workbookAutomation);								
-				
+//					RangeAnnotation[] rangeAnnotations =  list.toArray(new RangeAnnotation[collection.size()]);
+//					
+//					//System.out.println(collection.size());
+//					
+//					// re-draw all the annotation in memory structure 
+//					boolean result = AnnotationHandler.drawManyRangeAnnotations(workbookAutomation, rangeAnnotations);	
+//					if(result){
+//						WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
+//						wa.getWorksheetAnnotations().putAll(temp.getWorksheetAnnotations());
+//					}
+				}
 				// adjust the menu items in the menu bar for the file that was just openned
 				MenuUtils.adjustBarMenuForOpennedFile();
 			}
@@ -265,10 +288,10 @@ public class GUIListeners {
 					AnnotationHandler.clearRedoList();
 					AnnotationHandler.clearUndoList();
 					
-            		int style = SWT.ICON_INFORMATION;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
-					message.setMessage("The file was successfully saved.");
-					message.open();
+            		// int style = SWT.ICON_INFORMATION;
+					// MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					// message.setMessage("The file was successfully saved.");
+					// message.open();
 				}else{
 					int style = SWT.ICON_ERROR;
 					MessageBox message = MainWindow.getInstance().createMessageBox(style);
@@ -564,26 +587,11 @@ public class GUIListeners {
 				 int sheetIndex = MainWindow.getInstance().getActiveWorksheetIndex();
 				 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
 
-				 AnnotationResult  result=  
-						 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
+				 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
 				 		 currentSelection, annotationClass);				 
-				 
-				 if(result.getValidationResult()!=ValidationResult.OK){
-					
-					OleAutomation activeSheetAuto = 
-							WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
-					
-					// protect the worksheet to prevent user from modifying the annotations
-				    WorksheetUtils.protectWorksheet(activeSheetAuto);
-					WorksheetUtils.makeWorksheetActive(activeSheetAuto);
-						
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
-	 	            messageBox.setMessage(result.getMessage());
-	 	            messageBox.open();
-				 }
-				 
+				 	 
 				 // if the sheet was empty, had no annotations, 
-				 // sthe menu needs to be updated
+				 // the menu needs to be updated
 				 MenuUtils.adjustBarMenuForSheet(sheetName);
 				 
 				 if(MainWindow.getInstance().isControlSiteFocusControl())
@@ -592,6 +600,10 @@ public class GUIListeners {
 		};
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	protected static SelectionListener createUndoLastAnnotationSelectionListener(){
 		return new SelectionAdapter() {
 			@Override
@@ -603,13 +615,19 @@ public class GUIListeners {
 				
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook(); 
 				
-				boolean isSuccess = AnnotationHandler.deleteAnnotationFromSheet(workbookAutomation, ra);
+				OleAutomation worksheetAutomation = 
+						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
+				
+				WorksheetUtils.unprotectWorksheet(worksheetAutomation);		
+				boolean isSuccess = AnnotationHandler.deleteAnnotationFromSheet(worksheetAutomation, ra);
+				WorksheetUtils.protectWorksheet(worksheetAutomation);
+				worksheetAutomation.dispose();
+				
 				if(isSuccess){
 					AnnotationHandler.removeLastFromUndoList();
 					AnnotationHandler.addToRedoList(ra);
-				
+						
 					RangeAnnotationsSheet.deleteRangeAnnotationData(workbookAutomation, ra, true);
-
 				}else{
 					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
 	 	            messageBox.setMessage("Could not undo the last range annotation!!!");
@@ -621,7 +639,10 @@ public class GUIListeners {
 		};
 	}	
 	
-	
+	/**
+	 * 
+	 * @return
+	 */
 	protected static SelectionListener createRedoLastAnnotationSelectionListener(){
 		return new SelectionAdapter() {
 			@Override
@@ -629,7 +650,6 @@ public class GUIListeners {
 				
 				RangeAnnotation  ra = AnnotationHandler.getLastFromRedoList();		
 				if(ra==null){
-					MenuUtils.adjustBarMenuForSheet(ra.getSheetName());
 					return;
 				}
 				
@@ -637,16 +657,20 @@ public class GUIListeners {
 				OleAutomation worksheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 				
-				WorksheetUtils.unprotectWorksheet(worksheetAutomation);
-				AnnotationHandler.drawAnnotation(workbookAutomation, ra);
+				WorksheetUtils.unprotectWorksheet(worksheetAutomation);		
+				Boolean result = AnnotationHandler.drawRangeAnnotation(workbookAutomation, ra);
 				WorksheetUtils.protectWorksheet(worksheetAutomation);
+				worksheetAutomation.dispose();
 				
 				AnnotationHandler.removeLastFromRedoList();
+				if(!result){
+					return;
+				}
+				
 				AnnotationHandler.addToUndoList(ra);
 				
 				RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);
-				MenuUtils.adjustBarMenuForSheet(ra.getSheetName());
-				
+				MenuUtils.adjustBarMenuForSheet(ra.getSheetName());			
 			}
 		};
 	}	
@@ -689,7 +713,8 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
-
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				
 				AnnotationHandler.deleteAllAnnotations(workbookAutomation);
 				
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
@@ -699,6 +724,8 @@ public class GUIListeners {
 				
 				AnnotationHandler.clearRedoList();
 				AnnotationHandler.clearUndoList();
+				
+				MenuUtils.adjustBarMenuForSheet(sheetName);
 			}
 		};
 	}
@@ -724,6 +751,8 @@ public class GUIListeners {
 				
 				AnnotationHandler.clearRedoList();
 				AnnotationHandler.clearUndoList();
+				
+				MenuUtils.adjustBarMenuForSheet(sheetName);
 			}
 		};
 	}

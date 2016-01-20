@@ -57,31 +57,41 @@ public class AnnotationStatusSheet {
 		annotationStatusSheet.dispose();
 	}
 	
-	
+	/**
+	 * Read the annotation status data stored in the sheet.
+	 * @param workbookAutomation an OleAutomation to access the embedded workbook functionalities
+	 */
 	public static void readAnnotationStatuses(OleAutomation workbookAutomation){
 		
+		// get the automation for the annotation_status sheet
 		OleAutomation annotationStatusSheet =  WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
+		
+		// create the base in memory structure to save the annotation objects 
 		AnnotationHandler.createBaseAnnotations(workbookAutomation);
+		
+		// if the sheet that stores the annotation statuses does not exist, return 
+		// there are no data to read. the default status applies
 		if(annotationStatusSheet==null){		
 			return;
 		}
 		
+		// ensure that the annotation_status sheet has the expected format
 		if(!validateAnnotationStatusSheet(annotationStatusSheet)){
 			return;
 		}
 		
+		// read the workbook annotation status data 
 		if(!readWorkbookAnnotationStatus(annotationStatusSheet)){
 			return;
 		}
 		
+		// read the annotation status data for each sheet
 		readWorksheetAnnotationsStatuses(annotationStatusSheet);
 	}
 	
-	
-	
 	/**
 	 * Create the sheet that will store the status of the annotation for the workbook and the individual worksheets 
-	 * @param workbookAutomation an OleAutomation to access the embedded workbook
+	 * @param workbookAutomation an OleAutomation to access the embedded workbook functionalities
 	 * @return the OleAutomation of the created Annotation_Status sheet
 	 */
 	private static OleAutomation createAnnotationStatusSheet(OleAutomation workbookAutomation){
@@ -128,6 +138,7 @@ public class AnnotationStatusSheet {
 	 * @param isCompleted a boolean value that specifies if the annotation (worksheet or workbook) is completed or not
 	 * @param isNotApplicable a boolean value that specifies if the annotation (worksheet or workbook) is applicable or not
 	 */
+	@SuppressWarnings("unused")
 	private static void writeNewDataRow(OleAutomation annotationStatusSheet, int row, String name, 
 														boolean isCompleted, boolean isNotApplicable){		
 		
@@ -154,6 +165,7 @@ public class AnnotationStatusSheet {
 	 * @param row an integer that represents the index of the row from where to start writing the data
 	 * @param worksheetAnnotations an array of WorksheetAnnotations
 	 */
+	@SuppressWarnings("unused")
 	private static void writeManyWorksheetAnnotationStatuses(OleAutomation annotationStatusSheet, int row, WorksheetAnnotation[] worksheetAnnotations){
 		
 		WorksheetUtils.unprotectWorksheet(annotationStatusSheet);
@@ -286,12 +298,12 @@ public class AnnotationStatusSheet {
 	private static boolean readWorkbookAnnotationStatus(OleAutomation annotationStatusSheet){
 		
 		WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
-		String topLeftCell = "$"+startColumnChar+"$"+(startRow+1);
-		OleAutomation topRightCellAuto = WorksheetUtils.getCell(annotationStatusSheet, (startRow+1), startColumnIndex+2);
-		String downLeftCell = RangeUtils.getRangeAddress(topRightCellAuto);
-		topRightCellAuto.dispose();
+		String startCell = "$"+startColumnChar+"$"+(startRow+1);
+		OleAutomation endCellAuto = WorksheetUtils.getCell(annotationStatusSheet, (startRow+1), startColumnIndex+2);
+		String endCell = RangeUtils.getRangeAddress(endCellAuto);
+		endCellAuto.dispose();
 		
-		OleAutomation workbookStatusRow = WorksheetUtils.getRangeAutomation(annotationStatusSheet, topLeftCell, downLeftCell);
+		OleAutomation workbookStatusRow = WorksheetUtils.getRangeAutomation(annotationStatusSheet, startCell, endCell);
 		String[] values= RangeUtils.getRangeValues(workbookStatusRow);
 		workbookStatusRow.dispose();
 		
@@ -299,9 +311,9 @@ public class AnnotationStatusSheet {
 			return false;
 		}
 		
-		boolean isCompleted = Integer.valueOf(values[1])==1;
+		boolean isCompleted = Integer.valueOf(values[1])==-1; // excel translates boolean TRUE as integer -1 
 		wa.setCompleted(isCompleted);
-		boolean isNotApplicable = Integer.valueOf(values[2])==1;
+		boolean isNotApplicable = Integer.valueOf(values[2])==-1;
 		wa.setNotApplicable(isNotApplicable);
 			
 		return true;	
@@ -343,7 +355,7 @@ public class AnnotationStatusSheet {
 			if(sheetAnnotation!=null){
 				boolean isCompleted = Integer.valueOf(values[1])==-1;
 				sheetAnnotation.setCompleted(isCompleted);
-				boolean isNotApplicable = Integer.valueOf(values[2])==-1;
+				boolean isNotApplicable = Integer.valueOf(values[2])==-1; // excel translates boolean TRUE as integer -1
 				sheetAnnotation.setNotApplicable(isNotApplicable);
 			}
 			
@@ -389,6 +401,60 @@ public class AnnotationStatusSheet {
 		}
 		
 		return true;
+	}
+	
+	
+	/**
+	 * Hide/Show the sheet that stores the annotation statuses
+	 * @param embeddedWorkbook an OleAutomation that is used to access the functionalities of the workbook that is currently embedded by the application
+	 * @param visible true to show the sheet, false to hide it
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean setVisibility(OleAutomation embeddedWorkbook, boolean visible){
+		
+		OleAutomation annotationStatusSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(annotationStatusSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.setWorksheetVisibility(annotationStatusSheet, visible);
+		annotationStatusSheet.dispose();
+		return result;
+	}
+	
+	
+	/**
+	 * Protect the sheet that stores the annotation status
+	 * @param embeddedWorkbook an OleAutomation that is used to access the functionalities of the workbook that is currently embedded by the application
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean protect(OleAutomation embeddedWorkbook){
+		
+		OleAutomation annotationStatusSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(annotationStatusSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.protectWorksheet(annotationStatusSheet);
+		annotationStatusSheet.dispose();
+		return result;
+	}
+	
+	/**
+	 * Unprotect the sheet that stores the annotation status
+	 * @param embeddedWorkbook an OleAutomation that is used to access the functionalities of the workbook that is currently embedded by the application
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean unprotect(OleAutomation embeddedWorkbook){
+		
+		OleAutomation annotationStatusSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(annotationStatusSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.unprotectWorksheet(annotationStatusSheet);
+		annotationStatusSheet.dispose();
+		return result;
 	}
 	
 	/**

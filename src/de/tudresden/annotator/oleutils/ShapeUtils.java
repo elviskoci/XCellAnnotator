@@ -38,13 +38,13 @@ public class ShapeUtils {
 		}
 		
 		OleAutomation textboxAutomation = null;
-		if(textboxVariant!=null){
-			textboxAutomation = textboxVariant.getAutomation();
-			textboxVariant.dispose();
-		}else{
-			System.out.println("ERROR: Failed to draw textbox annotation!!!");
-			System.exit(1);
-		}
+//		if(textboxVariant!=null){
+		textboxAutomation = textboxVariant.getAutomation();
+		textboxVariant.dispose();
+//		}else{
+//			System.out.println("ERROR: Failed to draw textbox annotation!!!");
+//			System.exit(1);
+//		}
 		
 		return textboxAutomation;
 	}

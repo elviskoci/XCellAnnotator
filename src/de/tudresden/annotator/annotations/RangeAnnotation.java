@@ -105,7 +105,7 @@ public class RangeAnnotation extends DependentAnnotation<DependentAnnotation<?>>
 
 		
 	public static String generateKey(String sheetName, String classLabel, String rangeAddress) {
-		return AnnotationHandler.getStartOfAnnotationName(sheetName)+"_"+classLabel+"_"+rangeAddress;
+		return AnnotationHandler.getStartOfRangeAnnotationName(sheetName)+"_"+classLabel+"_"+rangeAddress;
 	}
 	
 	@Override 

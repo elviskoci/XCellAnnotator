@@ -7,6 +7,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
@@ -14,9 +15,10 @@ import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
 
-import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
-import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
+import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
+import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
+import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 
 /**
@@ -49,46 +51,29 @@ public class FileUtils {
 		//unprotect the workbook structure and all the worksheets
 		WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
 		WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
-		
-//		boolean isUnprotected = WorkbookUtils.unprotectWorkbook(embeddedWorkbook);		
-//		if(!isUnprotected){
-//			System.out.println("ERROR: Could not unprotect the workbook. Operation failed!");
-//			return false;
-//		}
-//
-// 		boolean areUnprotected =WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
-//		if(!areUnprotected){
-//			System.out.println("ERROR: Could not unprotect all worksheets. Operation failed!");
-//			return false;
-//		}
-		
+
 		// protect and hide the range_annotations sheet before save
 		RangeAnnotationsSheet.protect(embeddedWorkbook);
 		RangeAnnotationsSheet.setVisibility(embeddedWorkbook, false);
 		
+		// protect the annotation_status sheet before save
+		AnnotationStatusSheet.protect(embeddedWorkbook);
 		
 		
+		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
+		
+		// make range_annotations sheet again visible
 		RangeAnnotationsSheet.setVisibility(embeddedWorkbook, true);
 		// draw again the range annotations  
-		AnnotationHandler.drawAllAnnotations(embeddedWorkbook);
+		Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
+		RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
+		AnnotationHandler.drawManyRangeAnnotations(embeddedWorkbook, rangeAnnotations);
 		
-		
+		// protect again the workbook structure and the individual sheets
 		WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);
 		WorkbookUtils.protectAllWorksheets(embeddedWorkbook);
-
-//		boolean isProtected = WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);
-//		if(!isProtected){
-//			System.out.println("ERROR: Could not protect the workbook. Operation failed!");
-//			return false;
-//		}
-//		
-//		boolean areProtected = WorkbookUtils.protectAllWorksheets(embeddedWorkbook);
-//		if(!areProtected){
-//			System.out.println("ERROR: Could not protect all worksheets. Operation failed!");
-//			return false;
-//		}
 		
 		return isSuccess;
 	}

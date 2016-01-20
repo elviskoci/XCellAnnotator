@@ -94,7 +94,7 @@ public class MainWindow {
 		this.shell.setText("Annotator");
 	    this.shell.setLayout(new FillLayout());
 	    //this.shell.setSize(1600, 800);
-	    this.shell.setSize(1400, 600);
+	    this.shell.setSize(1500, 650);
 	    // add listener for the close event ( user clicks the close button (X) )
 	    this.shell.addListener(SWT.Close, GUIListeners.createCloseApplicationEventListener());
 	    
@@ -195,9 +195,19 @@ public class MainWindow {
 			System.exit(1);
 		}
 		
+//	     OleAutomation applicationBeforeActivation = ApplicationUtils.getApplicationAutomation(getControlSite());	    
+//	     suppress alerts for excel application
+//	     ApplicationUtils.setDisplayAlerts(applicationBeforeActivation, false);
+	    
+		// activate and display excel workbook
+		getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
 		
-	    OleAutomation applicationBeforeActivation = ApplicationUtils.getApplicationAutomation(getControlSite());
-	    if(applicationBeforeActivation==null){
+		setDirectoryPath(excelFile.getParent());
+		setFileName(excelFile.getName());
+		
+		// get excel application as OLE automation object
+	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
+	    if(application==null){
 	    	int style = SWT.ERROR;
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
 			message.setMessage("Something went wrong!!! Please take the following actions.\n\n"
@@ -212,18 +222,8 @@ public class MainWindow {
 			MainWindow.getInstance().disposeShell();
 			return;
 	    }
-	    // suppress alerts for excel application
-	    ApplicationUtils.setDisplayAlerts(applicationBeforeActivation, false);
 	    
-		// activate and display excel workbook
-		getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
-		
-		setDirectoryPath(excelFile.getParent());
-		setFileName(excelFile.getName());
-		
-		// get excel application as OLE automation object
-	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
-	         
+	    
 	    // add event listeners
 	    OleListener sheetSelectionListener = GUIListeners.createSheetSelectionEventListener();
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);

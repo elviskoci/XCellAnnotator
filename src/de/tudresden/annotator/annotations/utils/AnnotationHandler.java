@@ -34,7 +34,7 @@ import de.tudresden.annotator.oleutils.WorksheetFunctionUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 /**
- * This class handles all the operations related to the creation and management of the annotations 
+ * This class handles all the operations related to the creation and management of annotations 
  * @author Elvis Koci
  */
 public class AnnotationHandler {
@@ -44,12 +44,19 @@ public class AnnotationHandler {
 	 */
 	private static final WorkbookAnnotation workbookAnnotation = new WorkbookAnnotation();
 
+	/**
+	 * Maintains the list of all range annotations that can be undone
+	 */
 	private static final LinkedList<RangeAnnotation> undoList = new LinkedList<RangeAnnotation>();
+	
+	/**
+	 * Maintains the list of all range annotations that can be re-done after they have first been undone
+	 */
 	private static final LinkedList<RangeAnnotation> redoList = new LinkedList<RangeAnnotation>();
 
 		
 	/**
-	 * Set up the structure for keeping the annotation data in memory. This means having a WorkbookAnnotation 
+	 * Set up the base structure for keeping the annotation data in memory. This means having a WorkbookAnnotation 
 	 * object for the embedded workbook, as well as an WorksheetAnnotation object for each sheet in the workbook.  
 	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
 	 */
@@ -75,8 +82,7 @@ public class AnnotationHandler {
 			int index = WorksheetUtils.getWorksheetIndex(worksheet);
 			WorksheetAnnotation wa = new WorksheetAnnotation(name, index);
 			workbookAnnotation.getWorksheetAnnotations().put(name, wa);
-		}
-		
+		}		
 	}
 	
 	
@@ -88,13 +94,17 @@ public class AnnotationHandler {
 	 * @param sheetIndex the index of the worksheet that contains the selected range
 	 * @param selectedAreas an array of strings that represent all the selected ranges (areas)   
 	 * @param annotationClass the class to use for the annotation
-	 * @return an AnnotationResult object that holds information about the results from the execution of this method
+	 * @return an AnnotationResult object that holds information about the result from the execution of this method
 	 */
-	public static AnnotationResult annotate(OleAutomation workbookAutomation, String sheetName, int sheetIndex,
+	public static void annotate(OleAutomation workbookAutomation, String sheetName, int sheetIndex,
 								String selectedAreas[], AnnotationClass annotationClass) {
 	
 		if(selectedAreas==null){
-			return new AnnotationResult(ValidationResult.NOSELECTION, "You have not selected a range!");
+			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+            messageBox.setMessage( "You have not selected a range! "
+					+ "Please, first do a selection.");
+            messageBox.open();
+            return;
 		}
 		
 		// get the OleAutomation object for the worksheet using its name
@@ -105,51 +115,24 @@ public class AnnotationHandler {
 							
 		// for each area in the range create an annotation
 		for (String selectedArea : selectedAreas) {
-			
-			// ensure that the range contains data (i.e., range not empty)
-			OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, selectedArea);
-			if(selectedAreaAuto==null){
-				continue;
-			}
-				
-			OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(workbookAutomation);
-			OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAuto);
-			
-			Variant rangeVariant = new Variant(selectedAreaAuto);
-			Variant result = WorksheetFunctionUtils.callFunction(worksheetFunctionAuto, "COUNTA", new Variant[]{rangeVariant});  
-			double notEmpty = result.getDouble();
-			result.dispose();
-			if(notEmpty==0){
-				return new AnnotationResult(ValidationResult.EMPTY, "The selected range does not contain any value!");
-				
-			}
-				
+									
 			// create annotation object			
 			String classLabel = annotationClass.getLabel();
-			String annotationName = generateAnnotationName(sheetName, classLabel, selectedArea);
+			String annotationName = generateRangeAnnotationName(sheetName, classLabel, selectedArea);
 			RangeAnnotation ra = new RangeAnnotation(sheetName, sheetIndex, annotationClass, annotationName, selectedArea);
 			
 			// validate annotation before creation
-			ValidationResult validationResult = validateAnnotation(ra);
-			if(validationResult!=ValidationResult.OK){
-				
-				if(validationResult==ValidationResult.NOTCONTAINED){
-					String containerLabel = annotationClass.getContainer().getLabel();
-					String message = "Could not create a \""+classLabel+"\" annotation! The range it is not inside the borders of a "+containerLabel+" annotation range";
-					return new AnnotationResult(validationResult, message);
-				}
-				
-				if(validationResult==ValidationResult.OVERLAPPING){
-					String message = "Could not create a \""+classLabel+"\" annotation! The selected range \""+selectedArea+"\" overlaps with an existing annotation."; 
-					return new AnnotationResult(validationResult, message);
-				}
+			boolean annotationResult =validateRangeAnnotation(workbookAutomation, sheetAutomation, ra);
+			if(!annotationResult){
+			    WorksheetUtils.protectWorksheet(sheetAutomation);
+				WorksheetUtils.makeWorksheetActive(sheetAutomation);
+				break;
 			}
 			
-			 
 			// range automation has to re-created here because was disposed when checked if range is empty 
 			OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, selectedArea);
 			// draw annotation
-			drawAnnotation(sheetAutomation, rangeAutomation, annotationClass, annotationName);
+			drawRangeAnnotation(sheetAutomation, rangeAutomation, annotationClass, annotationName);
 			
 			// save on the AnnotationDataSheet metadata about the annotation 
 			RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);	
@@ -163,21 +146,19 @@ public class AnnotationHandler {
 		WorksheetUtils.protectWorksheet(sheetAutomation);
 		WorksheetUtils.makeWorksheetActive(sheetAutomation);
 		sheetAutomation.dispose();
-		
-		return new AnnotationResult(ValidationResult.OK, "The annotation was successfully created");
 	}
 	
 	
 	/**
-	 * Generate the name of the annotation 
+	 * Generate the name of the range annotation 
 	 * @param sheetName the name of the worksheet that contains the annotation
 	 * @param classLabel the label of the class the annotation is member of
 	 * @param rangeAddress a string that represents the address of the selected range
 	 * @return a string that represents the annotation name
 	 */
-	public static String generateAnnotationName(String sheetName, String classLabel, String rangeAddress){	
+	public static String generateRangeAnnotationName(String sheetName, String classLabel, String rangeAddress){	
 		 
-		 String startOfAnnotationName = getStartOfAnnotationName(sheetName);
+		 String startOfAnnotationName = getStartOfRangeAnnotationName(sheetName);
 		 String endofAnnotationName = classLabel+"_"+rangeAddress.replace("$", "").replace(":", "_");
 		 String formatedName = startOfAnnotationName+"_"+endofAnnotationName;
 		 
@@ -186,11 +167,11 @@ public class AnnotationHandler {
 	
 	
 	/**
-	 * Get the string that the names of all the annotations from the same worksheet begin with.    
+	 * Get the string that the names of all range annotations from the same worksheet begin with.    
 	 * @param sheetName the name of the worksheet that contains the annotation
 	 * @return  a string that is used as the beginning of the annotation name
 	 */
-	public static String getStartOfAnnotationName(String sheetName){
+	public static String getStartOfRangeAnnotationName(String sheetName){
 		
 		String name = sheetName.replace(" ", "_")+"_Annotation"; 
 		return  name.toUpperCase(); 
@@ -198,22 +179,52 @@ public class AnnotationHandler {
 	
 	
 	/**
-	 * Validate the annotation to prevent inconsistencies. This method checks if the dependencies 
-	 * between annotations are satisfied. Also, ensures that there are not overlaps between the annotations.   
+	 * Validate the range annotation to prevent inconsistencies. 
 	 * @param annotation an object that represents a range annotation  
-	 * @return a ValidationResponse object that contains information about the validation
+	 * @return true the annotation range passed all the validation tests, false otherwise
 	 */
-	public static ValidationResult validateAnnotation(RangeAnnotation annotation){
-
+	public static boolean validateRangeAnnotation(OleAutomation  embeddedWorkbook, 
+														OleAutomation sheetAutomation, RangeAnnotation annotation){
+		
+		// check if the range is valid (e.i., the OleAutomation can be created for this range)
+		OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, annotation.getRangeAddress());
+		if(selectedAreaAuto==null){					
+			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+            messageBox.setMessage("Can not annotate range "+annotation.getRangeAddress()+". "
+					+ "Please, avoid selecting entire rows or columns for annotation.");
+            messageBox.open();           
+			return false;
+		}
+		
+		// ensure that the range contains data (i.e., range not empty)
+		OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
+		OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAuto);
+		applicationAuto.dispose();
+		
+		Variant rangeVariant = new Variant(selectedAreaAuto);
+		Variant methodResult = WorksheetFunctionUtils.callFunction(worksheetFunctionAuto, "COUNTA", new Variant[]{rangeVariant}); 
+		worksheetFunctionAuto.dispose();
+		selectedAreaAuto.dispose();
+		
+		double notEmpty = methodResult.getDouble();
+		methodResult.dispose();
+		if(notEmpty==0){
+			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+            messageBox.setMessage("The selected range does not contain any value!");
+            messageBox.open();
+			return false;
+		}
+		
+		// ensure that the range annotation satisfies the dependencies and containment constrains  
 		AnnotationClass annotationClass =  annotation.getAnnotationClass();
-		String sheetKey = annotation.getSheetName();
+		String sheetName = annotation.getSheetName();
 		
 		if(annotationClass.isDependent()){
 						
 			AnnotationClass  containerClass = annotationClass.getContainer();
 			String containerLabel =  containerClass.getLabel();
 			
-			Collection<RangeAnnotation> collection = workbookAnnotation.getSheetAnnotationsByClass(sheetKey, containerLabel);
+			Collection<RangeAnnotation> collection = workbookAnnotation.getSheetAnnotationsByClass(sheetName, containerLabel);
 			RangeAnnotation containerAnnotation = getSmallestParent(collection, annotation.getRangeAddress());
 			
 			if(containerAnnotation!=null){
@@ -222,47 +233,80 @@ public class AnnotationHandler {
 				Collection<RangeAnnotation> containersCollection = containerAnnotation.getAllAnnotations();
 				if(containersCollection!=null){
 					ArrayList<RangeAnnotation> dependentAnnotations = new ArrayList<RangeAnnotation>(containersCollection);
-					return checkForOverlaps(dependentAnnotations, annotation.getRangeAddress(), false);
+					boolean result = checkForOverlaps(dependentAnnotations, annotation.getRangeAddress(), false);
+					if(result){
+						 String classLabel =annotationClass.getLabel();
+						 MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			             messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation at \""+sheetName+"\" sheet! "
+								+ "The selected range \""+annotation.getRangeAddress()+"\" overlaps with an existing annotation.");
+			             messageBox.open();
+			             return false;
+					}			 
+					return true;
 				}
 				
 			}else{
-				return ValidationResult.NOTCONTAINED;
+				String classLabel = annotationClass.getLabel();
+				MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+	            messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation at \""+sheetName+"\" sheet! "
+						+ "The range it is not inside the borders of a "+containerLabel+" annotation range");
+	            messageBox.open();
+			
+				return false;
 			}
 						
 		}else{
 			
 			if(annotationClass.isContainable()){
 				
-				 Collection<RangeAnnotation> collection = workbookAnnotation.getAllRangeAnnotationsForSheet(sheetKey);
-				 ValidationResult result = checkForOverlaps(collection, annotation.getRangeAddress(), true);
-				 if(result==ValidationResult.OK){
+				 Collection<RangeAnnotation> collection = workbookAnnotation.getAllRangeAnnotationsForSheet(sheetName);
+				 boolean result = checkForOverlaps(collection, annotation.getRangeAddress(), true);
+				 if(!result){
 					 RangeAnnotation smallestParent = getSmallestParent(collection, annotation.getRangeAddress());
 					 if(smallestParent!=null){
 							annotation.setParent(smallestParent);
-					}
+					 }
 				 }
-				 return result;			 
+				 
+				 String classLabel = annotationClass.getLabel();
+				 MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+	             messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation at \""+sheetName+"\" sheet! "
+						+ "The selected range \""+annotation.getRangeAddress()+"\" overlaps with an existing annotation.");
+	             messageBox.open();
+		            
+	             return false; 
+	             
 			}else{
-				 Collection<RangeAnnotation> collection = workbookAnnotation.getAllRangeAnnotationsForSheet(sheetKey);
-				 return checkForOverlaps(collection, annotation.getRangeAddress(), false);
+				 Collection<RangeAnnotation> collection = workbookAnnotation.getAllRangeAnnotationsForSheet(sheetName);
+				 boolean result = checkForOverlaps(collection, annotation.getRangeAddress(), false);
+				 
+				 if(result){
+					 String classLabel = annotationClass.getLabel();
+					 MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+		             messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation at \""+sheetName+"\" sheet! "
+							+ "The selected range \""+annotation.getRangeAddress()+"\" overlaps with an existing annotation.");
+		             messageBox.open();
+		             return false;
+				 }				 
+				 return true;
 			}	
 		}		
-		return ValidationResult.OK;
+		return true;
 	}
 	
 	
 	/**
-	 * Check if the new annotation overlaps with existing annotations
+	 * Check if the new range annotation overlaps with existing range annotations
 	 * @param collection the new annotation will be compared with each element of this collection for overlaps
 	 * @param newAnnotationRange a string that represents the range address of the new annotation  
 	 * @param ignoreContainers true to skip annotations that are members of classes that are marked as containers, false to consider them. 
 	 * This argument was included especially for the cases where annotations can be contained, but do not have a specific parent annotation class.
 	 * @return true if there are overlaps, false otherwise
 	 */
-	public static ValidationResult checkForOverlaps(Collection<RangeAnnotation> collection, String newAnnotationRange, boolean ignoreContainers){
+	public static boolean checkForOverlaps(Collection<RangeAnnotation> collection, String newAnnotationRange, boolean ignoreContainers){
 		
 		if(collection==null){
-			 return ValidationResult.OK;
+			 return false;
 		}
 		
 		ArrayList<RangeAnnotation> annotations = new ArrayList<RangeAnnotation>(collection);
@@ -275,10 +319,11 @@ public class AnnotationHandler {
 					if(isContainer)
 						continue;
 				}
-				return ValidationResult.OVERLAPPING;
+				             
+				return true; 
 			}
 		}
-		return ValidationResult.OK;
+		return  false;
 	}
 	
 	
@@ -330,13 +375,13 @@ public class AnnotationHandler {
 	
 	
 	/**
-	 * This method calls the function to draw the annotation based on the annotation tool specified in the annotations class
+	 * This method calls the function to draw the range annotation based on the annotation tool specified in the annotation class
 	 * @param sheetAutomation an OleAutomation for accessing the active worksheet functionalities
 	 * @param rangeAutomation an OleAutomation for accessing the selected range functionalities
 	 * @param annotationClass the (annotation) class that will be used  for the annotation
 	 * @param annotationName the name of the annotation to create
 	 */
-	public static void drawAnnotation(OleAutomation sheetAutomation, OleAutomation rangeAutomation, 
+	public static void drawRangeAnnotation(OleAutomation sheetAutomation, OleAutomation rangeAutomation, 
 															AnnotationClass annotationClass, String annotationName){
 		switch (annotationClass.getAnnotationTool()) {
 		case SHAPE  : annotateWithShape(sheetAutomation, rangeAutomation, annotationClass, annotationName); break;
@@ -353,37 +398,51 @@ public class AnnotationHandler {
 	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
 	 * @param ra the RangeAnnotation object to draw
 	 */
-	public static void drawAnnotation(OleAutomation workbookAutomation, RangeAnnotation ra){
+	public static boolean drawRangeAnnotation(OleAutomation workbookAutomation, RangeAnnotation ra){
 		OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 		OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, ra.getRangeAddress());
-		drawAnnotation(sheetAutomation, rangeAutomation, ra.getAnnotationClass(), ra.getName());
+		
+		boolean annotationResult= validateRangeAnnotation(workbookAutomation, sheetAutomation, ra);
+		if(!annotationResult){
+	         return false;
+		}
+		drawRangeAnnotation(sheetAutomation, rangeAutomation, ra.getAnnotationClass(), ra.getName());
+		return true;
 	}
 	
 	
 	/**
-	 * Draw all annotation object in memory 
+	 * Draw all range annotations in the give array
 	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
+	 * @return true if all the ranges were drawn successfully, false otherwise
 	 */
-	public static void drawAllAnnotations(OleAutomation workbookAutomation){	
+	public static boolean drawManyRangeAnnotations(OleAutomation workbookAutomation, RangeAnnotation[] rangeAnnotations){	
 		
-		boolean areUnprotected = WorkbookUtils.unprotectAllWorksheets(workbookAutomation);
-		if(!areUnprotected){		
-			// TODO: Convert the following to error message box
-			System.out.println("ERROR: Could not unprotect all worksheets. Operation failed!");
-			return;
+		WorkbookUtils.unprotectAllWorksheets(workbookAutomation);			
+		
+		int k=0;
+		for (int i=0; i< rangeAnnotations.length; i++) {
+
+			boolean result = AnnotationHandler.drawRangeAnnotation(workbookAutomation, rangeAnnotations[i]);
+			if(!result){
+				k=i;
+				break; 
+			}
 		}
-			
-		ArrayList<RangeAnnotation> allAnnotations = 
-				new ArrayList<RangeAnnotation>(AnnotationHandler.getWorkbookAnnotation().getAllAnnotations());
-		for (int i=0; i<allAnnotations.size();i++) {
-			RangeAnnotation rangeAnnotation = allAnnotations.get(i);
-			AnnotationHandler.drawAnnotation(workbookAutomation, rangeAnnotation);
+		
+		// if drawing fails for one annotation 
+		if(k>0){
+			for (int j=0; j<k;j++) {
+				deleteAnnotationFromSheet(workbookAutomation, rangeAnnotations[j]);
+			}
 		}
-		boolean areProtected = WorkbookUtils.protectAllWorksheets(workbookAutomation);
-		if(!areProtected){
-			System.out.println("ERROR: Could not protect all worksheets. Operation failed!");
-			return;
+		
+		WorkbookUtils.protectAllWorksheets(workbookAutomation);
+		
+		if(k>0){
+			return false;
 		}
+		return true;
 	}
 	
 	
@@ -444,7 +503,7 @@ public class AnnotationHandler {
 			
 	
 	/**
-	 * Format the annotation object (shape, textbox, etc) used to annotate 
+	 * Format the annotation object (shape, textbox, etc) 
 	 * @param annotation an OleAutomation to access the functionalities of the annotation object
 	 * @param annotationClass an object that represents an annotation class
 	 */
@@ -499,7 +558,8 @@ public class AnnotationHandler {
 			OleAutomation fontAutomation = CharactersUtils.getFontAutomation(charactersAutomation);
 			FontUtils.setFontColor(fontAutomation, annotationClass.getTextColor());
 			FontUtils.setBoldFont(fontAutomation, annotationClass.isBoldText()); 
-			FontUtils.setFontSize(fontAutomation, annotationClass.getFontSize()); // TODO: font size should be relative to the size of the range ? 
+			FontUtils.setFontSize(fontAutomation, annotationClass.getFontSize()); 
+			// TODO: font size should be relative to the size of the range ? 
 			
 			fontAutomation.dispose();
 			charactersAutomation.dispose();
@@ -575,7 +635,7 @@ public class AnnotationHandler {
 		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(worksheetAutomation);
 		
 		// all shapes that are used for annotations have names that start with the following string pattern 
-		String startString = getStartOfAnnotationName(sheetName);
+		String startString = getStartOfRangeAnnotationName(sheetName);
 		
 		int count = CollectionsUtils.countItemsInCollection(shapesAutomation);	
 		for (int i = 1; i <= count; i++) {
@@ -609,12 +669,11 @@ public class AnnotationHandler {
 			deleteAnnotationsFromSheet(sheet);
 		}
 	}
-	
-	
+		
 	/**
-	 * Delete all the shapes used for annotations in the worksheet having the given name 
+	 * Delete all the shapes used for annotations in the specified sheet 
 	 * @param workbookAutomation an OleAutomation to access the functionalities of the embedded workbook
-	 * @param sheetName the name of the worksheet for which the annotation shapes will be deleted
+	 * @param sheetName the name of the sheet for which the annotation shapes will be deleted
 	 */
 	public static void deleteAnnotationsFromSheet(OleAutomation workbookAutomation, String sheetName ){
 		
@@ -626,11 +685,10 @@ public class AnnotationHandler {
 		OleAutomation worksheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
 		deleteAnnotationsFromSheet(worksheetAutomation);
 	}
-
 	
 	/**
-	 * Delete all the shapes used for annotations in the given worksheet 
-	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the worksheet that action will be applied on
+	 * Delete all the shapes used for annotations in the given sheet 
+	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the sheet that action will be applied on
 	 */
 	public static void deleteAnnotationsFromSheet(OleAutomation worksheetAutomation){
 		
@@ -650,7 +708,7 @@ public class AnnotationHandler {
 		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(worksheetAutomation);	
 	
 		// all shapes that are used for annotating have names that start with the following string pattern 
-		String startString =  getStartOfAnnotationName(sheetName);
+		String startString =  getStartOfRangeAnnotationName(sheetName);
 		
 		int count = CollectionsUtils.countItemsInCollection(shapesAutomation);	
 		int processed = 0; 
@@ -673,30 +731,24 @@ public class AnnotationHandler {
 		WorksheetUtils.protectWorksheet(worksheetAutomation);
 		worksheetAutomation.dispose();	
 	}
-		
-	public static boolean deleteAnnotationFromSheet(OleAutomation workbookAutomation, RangeAnnotation annotation){
-		
-		OleAutomation worksheetAutomation = 
-				WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, annotation.getSheetName());
-		
-		// unprotect the worksheet
-		WorksheetUtils.unprotectWorksheet(worksheetAutomation);
-
-		// delete all shapes that are used for annotating ranges of cells
+	
+	/**
+	 * Delete the specified range annotation from the sheet 
+	 * @param worksheetAutomation an OleAutomation to access the functionalities of the sheet 
+	 * @param annotation a RangeAnnotation object 
+	 * @return true if deletion was successful, false otherwise
+	 */
+	public static boolean deleteAnnotationFromSheet(OleAutomation worksheetAutomation, RangeAnnotation annotation){
+				
 		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(worksheetAutomation);
-		
 		OleAutomation shapeAutomation = CollectionsUtils.getItemByName(shapesAutomation, annotation.getName(), true);	 
 		
 		boolean result = false; 
 		if(shapeAutomation!=null)
 			result = ShapeUtils.deleteShape(shapeAutomation);
-		
-		// protect the worksheet from further user manipulation 
-		WorksheetUtils.protectWorksheet(worksheetAutomation);
 				
 		shapeAutomation.dispose();
 		shapesAutomation.dispose();
-		worksheetAutomation.dispose();
 		
 		return result;
 	}
