@@ -635,6 +635,8 @@ public class GUIListeners {
 					AnnotationHandler.addToRedoList(ra);
 						
 					RangeAnnotationsSheet.deleteRangeAnnotationData(workbookAutomation, ra, true);
+					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
+					
 				}else{
 					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
 	 	            messageBox.setMessage("Could not undo the last range annotation!!!");
@@ -671,12 +673,15 @@ public class GUIListeners {
 				
 				AnnotationHandler.removeLastFromRedoList();
 				if(!result){
+					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
 					return;
 				}
 				
-				AnnotationHandler.addToUndoList(ra);
+				AnnotationHandler.addToUndoList(ra);	
 				
 				RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);
+				AnnotationHandler.getWorkbookAnnotation().addRangeAnnotation(ra);
+				
 				MenuUtils.adjustBarMenuForSheet(ra.getSheetName());			
 			}
 		};

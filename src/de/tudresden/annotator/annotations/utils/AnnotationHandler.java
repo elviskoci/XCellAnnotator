@@ -767,11 +767,7 @@ public class AnnotationHandler {
 	}
 	
 	public static void removeLastFromUndoList(){
-		RangeAnnotation annotation = undoList.removeLast();
-
-		if(annotation!=null){
-			workbookAnnotation.removeRangeAnnotation(annotation);
-		}
+		undoList.removeLast();
 	}
 	
 	public static RangeAnnotation getLastFromUndoList(){
@@ -781,13 +777,9 @@ public class AnnotationHandler {
 			return null;
 		}
 	}
-		
+	
 	public static void removeLastFromRedoList(){
-		RangeAnnotation annotation = redoList.removeLast();
-
-		if(annotation!=null){
-			workbookAnnotation.addRangeAnnotation(annotation);
-		}
+		redoList.removeLast();
 	}
 		
 	public static RangeAnnotation getLastFromRedoList(){
