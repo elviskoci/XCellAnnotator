@@ -515,10 +515,11 @@ public class GUIListeners {
 								+ "It does not contain any annotations yet!"); 
 						mb.open();
 					}else{
-						if(sheetAnnotation.getAllAnnotations().size()<3){
+						if(sheetAnnotation.getAllAnnotations().size()<4){
 							int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
 							MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-							mb.setMessage("This sheet contains very few annotations. Are you sure you want to proceed?!"); 
+							mb.setMessage("This sheet contains very few annotations. "
+									+ "Do you still want to mark it as \"Completed\" ?"); 
 							int option = mb.open();
 							
 							if(option == SWT.YES){
@@ -577,7 +578,7 @@ public class GUIListeners {
 					if(!sheetAnnotation.getAllAnnotations().isEmpty()){
 						int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
 						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-						mb.setMessage("Marking this sheet as not applicable will erase all the existing annotations "
+						mb.setMessage("Marking this sheet as \"Not Applicable\" will erase all the existing annotations "
 								+ "in the sheet. Do you want to proceed ?"); 
 						int option = mb.open();
 						
@@ -638,7 +639,7 @@ public class GUIListeners {
 					if( wa.getAllAnnotations().isEmpty()){
 						int style = SWT.ICON_WARNING ;
 						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-						mb.setMessage("You can not mark the file (workbook) as completed. "
+						mb.setMessage("You can not mark the file (workbook) as \"Completed\". "
 								+ "It does not contain any annotations yet!"); 
 						mb.open();
 					}else{
@@ -652,7 +653,7 @@ public class GUIListeners {
 							WorksheetAnnotation sa = itr.next();
 							
 							if(!sa.isCompleted() && !sa.isNotApplicable()){
-								if(sa.getAllAnnotations().isEmpty() || sa.getAllAnnotations().size()<3){
+								if(sa.getAllAnnotations().isEmpty() || sa.getAllAnnotations().size()<4){
 									
 									OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
 									OleAutomation worksheetAutomation = 
@@ -662,7 +663,8 @@ public class GUIListeners {
 									int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
 									MessageBox mb = MainWindow.getInstance().createMessageBox(style);
 									mb.setMessage("The \""+sa.getSheetName()+"\" does not contain any or "
-											+ "contains very few annotations. Do you want to proceed ?"); 
+											+ "contains very few annotations. "
+											+ "\nDo you still want to mark this file (workbook) as \"Completed\" ?"); 
 									int option = mb.open();
 									
 									if(option == SWT.YES){
@@ -737,7 +739,8 @@ public class GUIListeners {
 					if(!workbookAnnotation.getAllAnnotations().isEmpty()){
 						int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
 						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-						mb.setMessage("Marking file (workbook) as not applicable will erase all the existing annotations. "
+						mb.setMessage("Marking this file (workbook) as \"Not Applicable\" "
+								+ "will erase all the existing annotations. "
 								+ "Do you want to proceed ?"); 
 						int option = mb.open();
 						
