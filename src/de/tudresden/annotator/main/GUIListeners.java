@@ -59,7 +59,7 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){	
 	 	            	
 	 	            	String filePath = directoryPath+"\\"+fileName;
-	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int styleError = SWT.ICON_ERROR;
@@ -280,7 +280,7 @@ public class GUIListeners {
 				String directory = MainWindow.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
-				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath);
+				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath, false);
 				if(result){		
 					// TODO: Mark Annotated Files. 
             		// FileUtils.markFileAsAnnotated(directory, fileName, 1);
@@ -326,7 +326,7 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){	
 	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
-	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
@@ -434,7 +434,7 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){	
 	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
-	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath);
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;

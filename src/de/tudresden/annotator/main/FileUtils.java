@@ -11,6 +11,7 @@ import java.util.Collection;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
+import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
@@ -19,6 +20,7 @@ import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
 import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
+import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 
 /**
@@ -28,21 +30,24 @@ public class FileUtils {
 	
 	public static final String CurrentProgressFileName = "annotated"; 
 	
+	
 	/**
-	 * 
-	 * @param embeddedWorkbook
-	 * @param filePath
-	 * @return
+	 * Save all the annotation progress 
+	 * @param embeddedWorkbook an OleAutomation that provides access to the functionalities of the embedded workbook
+	 * @param filePath the path where to save the file
+	 * @param beforeFileClose true if progress is saved before closing the file or exiting the application, 
+	 * false if file will remain open after save.
+	 * @return true if progress was successfully saved, false otherwise. 
 	 */
-	public static boolean saveProgress(OleAutomation embeddedWorkbook, String filePath){
+	public static boolean saveProgress(OleAutomation embeddedWorkbook, String filePath, boolean beforeFileClose){
 				 
 		// save the status of all worksheet annotations and the workbook annotation 
 		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);
 		
-		//delete all shape annotations
+		// delete all shape annotations
 		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
 						
-		//unprotect the workbook structure and all the worksheets
+		// unprotect the workbook structure and all the worksheets
 		WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
 		WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
 
@@ -53,26 +58,38 @@ public class FileUtils {
 		// protect the annotation_status sheet before save
 		AnnotationStatusSheet.protect(embeddedWorkbook);
 		
+		// deactivate alerts before save
+		OleAutomation application = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
+		MainWindow.getInstance().deactivateControlSite();
+		ApplicationUtils.setDisplayAlerts(application, false);
 		
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
+		if(!beforeFileClose){			
+			// activate alerts after save
+			ApplicationUtils.setDisplayAlerts(application, true);
+			MainWindow.getInstance().doVerbControlSite(OLE.OLEIVERB_INPLACEACTIVATE);
+			MainWindow.getInstance().setUpApplicationDisplay(application);
 			
-		// draw again the range annotations  
-		Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
-		RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
-		AnnotationHandler.drawManyRangeAnnotations(embeddedWorkbook, rangeAnnotations);
-		
-		// make range_annotations sheet again visible
-		RangeAnnotationsSheet.setVisibility(embeddedWorkbook, true);
-
-		// protect again the workbook structure and the individual sheets
-		WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);
-		WorkbookUtils.protectAllWorksheets(embeddedWorkbook);
+			// draw again the range annotations  
+			Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
+			RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
+			AnnotationHandler.drawManyRangeAnnotations(embeddedWorkbook, rangeAnnotations);
+			
+			// make range_annotations sheet again visible
+			RangeAnnotationsSheet.setVisibility(embeddedWorkbook, true);
+	
+			// protect again the workbook structure and the individual sheets
+			WorkbookUtils.protectWorkbook(embeddedWorkbook, true, false);
+			WorkbookUtils.protectAllWorksheets(embeddedWorkbook);
+		}
 		
 		return isSuccess;
 	}
 
+	
+	
 	/**
 	 * 
 	 * @param directory
@@ -131,8 +148,8 @@ public class FileUtils {
 				        
 						File excelFile = new File(fileName);
 				        
-				        // set up the excel application user interface for the annotation task
-				        mw.setUpWorkbookDisplay(excelFile);
+				        // embed the excel file and set up the user interface
+				        mw.embedExcelFile(excelFile);
 				        
 				    } catch (SWTError e) {
 				        e.printStackTrace();

@@ -121,7 +121,7 @@ public class MainWindow {
 		rightPanel = new Composite(mainSash, SWT.BORDER);
 		rightPanel.setLayout(new FillLayout());
 		
-		mainSash.setWeights(new int[] {0,100});
+		mainSash.setWeights(new int[] {0, 100});
 			
 		// sub split the right panel 
 	    rightSash = new SashForm(rightPanel, SWT.VERTICAL);
@@ -156,7 +156,12 @@ public class MainWindow {
 	    this.setMenuBar(oleFrameMenuBar);
 	}
 	
-	protected void setUpWorkbookDisplay( File excelFile){
+	
+	/**
+	 * Embed the specified excel file to the application window
+	 * @param excelFile the excel file to embed
+	 */
+	protected void embedExcelFile(File excelFile){	
 		
 		try {
 			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));        
@@ -194,17 +199,10 @@ public class MainWindow {
 			// ex.printStackTrace();
 			System.exit(1);
 		}
-		
-//	     OleAutomation applicationBeforeActivation = ApplicationUtils.getApplicationAutomation(getControlSite());	    
-//	     suppress alerts for excel application
-//	     ApplicationUtils.setDisplayAlerts(applicationBeforeActivation, false);
-	    
+			
 		// activate and display excel workbook
 		getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
-		
-		setDirectoryPath(excelFile.getParent());
-		setFileName(excelFile.getName());
-		
+				
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
 	    if(application==null){
@@ -222,8 +220,46 @@ public class MainWindow {
 			MainWindow.getInstance().disposeShell();
 			return;
 	    }
+	        
+	    // get active workbook, the one that is embedded in this application
+	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
+	    setEmbeddedWorkbook(workbook);
 	    
+	    // get the name of workbook for future reference. 
+	    // the name of the workbook might be different from the excel file name. 
+	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
+	    setEmbeddedWorkbookName(workbookName);
 	    
+	    // get the active sheet automation, i.e. the one that is on top of the other worksheet
+	    OleAutomation worksheet = WorkbookUtils.getActiveWorksheetAutomation(workbook);
+	    
+	    // get and store the name and index for thesheet that is "active"
+	    String sheetName = WorksheetUtils.getWorksheetName(worksheet);
+	    setActiveWorksheetName(sheetName);
+	    int sheetIndex = WorksheetUtils.getWorksheetIndex(worksheet);
+	    setActiveWorksheetIndex(sheetIndex);
+	    worksheet.dispose();
+	    
+	    // save the directory and fileName for future reference
+		setDirectoryPath(excelFile.getParent());
+		setFileName(excelFile.getName());
+		
+		// prepare the display for the annotation process
+		setUpApplicationDisplay(application);
+		setUpWorkbook(workbook);
+		    
+	    //Color green1 = new Color (Display.getCurrent(), 169, 208, 142);
+	    Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
+	    this.excelPanel.setBackground(green2);
+	}
+	
+	
+	/**
+	 * set up (prepare) the excel application display for the annotation process
+	 * @param application an OleAutomation object that provides access the functionalities of the Excel Application
+	 */
+	protected void setUpApplicationDisplay(OleAutomation application){
+		    
 	    // add event listeners
 	    OleListener sheetSelectionListener = GUIListeners.createSheetSelectionEventListener();
         getControlSite().addEventListener(application, IID_AppEvents, SheetSelectionChange, sheetSelectionListener);
@@ -231,7 +267,7 @@ public class MainWindow {
         OleListener sheetActivationlistener = GUIListeners.createSheetActivationEventListener();
         getControlSite().addEventListener(application, IID_AppEvents, SheetActivate, sheetActivationlistener);
                 
-		// minimize ribbon.	TODO: Try hiding individual CommandBars
+		// minimize ribbon.	
 	    ApplicationUtils.hideRibbon(application);	
 	    
 	    // hide menu on right click of user at a worksheet tab
@@ -239,17 +275,20 @@ public class MainWindow {
 	    
 	    // hide menu on right click of user on a cell
 	    CommandBarUtils.setEnabledForCommandBar(application, "Cell", false);
-	    
-	    // get active workbook, the one that is embedded in this application
-	    OleAutomation workbook = ApplicationUtils.getActiveWorkbookAutomation(application);
-	    setEmbeddedWorkbook(workbook);
-	    
-	    // show the annotation_data_sheet if it exists
+	}
+	
+	/**
+	 * set up the workbook for the annotation process
+	 * @param workbook an OleAutomation object that provides access the functionalities of the embedded workbook
+	 */
+	protected void setUpWorkbook(OleAutomation workbook){
+		
+		// show the annotation_data_sheet if it exists
 	    OleAutomation  annotationDataSheet = 
 			WorkbookUtils.getWorksheetAutomationByName(workbook, RangeAnnotationsSheet.getName()); 
 		WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
-				
-	    // protect the structure of the workbook if it is not yet protected
+		
+		// protect the structure of the workbook if it is not yet protected
 		boolean isProtected = WorkbookUtils.protectWorkbook(workbook, true, false);		
 		if(!isProtected){
 			int style = SWT.ERROR;
@@ -273,26 +312,8 @@ public class MainWindow {
 			return;
 		}
 		
-	    // get the name of workbook for future reference. The name of the workbook might be different from the excel file name. 
-	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
-	    
-	    // get the active worksheet automation, i.e. the one that is on top of the other worksheet
-	    OleAutomation worksheet = WorkbookUtils.getActiveWorksheetAutomation(workbook);
-	    
-	    // get and store the name and index for the worksheet that is "active"
-	    String sheetName = WorksheetUtils.getWorksheetName(worksheet);
-	    setActiveWorksheetName(sheetName);
-	    int sheetIndex = WorksheetUtils.getWorksheetIndex(worksheet);
-	    setActiveWorksheetIndex(sheetIndex);
-	    
-	    setEmbeddedWorkbookName(workbookName);
-	    worksheet.dispose();
-	    
-	    //Color green1 = new Color (Display.getCurrent(), 169, 208, 142);
-	    Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
-	    this.excelPanel.setBackground(green2);
-
 	}
+	
 				
 	/**
 	 * @return the display
@@ -412,6 +433,25 @@ public class MainWindow {
 	protected boolean isControlSiteFocusControl(){
 		return this.controlSite.isFocusControl();
 	}
+	
+	
+	/**
+	 * Requests that the control site perform an action
+	 * @param verb the operation that is requested. This is one of the OLE.OLEIVERB_ values
+	 * @return an HRESULT value indicating the success of the operation request; OLE.S_OK indicates success
+	 */
+	protected int doVerbControlSite(int verb){
+		return this.controlSite.doVerb(verb);
+	}
+	
+	
+	/**
+	 * Deactivate control site
+	 */
+	protected void deactivateControlSite(){
+		this.controlSite.deactivateInPlaceClient();
+	}
+	
 	
 	/**
 	 * Dispose control site 
