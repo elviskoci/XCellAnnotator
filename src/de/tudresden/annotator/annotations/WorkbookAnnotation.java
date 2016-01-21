@@ -21,8 +21,8 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	/*
 	 * This two attributes mentain the status of the annotation for the workbook
 	 */
-	boolean isCompleted = false;
-	boolean isNotApplicable = false;
+	private boolean isCompleted = false;
+	private boolean isNotApplicable = false;
 	
 	/**
 	 * This hashmap is used to manage worksheet annotations
@@ -359,23 +359,42 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 
 	@Override
 	public String toString() {
-		//JSONObject json = new JSONObject(worksheetAnnotations);
 		return this.worksheetAnnotations.values().toString();
 	}
 	
-	
-//	@Override
-//	public boolean equals( Annotation<WorkbookAnnotation, RangeAnnotation> annotation) {
-//		if (annotation instanceof WorkbookAnnotation) {	
-//			WorkbookAnnotation workbookAnnotation = (WorkbookAnnotation) annotation;		
-//            return workbookAnnotation.getWorkbookName().compareToIgnoreCase(this.getWorkbookName())==0;
-//        }
-//        return false;
-//	}
-//
-//	@Override
-//	public int hashCode() {
-//		return this.getWorkbookName().hashCode();
-//	}
+	@Override
+	public int hashCode() {
+		
+		int hash = this.getWorkbookName().hashCode() + (this.isCompleted?1:0) + (this.isNotApplicable?1:0);
+		
+		for (WorksheetAnnotation val : this.getWorksheetAnnotations().values()) {
+			hash = hash + val.hashCode();
+		}
+		
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Annotation<RangeAnnotation> annotation) {
+		
+		if(!(annotation instanceof WorkbookAnnotation))
+			return false;
+		
+		WorkbookAnnotation wa = (WorkbookAnnotation) annotation;
+				
+		if(this.workbookName.compareTo(wa.getWorkbookName())!=0)
+			return false;
+		
+		if(!this.worksheetAnnotations.equals(wa.getWorksheetAnnotations()))
+			return false;
+		
+		if(wa.isCompleted()!=this.isCompleted)
+			return false;
+			
+		if(wa.isNotApplicable()!=this.isNotApplicable)
+			return false;
+		
+		return true;	
+	}
 	
 }

@@ -114,18 +114,33 @@ public class RangeAnnotation extends DependentAnnotation<DependentAnnotation<?>>
 			return this.name+" = "+this.allAnnotations.values().toString();
 	}
 
-//	@Override
-//	public boolean equals(Annotation <RangeAnnotation, RangeAnnotation> annotation) {
-//		if (annotation instanceof RangeAnnotation) {	
-//			RangeAnnotation rangeAnnotation = (RangeAnnotation) annotation;		
-//            return rangeAnnotation.getName().compareToIgnoreCase(this.getName())==0;
-//        }
-//        return false;
-//	}
-//
-//	
-//	@Override
-//	public int hashCode() {
-//		return this.getName().hashCode();
-//	}
+	@Override
+	public boolean equals(Annotation<RangeAnnotation> annotation) {
+		
+		if(!(annotation instanceof RangeAnnotation))
+			return false;
+		
+		RangeAnnotation ra = (RangeAnnotation) annotation;
+				
+		if(this.name.compareTo(ra.getName())!=0)
+			return false;
+		
+		if(!(this.allAnnotations.equals(ra.getAllAnnotations())))
+			return false;
+		
+		return true;	
+	}
+
+	
+	@Override
+	public int hashCode() {
+		
+		int hash = this.name.hashCode();
+		
+		for (RangeAnnotation val : this.allAnnotations.values()) {
+			hash = hash + val.hashCode();
+		}
+		
+		return hash;
+	}
 }

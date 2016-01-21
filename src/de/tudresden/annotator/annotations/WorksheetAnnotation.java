@@ -11,8 +11,8 @@ public class WorksheetAnnotation extends DependentAnnotation<WorkbookAnnotation>
 	private String workbookName;
 	private String sheetName;
 	private int sheetIndex;
-	boolean isCompleted = false;
-	boolean notApplicable = false;
+	private boolean isCompleted = false;
+	private boolean isNotApplicable = false;
 
 	/**
 	 * @param workbookName
@@ -94,38 +94,52 @@ public class WorksheetAnnotation extends DependentAnnotation<WorkbookAnnotation>
 	 * @return the isIrrelevant
 	 */
 	public boolean isNotApplicable() {
-		return notApplicable;
+		return isNotApplicable;
 	}
 
 	/**
 	 * @param isNotApplicable the isNotApplicable to set
 	 */
 	public void setNotApplicable(boolean isNotApplicable) {
-		this.notApplicable = isNotApplicable;
+		this.isNotApplicable = isNotApplicable;
 	}
 	
 	@Override 
 	public String toString() {
-		// JSONObject json = new JSONObject(this.allAnnotations);
 		return this.getSheetName()+" = "+this.allAnnotations.values(); 
 	}
 
-	
-//	@Override
-//	public boolean equals(Annotation<WorkbookAnnotation, RangeAnnotation> annotation) {
-//		
-//		if (annotation instanceof WorksheetAnnotation) {
-//			WorksheetAnnotation sheetAnnotation = (WorksheetAnnotation) annotation;
-//
-//			return sheetAnnotation.getSheetName().compareTo(this.getSheetName()) == 0
-//					&& sheetAnnotation.getSheetIndex() == this.getSheetIndex();
-//		}
-//		return false;
-//	}
-//
-//	
-//	@Override
-//	public int hashCode() {
-//		return this.getSheetName().hashCode() + this.getSheetIndex();
-//	}
+	@Override
+	public boolean equals(Annotation<RangeAnnotation> annotation) {
+		
+		if(!(annotation instanceof WorksheetAnnotation))
+			return false;
+		
+		WorksheetAnnotation sa = (WorksheetAnnotation) annotation;
+		
+		if(sa.getSheetName().compareTo(this.sheetName)!=0)
+			return false;
+		
+		if(!(sa.getAllAnnotations().equals(this.allAnnotations)))
+			return false;
+		
+		if(sa.isCompleted()!=this.isCompleted)
+			return false;
+			
+		if(sa.isNotApplicable()!=this.isNotApplicable)
+			return false;
+		
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = this.getSheetName().hashCode() + (this.isCompleted?1:0) + (this.isNotApplicable?1:0) ;
+		
+		for (RangeAnnotation val : this.allAnnotations.values()) {
+			hash = hash + val.hashCode();
+		}
+		
+		return hash;
+	}
 }

@@ -294,6 +294,7 @@ public class MenuUtils {
 			
 			if(menuItem.getID()==2000000){ // annotations menu
 				menuItem.setEnabled(true);
+				unselectAllSubMenus(menuItem.getMenu());
 			}
 			
 			if(menuItem.getID()==3000000){ // annotations menu
@@ -329,6 +330,7 @@ public class MenuUtils {
 			}else{
 				menuItem.setEnabled(true);
 				disableAllSubMenus(menuItem.getMenu());
+				unselectAllSubMenus(menuItem.getMenu());
 			}		
 		}
 		
@@ -338,6 +340,8 @@ public class MenuUtils {
 				menuItem.setEnabled(true);
 			}else{
 				menuItem.setEnabled(false);
+				disableAllSubMenus(menuItem.getMenu());
+				unselectAllSubMenus(menuItem.getMenu());
 			}
 		}
 	}

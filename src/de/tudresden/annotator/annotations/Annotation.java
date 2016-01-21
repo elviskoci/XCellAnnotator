@@ -140,18 +140,18 @@ public abstract class Annotation < T extends Annotation<?>>{
 	}
 	
 	
-//	/**
-//	 * Check if the given annotation object is equal to this one
-//	 * @param annotation the annotation object to compare this object to
-//	 * @return true if the objects are equal, false otherwise
-//	 */
-//	public abstract boolean equals(Annotation<P, T> annotation);
-//
-//	
-//	/**
-//	 * Get the hashcode of this object
-//	 * @return the hashcode of the object
-//	 */
-//	public abstract int hashCode();
+	/**
+	 * Check if the given annotation object is equal to this one
+	 * @param annotation the annotation object to compare this object to
+	 * @return true if the objects are equal, false otherwise
+	 */
+	public abstract boolean equals(Annotation<T> annotation);
+
+	
+	/**
+	 * Get the hashcode of this object
+	 * @return the hashcode of the object
+	 */
+	public abstract int hashCode();
 	
 }

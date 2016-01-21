@@ -10,10 +10,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleEvent;
 import org.eclipse.swt.ole.win32.OleListener;
 import org.eclipse.swt.ole.win32.Variant;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
@@ -44,13 +46,14 @@ public class GUIListeners {
 	    {
 	        public void handleEvent(Event event)
 	        {	
-	        	
-	    		MainWindow wm = MainWindow.getInstance();
-	    		String directoryPath = wm.getDirectoryPath();
-	    		String fileName = wm.getFileName();
-	    		OleAutomation embeddedWorkbook = wm.getEmbeddedWorkbook();
+	        	if(!MainWindow.getInstance().isControlSiteNull() && 
+						AnnotationHandler.getWorkbookAnnotation().hashCode()!= AnnotationHandler.getOldWorkbookAnnotationHash()){
+	    			
+		    		MainWindow wm = MainWindow.getInstance();
+		    		String directoryPath = wm.getDirectoryPath();
+		    		String fileName = wm.getFileName();
+		    		OleAutomation embeddedWorkbook = wm.getEmbeddedWorkbook();
 
-	        	if(!wm.isControlSiteNull() && wm.isControlSiteDirty() && embeddedWorkbook!=null){
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
 	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Want to save your changes?");
@@ -254,10 +257,13 @@ public class GUIListeners {
 				RangeAnnotation[] rangeAnnotations = RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
 				
 				if(rangeAnnotations!=null){		
-					// re-draw all the range annotations  
+					// update workbook annotation and re-draw all the range annotations  
 					AnnotationHandler.recreateRangeAnnotations(workbookAutomation, rangeAnnotations);	
 				}
-
+				
+				AnnotationHandler.setOldWorkbookAnnotationHash(
+						AnnotationHandler.getWorkbookAnnotation().hashCode()); 
+				
 				// adjust the menu items in the menu bar for the file that was just openned
 				MenuUtils.adjustBarMenuForOpennedFile();
 			}
@@ -288,12 +294,16 @@ public class GUIListeners {
 					AnnotationHandler.clearRedoList();
 					AnnotationHandler.clearUndoList();
 					
+					// to check if the workbook has changed since last save
+					int hash = AnnotationHandler.getWorkbookAnnotation().hashCode();
+					AnnotationHandler.setOldWorkbookAnnotationHash(hash);
+					
 					MenuUtils.adjustBarMenuForSheet(sheetName);
 					
-            		// int style = SWT.ICON_INFORMATION;
-					// MessageBox message = MainWindow.getInstance().createMessageBox(style);
-					// message.setMessage("The file was successfully saved.");
-					// message.open();
+            		int style = SWT.ICON_INFORMATION;
+					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					message.setMessage("The file was successfully saved.");
+					message.open();
 				}else{
 					int style = SWT.ICON_ERROR;
 					MessageBox message = MainWindow.getInstance().createMessageBox(style);
@@ -313,10 +323,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
-				if( !MainWindow.getInstance().isControlSiteNull() && 
-						MainWindow.getInstance().isControlSiteDirty() &&
-						 	MainWindow.getInstance().getEmbeddedWorkbook()!=null){
+															
+				if(AnnotationHandler.getWorkbookAnnotation().hashCode()!=
+						AnnotationHandler.getOldWorkbookAnnotationHash()){
 									
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
 	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
@@ -343,8 +352,12 @@ public class GUIListeners {
 	 	            if(response == SWT.NO || response == SWT.YES){
 	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+	 					
 	 					MainWindow.getInstance().setEmbeddedWorkbook(null);
 	 					MainWindow.getInstance().disposeControlSite();
+	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
+	 					MainWindow.getInstance().setColorToExcelPanel(lightGreyShade);
+	 					
 	 					MenuUtils.adjustBarMenuForFileClose();
 	 	            } 
 	 	            
@@ -358,7 +371,11 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){
 	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+	 					
+	 					MainWindow.getInstance().setEmbeddedWorkbook(null);
 	 					MainWindow.getInstance().disposeControlSite();
+	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
+	 					MainWindow.getInstance().setColorToExcelPanel(lightGreyShade);
 	 					MenuUtils.adjustBarMenuForFileClose();
 	 	            }
 	        	}					
@@ -422,9 +439,8 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {	
 				
-				if( !MainWindow.getInstance().isControlSiteNull() && 
-						MainWindow.getInstance().isControlSiteDirty() &&
-						 	MainWindow.getInstance().getEmbeddedWorkbook()!=null){
+				if(!MainWindow.getInstance().isControlSiteNull() && 
+					AnnotationHandler.getWorkbookAnnotation().hashCode()!= AnnotationHandler.getOldWorkbookAnnotationHash()){
 								
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
 	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
@@ -456,6 +472,7 @@ public class GUIListeners {
 	 	            	MainWindow.getInstance().disposeControlSite();
 	 	            	MainWindow.getInstance().disposeShell();
 	 	            } 
+	 	            
 	        	}else{
 	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
 	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);

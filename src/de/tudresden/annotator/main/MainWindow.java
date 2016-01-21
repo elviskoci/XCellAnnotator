@@ -88,7 +88,7 @@ public class MainWindow {
 	private void buildGUIWindow(){
 			
 		// this.display.addFilter(SWT.KeyDown, GUIListeners.createArrowButtonPressedEventListener());        		
-		this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
+		// this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
 		
 		// shell properties
 		this.shell.setText("Annotator");
@@ -247,10 +247,11 @@ public class MainWindow {
 		// prepare the display for the annotation process
 		setUpApplicationDisplay(application);
 		setUpWorkbook(workbook);
-		    
-	    //Color green1 = new Color (Display.getCurrent(), 169, 208, 142);
+		
+		// update display window
 	    Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 	    this.excelPanel.setBackground(green2);
+	    this.shell.setText("Annotator - "+excelFile.getName());
 	}
 	
 	
@@ -286,8 +287,11 @@ public class MainWindow {
 		// show the annotation_data_sheet if it exists
 	    OleAutomation  annotationDataSheet = 
 			WorkbookUtils.getWorksheetAutomationByName(workbook, RangeAnnotationsSheet.getName()); 
-		WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
-		
+	    
+	    if(annotationDataSheet!=null){
+	    	WorksheetUtils.setWorksheetVisibility(annotationDataSheet, true);
+	    }
+	    
 		// protect the structure of the workbook if it is not yet protected
 		boolean isProtected = WorkbookUtils.protectWorkbook(workbook, true, false);		
 		if(!isProtected){
@@ -314,6 +318,9 @@ public class MainWindow {
 		
 	}
 	
+	protected void setColorToExcelPanel(Color color){
+		excelPanel.setBackground(color);
+	}
 				
 	/**
 	 * @return the display
@@ -609,7 +616,6 @@ public class MainWindow {
 		return  new FileDialog(this.shell, SWT.OPEN);
 	}
 	
-	
 	/**
 	 * Create an image using the main display as device
 	 * @param fileName the name of the image file 
@@ -617,17 +623,6 @@ public class MainWindow {
 	 */
 	public Image createImage(String fileName){
 		return new Image(this.display, fileName);
-	}
-	
-	
-	/**
-	 * Get a copy of the given image. The appearance
-	 * of the image might be differ according to 
-	 * the specified flag 
-	 * @return an object that represents an SWT image
-	 */
-	public Image adjustImageByFlag(Image srcImage, int flag){
-		return new Image(this.display, srcImage, flag);
 	}
 	
 	/**

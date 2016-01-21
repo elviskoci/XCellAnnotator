@@ -43,6 +43,8 @@ public class AnnotationHandler {
 	 * This object stores and provides access to all annotations that are created in the embedded workbook  
 	 */
 	private static final WorkbookAnnotation workbookAnnotation = new WorkbookAnnotation();
+	
+	private static int oldWorkbookAnnotationHash;
 
 	/**
 	 * Maintains the list of all range annotations that can be undone
@@ -66,6 +68,9 @@ public class AnnotationHandler {
 			String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
 			workbookAnnotation.setWorkbookName(workbookName);
 		}
+		
+		workbookAnnotation.setCompleted(false);
+		workbookAnnotation.setNotApplicable(false);
 		
 		OleAutomation worksheetsAutomation = WorkbookUtils.getWorksheetsAutomation(workbookAutomation);
 		if(worksheetsAutomation==null)
@@ -811,5 +816,19 @@ public class AnnotationHandler {
 	 */
 	public static WorkbookAnnotation getWorkbookAnnotation() {
 		return workbookAnnotation;
+	}
+	
+	/**
+	 * @return the oldWorkbookAnnotationHash
+	 */
+	public static int getOldWorkbookAnnotationHash() {
+		return oldWorkbookAnnotationHash;
+	}
+
+	/**
+	 * @param oldWorkbookAnnotationHash the oldWorkbookAnnotationHash to set
+	 */
+	public static void setOldWorkbookAnnotationHash(int oldWorkbookAnnotationHash) {
+		AnnotationHandler.oldWorkbookAnnotationHash = oldWorkbookAnnotationHash;
 	}
 }
