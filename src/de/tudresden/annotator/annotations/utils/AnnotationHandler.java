@@ -604,11 +604,11 @@ public class AnnotationHandler {
 	
 	
 	/**
-	 * Hide/Show all the shapes used for annotations in the worksheet having the given name. 
-	 * This method will loop through the collection of shapes in the worksheet and set their visibility to false or true,
+	 * Hide/Show all the shapes used for annotations in the sheet having the given name. 
+	 * This method will loop through the collection of shapes in the sheet and set their visibility to false or true,
 	 * if they are used for annotations. The other shapes, that were present in the original file, will not be affected. 
 	 * @param workbookAutomation an OleAutomation to access the functionalities of the embedded workbook
-	 * @param sheetName the name of the worksheet for which the action will be performed
+	 * @param sheetName the name of the sheet for which the action will be performed
 	 * @param visible true to make annotation shapes visible, false to hide them
 	 */
 	public static void setVisibilityForAnnotationsInSheet(OleAutomation workbookAutomation, String sheetName, boolean visible ){
@@ -624,10 +624,10 @@ public class AnnotationHandler {
 	
 	
 	/**
-	 * Hide/Show all the shapes used for annotations in the worksheet having the given name. 
-	 * This method will loop through the collection of shapes in the worksheet and set their visibility to false or true,
+	 * Hide/Show all the shapes used for annotations in the sheet having the given name. 
+	 * This method will loop through the collection of shapes in the sheet and set their visibility to false or true,
 	 * if they are used for annotations. The other shapes, that were present in the original file, will not be affected.
-	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the worksheet that action will be applied on
+	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the sheet that action will be applied on
 	 * @param visible true to make annotation shapes visible, false to hide them
 	 */
 	public static void setVisibilityForAnnotationsInSheet(OleAutomation worksheetAutomation,  boolean visible){

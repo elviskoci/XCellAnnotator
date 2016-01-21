@@ -151,10 +151,8 @@ public class BarMenu {
 		/*
 		 * Show Annotations menu item  
 		 */
-		MenuItem menuItemShowAnnotations = new MenuItem(menuAnnotations, SWT.CASCADE);
-		menuItemShowAnnotations.setID(2070000);
-		menuItemShowAnnotations.setText("Show...");
-		menuItemShowAnnotations.setEnabled(false);
+		MenuItem menuItemShow = addShowMenu(menuAnnotations);
+		menuItemShow.setEnabled(false);
 		
 		
 		/*
@@ -428,7 +426,33 @@ public class BarMenu {
 		return hideMenuItem;
 	}
 	
+	private MenuItem addShowMenu(Menu menu){
+		
+		MenuItem showMenuItem = new MenuItem(menu, SWT.CASCADE);
+		showMenuItem.setID(2070000);
+		showMenuItem.setText("&Show");
+		Menu menuShow = new Menu(showMenuItem);
+		showMenuItem.setMenu(menuShow);
+		
+		/*
+		 * Show All menu item
+		 */
+		MenuItem menuItemShowAll = new MenuItem(menuShow, SWT.CASCADE);
+		menuItemShowAll.setID(2070100);
+		menuItemShowAll.setText("All");
+		menuItemShowAll.addSelectionListener(GUIListeners.createShowAllAnnotationsSelectionListener());
+		
+		/*
+		 * Show In Sheet menu item
+		 */
+		MenuItem menuItemHideInSheet = new MenuItem(menuShow, SWT.CASCADE);
+		menuItemHideInSheet.setID(2070700);
+		menuItemHideInSheet.setText("In Sheet");
+		menuItemHideInSheet.addSelectionListener(GUIListeners.createShowInSheetAnnotationsSelectionListener());
 	
+		return showMenuItem;
+	}
+
 	private MenuItem addDeleteMenu(Menu menu){
 		
 		MenuItem deleteMenuItem = new MenuItem(menu, SWT.CASCADE);

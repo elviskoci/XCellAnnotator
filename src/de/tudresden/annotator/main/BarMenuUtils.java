@@ -14,7 +14,7 @@ import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 /**
  * @author Elvis Koci
  */
-public class MenuUtils {
+public class BarMenuUtils {
 	
 	protected static void adjustBarMenuForSheet(String sheetName){
 					
@@ -43,7 +43,7 @@ public class MenuUtils {
 		// it is after creation that its name is updated to "Range_Annotations_Data"
 		if(sheetAnnotation==null || sheetName.compareTo(RangeAnnotationsSheet.getName())==0){
 			for (MenuItem menuItem : annotationsMenuItems) {
-				if(menuItem.getID()!=2030000){
+				if(menuItem.getID()!=2030000){ // File as
 					menuItem.setEnabled(false);
 					disableAllSubMenus(menuItem.getMenu());
 				}else{
@@ -273,8 +273,7 @@ public class MenuUtils {
 							}
 						}
 					}
-				}			
-				
+				}							
 				String activeSheetName = MainWindow.getInstance().getActiveWorksheetName();
 				adjustBarMenuForSheet(activeSheetName);
 			}			
@@ -345,6 +344,30 @@ public class MenuUtils {
 			}
 		}
 	}
+	
+	
+	protected static void setEnabledForRangeAsMenuItem(boolean enabled){
+		
+		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		MenuItem[] menuItems = menuBar.getMenuItems();
+		
+		MenuItem annotationsMenuItem = null;
+		for (MenuItem menuItem : menuItems) {
+			if(menuItem.getID()==2000000){ // annotations menu
+				annotationsMenuItem = menuItem;
+				break;
+			}
+		}
+		
+		MenuItem[] annotationsMenuItems = annotationsMenuItem.getMenu().getItems();
+		for (MenuItem menuItem : annotationsMenuItems) {
+			if(menuItem.getID()==2010000){ // annotations menu
+				menuItem.setEnabled(enabled);
+				break;
+			}
+		}
+	}
+	
 	
 	private static void enableAllSubMenus(Menu cascadeMenu){
 		if(cascadeMenu!=null){

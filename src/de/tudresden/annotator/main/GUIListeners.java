@@ -186,7 +186,7 @@ public class GUIListeners {
 					
 					
 				// adjust the bar menu according to the properties of the workbook and the active sheet
-				MenuUtils.adjustBarMenuForWorkbook();		
+				BarMenuUtils.adjustBarMenuForWorkbook();		
 								
 				// return the focus to the embedded excel workbook, if it does not have it already
 				if(!MainWindow.getInstance().isControlSiteFocusControl())
@@ -265,7 +265,7 @@ public class GUIListeners {
 						AnnotationHandler.getWorkbookAnnotation().hashCode()); 
 				
 				// adjust the menu items in the menu bar for the file that was just openned
-				MenuUtils.adjustBarMenuForOpennedFile();
+				BarMenuUtils.adjustBarMenuForOpennedFile();
 			}
 		};
 	}
@@ -298,7 +298,7 @@ public class GUIListeners {
 					int hash = AnnotationHandler.getWorkbookAnnotation().hashCode();
 					AnnotationHandler.setOldWorkbookAnnotationHash(hash);
 					
-					MenuUtils.adjustBarMenuForSheet(sheetName);
+					BarMenuUtils.adjustBarMenuForSheet(sheetName);
 					
             		int style = SWT.ICON_INFORMATION;
 					MessageBox message = MainWindow.getInstance().createMessageBox(style);
@@ -358,7 +358,7 @@ public class GUIListeners {
 	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
 	 					MainWindow.getInstance().setColorToExcelPanel(lightGreyShade);
 	 					
-	 					MenuUtils.adjustBarMenuForFileClose();
+	 					BarMenuUtils.adjustBarMenuForFileClose();
 	 	            } 
 	 	            
 				}else{
@@ -376,7 +376,7 @@ public class GUIListeners {
 	 					MainWindow.getInstance().disposeControlSite();
 	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
 	 					MainWindow.getInstance().setColorToExcelPanel(lightGreyShade);
-	 					MenuUtils.adjustBarMenuForFileClose();
+	 					BarMenuUtils.adjustBarMenuForFileClose();
 	 	            }
 	        	}					
 			}
@@ -537,7 +537,7 @@ public class GUIListeners {
 					wasUpdated=true;
 				}
 								
-				MenuUtils.adjustBarMenuForSheet(sheetName);
+				BarMenuUtils.adjustBarMenuForSheet(sheetName);
 				
 				if(wasUpdated){
 					AnnotationHandler.clearRedoList();
@@ -605,7 +605,7 @@ public class GUIListeners {
 				}
 
 				
-				MenuUtils.adjustBarMenuForSheet(sheetName);
+				BarMenuUtils.adjustBarMenuForSheet(sheetName);
 				
 				if(wasUpdated){
 					AnnotationHandler.clearRedoList();
@@ -702,13 +702,13 @@ public class GUIListeners {
 					wasUpdated=true;
 				}
 				
-				MenuUtils.adjustBarMenuForWorkbook();
+				BarMenuUtils.adjustBarMenuForWorkbook();
 				
 				if(wasUpdated){			
 					AnnotationHandler.clearRedoList();
 					AnnotationHandler.clearUndoList();
 					
-					MenuUtils.adjustBarMenuForWorkbook();
+					BarMenuUtils.adjustBarMenuForWorkbook();
 					
 					int style = SWT.ICON_INFORMATION;
 					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
@@ -763,7 +763,7 @@ public class GUIListeners {
 					wasUpdated = true;
 				}
 				
-				MenuUtils.adjustBarMenuForWorkbook();
+				BarMenuUtils.adjustBarMenuForWorkbook();
 				
 				if(wasUpdated){
 					
@@ -800,7 +800,7 @@ public class GUIListeners {
 				 	 
 				 // if the sheet was empty, had no annotations, 
 				 // the menu needs to be updated
-				 MenuUtils.adjustBarMenuForSheet(sheetName);
+				 BarMenuUtils.adjustBarMenuForSheet(sheetName);
 				 
 				 if(MainWindow.getInstance().isControlSiteFocusControl())
 					 	MainWindow.getInstance().setFocusToShell();			 
@@ -848,7 +848,7 @@ public class GUIListeners {
 	 	            messageBox.open();
 				}
 					
-				MenuUtils.adjustBarMenuForSheet(ra.getSheetName());
+				BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());
 			}
 		};
 	}	
@@ -879,7 +879,7 @@ public class GUIListeners {
 				AnnotationHandler.removeLastFromRedoList();
 				if(!result){
 					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
-					MenuUtils.adjustBarMenuForSheet(ra.getSheetName());	
+					BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());	
 					return;
 				}
 				
@@ -888,7 +888,7 @@ public class GUIListeners {
 				RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);
 				AnnotationHandler.getWorkbookAnnotation().addRangeAnnotation(ra);
 				
-				MenuUtils.adjustBarMenuForSheet(ra.getSheetName());			
+				BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());			
 			}
 		};
 	}	
@@ -921,6 +921,38 @@ public class GUIListeners {
 			}
 		};
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createShowAllAnnotationsSelectionListener(){
+		return new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				AnnotationHandler.setVisilityForAllAnnotations(workbookAutomation, true);
+			}			
+		};
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createShowInSheetAnnotationsSelectionListener(){
+		return new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				AnnotationHandler.setVisibilityForAnnotationsInSheet(workbookAutomation, sheetName, true);
+			}
+			
+		};
+	}
 	
 	/**
 	 * 
@@ -943,7 +975,7 @@ public class GUIListeners {
 				AnnotationHandler.clearRedoList();
 				AnnotationHandler.clearUndoList();
 				
-				MenuUtils.adjustBarMenuForSheet(sheetName);
+				BarMenuUtils.adjustBarMenuForSheet(sheetName);
 			}
 		};
 	}
@@ -970,7 +1002,7 @@ public class GUIListeners {
 				AnnotationHandler.clearRedoList();
 				AnnotationHandler.clearUndoList();
 				
-				MenuUtils.adjustBarMenuForSheet(sheetName);
+				BarMenuUtils.adjustBarMenuForSheet(sheetName);
 			}
 		};
 	}
