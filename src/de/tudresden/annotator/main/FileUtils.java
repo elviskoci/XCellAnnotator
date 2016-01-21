@@ -66,9 +66,10 @@ public class FileUtils {
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		
+		// activate alerts after save
+		ApplicationUtils.setDisplayAlerts(application, true);
+		
 		if(!beforeFileClose){			
-			// activate alerts after save
-			ApplicationUtils.setDisplayAlerts(application, true);
 			MainWindow.getInstance().doVerbControlSite(OLE.OLEIVERB_INPLACEACTIVATE);
 			MainWindow.getInstance().setUpApplicationDisplay(application);
 			
