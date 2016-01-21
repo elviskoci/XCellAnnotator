@@ -449,7 +449,7 @@ public class MainWindow {
 	/**
 	 * @param embeddedWorkbook the embeddedWorkbook to set
 	 */
-	private void setEmbeddedWorkbook(OleAutomation embeddedWorkbook) {
+	protected void setEmbeddedWorkbook(OleAutomation embeddedWorkbook) {
 		this.embeddedWorkbook = embeddedWorkbook;
 	}
 	

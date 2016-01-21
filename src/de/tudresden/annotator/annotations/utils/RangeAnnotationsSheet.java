@@ -390,6 +390,7 @@ public class RangeAnnotationsSheet {
 		
 		// get the range that contains the annotation data together with the header row
 		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheetBeforeFilter);
+		annotationDataSheetBeforeFilter.dispose();	// TODO: It seems this line occasionally throws SWTError native exception: 0xc0000005
 		
 		// filter this range to get only those rows relevant to the specified sheet 
 		RangeUtils.filterRange(usedRange, fieldIndex, value); 
@@ -419,10 +420,7 @@ public class RangeAnnotationsSheet {
 		}
 		areasAuto.dispose();
 		
-		// dispose the AnnotationDataSheet OleAutomation and create a new one. 
-		// this is done to prevent some OLE exception that appear when using the same
 		// OleAutomation after filtering the range 
-		annotationDataSheetBeforeFilter.dispose();	
 		OleAutomation annotationDataSheetAfterFilter = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
 		
 		// remove filtered rows 

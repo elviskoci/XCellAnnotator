@@ -343,6 +343,7 @@ public class GUIListeners {
 	 	            if(response == SWT.NO || response == SWT.YES){
 	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+	 					MainWindow.getInstance().setEmbeddedWorkbook(null);
 	 					MainWindow.getInstance().disposeControlSite();
 	 					MenuUtils.adjustBarMenuForFileClose();
 	 	            } 
@@ -360,8 +361,7 @@ public class GUIListeners {
 	 					MainWindow.getInstance().disposeControlSite();
 	 					MenuUtils.adjustBarMenuForFileClose();
 	 	            }
-	        	}		
-				
+	        	}					
 			}
 		};
 	}
@@ -805,28 +805,32 @@ public class GUIListeners {
 					return;
 				
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook(); 
-				
-				OleAutomation worksheetAutomation = 
+				OleAutomation sheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 				
-				WorksheetUtils.unprotectWorksheet(worksheetAutomation);		
-				boolean isSuccess = AnnotationHandler.deleteAnnotationFromSheet(worksheetAutomation, ra);
-				WorksheetUtils.protectWorksheet(worksheetAutomation);
-				worksheetAutomation.dispose();
+				WorksheetUtils.unprotectWorksheet(sheetAutomation);		
+				boolean isSuccess = AnnotationHandler.deleteAnnotationFromSheet(sheetAutomation, ra);
+				WorksheetUtils.protectWorksheet(sheetAutomation);
+				sheetAutomation.dispose();
 				
 				if(isSuccess){
 					AnnotationHandler.removeLastFromUndoList();
 					AnnotationHandler.addToRedoList(ra);
 						
 					RangeAnnotationsSheet.deleteRangeAnnotationData(workbookAutomation, ra, true);
-					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
 					
+					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
+						
+					MainWindow.getInstance().setActiveWorksheetIndex(ra.getSheetIndex());
+					MainWindow.getInstance().setActiveWorksheetName(ra.getSheetName());
+					MainWindow.getInstance().setCurrentSelection(new String[]{ra.getRangeAddress()});
+									
 				}else{
 					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
 	 	            messageBox.setMessage("Could not undo the last range annotation!!!");
 	 	            messageBox.open();
 				}
-				
+					
 				MenuUtils.adjustBarMenuForSheet(ra.getSheetName());
 			}
 		};

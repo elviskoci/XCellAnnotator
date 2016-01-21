@@ -129,7 +129,7 @@ public class AnnotationHandler {
             messageBox.open();
             return;
 		}
-		
+
 		// get the OleAutomation object for the worksheet using its name
 		OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
 
@@ -138,7 +138,7 @@ public class AnnotationHandler {
 							
 		// for each area in the range create an annotation
 		for (String selectedArea : selectedAreas) {
-									
+			
 			// create annotation object			
 			String classLabel = annotationClass.getLabel();
 			String annotationName = generateRangeAnnotationName(sheetName, classLabel, selectedArea);
@@ -149,7 +149,8 @@ public class AnnotationHandler {
 			if(!annotationResult){
 			    WorksheetUtils.protectWorksheet(sheetAutomation);
 				WorksheetUtils.makeWorksheetActive(sheetAutomation);
-				break;
+				sheetAutomation.dispose();
+				return;
 			}
 			
 			// range automation has to re-created here because was disposed when checked if range is empty 

@@ -3,7 +3,6 @@
  */
 package de.tudresden.annotator.annotations;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 

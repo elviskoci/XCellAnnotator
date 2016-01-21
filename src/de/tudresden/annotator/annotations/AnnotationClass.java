@@ -3,8 +3,6 @@
  */
 package de.tudresden.annotator.annotations;
 
-import org.eclipse.swt.SWT;
-
 /**
  * @author Elvis Koci
  */
