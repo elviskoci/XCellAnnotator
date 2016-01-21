@@ -45,6 +45,7 @@ public class MenuUtils {
 			for (MenuItem menuItem : annotationsMenuItems) {
 				if(menuItem.getID()!=2030000){
 					menuItem.setEnabled(false);
+					disableAllSubMenus(menuItem.getMenu());
 				}else{
 					menuItem.setEnabled(true);
 				}
@@ -61,6 +62,7 @@ public class MenuUtils {
 					   menuItem.getID() == 2060000 ){ 
 							// &Range as, &Delete, Undo, and Redo, Show formulas 
 							menuItem.setEnabled(false);
+							disableAllSubMenus(menuItem.getMenu());
 					}else{ 
 							menuItem.setEnabled(true);
 							if(menuItem.getID()==2020000){ // &Sheet as 
@@ -78,6 +80,10 @@ public class MenuUtils {
 									}
 								}
 							}
+							
+							if(menuItem.getID()!=2020000 && menuItem.getID()!=2030000){
+								enableAllSubMenus(menuItem.getMenu());
+							}
 					}
 				}
 							
@@ -91,6 +97,7 @@ public class MenuUtils {
 						   menuItem.getID() == 2090000){  
 						   // &Range as, &Hide, &Delete, Show Formulas, and Show Annotations 
 								menuItem.setEnabled(false);
+								disableAllSubMenus(menuItem.getMenu());
 						}else{
 								menuItem.setEnabled(true);
 								if(menuItem.getID()==2020000){ // &Sheet as 
@@ -107,6 +114,10 @@ public class MenuUtils {
 										}
 									}
 								}
+								
+								if(menuItem.getID()!=2020000 && menuItem.getID()!=2030000){
+									enableAllSubMenus(menuItem.getMenu());
+								}
 						}
 					}
 					
@@ -120,6 +131,7 @@ public class MenuUtils {
 							   menuItem.getID() == 2080000 ){
 							   // &Hide, &Delete, Show Formulas, &Show Annotations, Undo Annotation
 							   menuItem.setEnabled(false);
+							   disableAllSubMenus(menuItem.getMenu());
 							}else if(menuItem.getID() == 2090000){ // Redo last annotation
 								if(AnnotationHandler.getLastFromRedoList()==null){
 										menuItem.setEnabled(false);
@@ -189,6 +201,7 @@ public class MenuUtils {
 					// &Range as, &Sheet as, &Show Annotation, 
 					// &Hide, &Delete, Show Formulas, Undo, and Redo
 						menuItem.setEnabled(false);
+						disableAllSubMenus(menuItem.getMenu());
 				}else{
 						menuItem.setEnabled(true);
 						if(menuItem.getID()==2030000){ // &File as 
@@ -221,6 +234,7 @@ public class MenuUtils {
 						// &Hide, &Delete, Show Formulas, Undo, and Redo
 						
 							menuItem.setEnabled(false);
+							disableAllSubMenus(menuItem.getMenu());
 					}else{
 						if(menuItem.getID() == 2030000 ){ // File as
 							menuItem.setEnabled(true);
@@ -244,6 +258,8 @@ public class MenuUtils {
 				MenuItem[] annotationsMenuItems = annotationsMenu.getMenu().getItems();
 				for (MenuItem menuItem : annotationsMenuItems) {
 					if(menuItem.getID() == 2030000){ // &File as
+						
+						menuItem.setEnabled(true);
 						MenuItem[] submenus = menuItem.getMenu().getItems();
 						for (int i = 0; i < submenus.length; i++) {
 							if(submenus[i].getID()==2030100){ // Not Applicable

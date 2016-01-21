@@ -61,7 +61,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Add a new RangeAutomation
+	 * Add a new RangeAnnotation
 	 * @param sheetName the name of the worksheet where the RangeAnnotation is placed 
 	 * @param sheetIndex the index of the worksheet where the RangeAnnotation is placed 
 	 * @param annotationClass the AnnotationClass that this RangeAnnotation is member of
@@ -108,7 +108,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Get the RangeAutomation based on the worksheet key and annotation key
+	 * Get the RangeAnnotation based on the worksheet key and annotation key
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed 
 	 * @param annotationKey a string that is used as key for the annotation object 
 	 * @return the RangeAnnotation object that corresponds to the given arguments  
@@ -127,7 +127,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	 * Get the collection of RangeAnnotations for the given Worksheet key and AnnotationClass label
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 * @param classLabel the label of the AnnotationClass that this RangeAnnotation is member of
-	 * @return a collection of RangeAutomations that correspond to the given arguments
+	 * @return a collection of RangeAnnotations that correspond to the given arguments
 	 */
 	public Collection<RangeAnnotation> getSheetAnnotationsByClass(String sheetKey, String classLabel){
 		
@@ -157,7 +157,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Remove a RangeAutomation 
+	 * Remove a RangeAnnotation 
 	 * @param rangeAnnotation an object that represents a RangeAnnotation
 	 */
 	public void removeRangeAnnotation(RangeAnnotation rangeAnnotation){
@@ -183,7 +183,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Remove a RangeAutomation 
+	 * Remove a RangeAnnotation
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 * @param classLabel the label of the AnnotationClass that this RangeAnnotation is member of
 	 * @param annotationKey a string that is used as key for the annotation object 
@@ -211,7 +211,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Remove a RangeAutomation 
+	 * Remove a RangeAnnotation
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 * @param rangeAnnotationKey a string that is used as key for the annotation object 
 	 */
@@ -239,7 +239,7 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Remove all RangeAutomations belonging to the specified Workbook and AnnotationClass
+	 * Remove all RangeAnnotations belonging to the specified Workbook and AnnotationClass
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 * @param classLabel the label of the AnnotationClass that this RangeAnnotation is member of
 	 * 
@@ -251,10 +251,12 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 		if(sheetAnnotation==null)
 			return;
 		
-		ArrayList<RangeAnnotation>  annotations= new ArrayList<RangeAnnotation>(sheetAnnotation.getAnnotationsByClass(classLabel));	
-		for (RangeAnnotation rangeAnnotation : annotations) {
-			this.removeAnnotationFromBucket(classLabel, rangeAnnotation.getName());
-			this.removeAnnotation(rangeAnnotation.getName());
+		RangeAnnotation[] rangeAnnotations = 
+				sheetAnnotation.getAnnotationsByClass(classLabel).toArray(
+						new RangeAnnotation[sheetAnnotation.getAllAnnotations().size()]);
+			
+		for (RangeAnnotation rangeAnnotation : rangeAnnotations) {
+			this.removeRangeAnnotation(rangeAnnotation);
 		}
 		
 		sheetAnnotation.removeAllAnnotationsOfClass(classLabel);
@@ -262,14 +264,34 @@ public class WorkbookAnnotation extends Annotation<RangeAnnotation>{
 	
 	
 	/**
-	 * Remove all RangeAutomation belonging to the worksheet with the given key
+	 * Remove all RangeAnnotations belonging to the worksheet with the given key
 	 * @param sheetKey a string that represents the id (key) of the worksheet where the RangeAnnotation is placed
 	 */
-	public void removeAllAnnotationsFromSheet(String sheetKey){
+	public void removeAllRangeAnnotationsFromSheet(String sheetKey){
 		WorksheetAnnotation sheetAnnotation= this.worksheetAnnotations.get(sheetKey);
-		sheetAnnotation.removeAllAnnotations();
+		RangeAnnotation[] rangeAnnotations = 
+				sheetAnnotation.getAllAnnotations().toArray(
+						new RangeAnnotation[sheetAnnotation.getAllAnnotations().size()]);
+		
+		for (RangeAnnotation rangeAnnotation : rangeAnnotations) {
+			this.removeRangeAnnotation(rangeAnnotation);
+		}
 	}
 	
+	/**
+	 * Remove all RangeAnnotations belonging to the worksheet with the given key
+	 * @param sheetAnnotation the WorksheetAnnotation object that contains all the range annotations to delete
+	 */
+	public void removeAllRangeAnnotationsFromSheet(WorksheetAnnotation sheetAnnotation){
+		
+		RangeAnnotation[] rangeAnnotations = 
+				sheetAnnotation.getAllAnnotations().toArray(
+						new RangeAnnotation[sheetAnnotation.getAllAnnotations().size()]);
+		
+		for (RangeAnnotation rangeAnnotation : rangeAnnotations) {
+			this.removeRangeAnnotation(rangeAnnotation);
+		}
+	}
 	
 	@Override
 	/**

@@ -93,8 +93,8 @@ public class MainWindow {
 		// shell properties
 		this.shell.setText("Annotator");
 	    this.shell.setLayout(new FillLayout());
-	    this.shell.setSize(1600, 800);
-	    // this.shell.setSize(1500, 650);
+	    //this.shell.setSize(1600, 800);
+	    this.shell.setSize(1500, 650);
 	    // add listener for the close event ( user clicks the close button (X) )
 	    this.shell.addListener(SWT.Close, GUIListeners.createCloseApplicationEventListener());
 	    

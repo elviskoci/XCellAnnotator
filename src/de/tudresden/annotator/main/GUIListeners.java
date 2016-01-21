@@ -3,6 +3,9 @@
  */
 package de.tudresden.annotator.main;
 
+import java.util.Collection;
+import java.util.Iterator;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -480,18 +483,55 @@ public class GUIListeners {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 				
-				sheetAnnotation.setCompleted(!sheetAnnotation.isCompleted());			
+				if(sheetAnnotation==null){
+					System.out.println(sheetName);
+					return;
+				}
+						
+				boolean wasUpdated = false;  
 				
-				AnnotationHandler.clearRedoList();
-				AnnotationHandler.clearUndoList();
-				
+				if(!sheetAnnotation.isCompleted()){
+					if( sheetAnnotation.getAllAnnotations().isEmpty()){
+						int style = SWT.ICON_WARNING ;
+						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						mb.setMessage("You can not mark this sheet as completed. "
+								+ "It does not contain any annotations yet!"); 
+						mb.open();
+					}else{
+						if(sheetAnnotation.getAllAnnotations().size()<3){
+							int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+							MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+							mb.setMessage("This sheet contains very few annotations. Are you sure you want to proceed?!"); 
+							int option = mb.open();
+							
+							if(option == SWT.YES){
+								sheetAnnotation.setCompleted(true);
+								wasUpdated=true;
+								
+							}
+							
+						}else{
+							sheetAnnotation.setCompleted(true);
+							wasUpdated=true;
+						}
+					}	
+				}else{
+					sheetAnnotation.setCompleted(false);
+					wasUpdated=true;
+				}
+								
 				MenuUtils.adjustBarMenuForSheet(sheetName);
 				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				String value = String.valueOf((sheetAnnotation.isCompleted())).toUpperCase();
-				mb.setMessage(" Sheet status was updated to Completed := "+value); 
-				mb.open();
+				if(wasUpdated){
+					AnnotationHandler.clearRedoList();
+					AnnotationHandler.clearUndoList();
+									
+					int style = SWT.ICON_INFORMATION;
+					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					String value = String.valueOf((sheetAnnotation.isCompleted())).toUpperCase();
+					mb.setMessage(" Sheet status was updated to Completed := "+value); 
+					mb.open();
+				}
 			}
 		};
 	}
@@ -508,18 +548,58 @@ public class GUIListeners {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 				
-				sheetAnnotation.setNotApplicable(!sheetAnnotation.isNotApplicable());
+				if(sheetAnnotation==null){
+					System.out.println(sheetName);
+					return;
+				}
 				
-				AnnotationHandler.clearRedoList();
-				AnnotationHandler.clearUndoList();
+				boolean wasUpdated = false;  
+
+				if(!sheetAnnotation.isNotApplicable()){
+					
+					if(!sheetAnnotation.getAllAnnotations().isEmpty()){
+						int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						mb.setMessage("Marking this sheet as not applicable will erase all the existing annotations "
+								+ "in the sheet. Do you want to proceed ?"); 
+						int option = mb.open();
+						
+						if(option == SWT.YES){
+							OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+							AnnotationHandler.deleteShapeAnnotationsInSheet(embeddedWorkbook, sheetName);
+							RangeAnnotationsSheet.deleteRangeAnnotationDataFromSheet(embeddedWorkbook, sheetName, true);
+							
+							AnnotationHandler.clearRedoList();
+							AnnotationHandler.clearUndoList();
+							
+							workbookAnnotation.removeAllRangeAnnotationsFromSheet(sheetName);
+							
+							sheetAnnotation.setNotApplicable(true);
+							wasUpdated = true;
+						}
+					}else{
+						sheetAnnotation.setNotApplicable(true);
+						wasUpdated = true;
+					}
+					
+				}else{
+					sheetAnnotation.setNotApplicable(false);
+					wasUpdated = true;
+				}
+
 				
 				MenuUtils.adjustBarMenuForSheet(sheetName);
 				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				String value = String.valueOf((sheetAnnotation.isNotApplicable())).toUpperCase();
-				mb.setMessage(" Sheet status was updated to NotApplicable := "+value); 
-				mb.open();
+				if(wasUpdated){
+					AnnotationHandler.clearRedoList();
+					AnnotationHandler.clearUndoList();
+					
+					int style = SWT.ICON_INFORMATION;
+					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					String value = String.valueOf((sheetAnnotation.isNotApplicable())).toUpperCase();
+					mb.setMessage(" Sheet status was updated to NotApplicable := "+value); 
+					mb.open();
+				}
 			}
 		};
 	}
@@ -533,19 +613,92 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e){
 				
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();		
-				workbookAnnotation.setCompleted(!workbookAnnotation.isCompleted());
+				WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();		
+				boolean wasUpdated = false; 
 				
-				AnnotationHandler.clearRedoList();
-				AnnotationHandler.clearUndoList();
+				if(!wa.isCompleted()){
+
+					if( wa.getAllAnnotations().isEmpty()){
+						int style = SWT.ICON_WARNING ;
+						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						mb.setMessage("You can not mark the file (workbook) as completed. "
+								+ "It does not contain any annotations yet!"); 
+						mb.open();
+					}else{
+					
+						Collection<WorksheetAnnotation> sheetAnnotations 
+											= wa.getWorksheetAnnotations().values();
+						Iterator<WorksheetAnnotation> itr = sheetAnnotations.iterator();
+						
+						boolean hasPendingSheets =  false;
+						while (itr.hasNext()) {
+							WorksheetAnnotation sa = itr.next();
+							
+							if(!sa.isCompleted() && !sa.isNotApplicable()){
+								if(sa.getAllAnnotations().isEmpty() || sa.getAllAnnotations().size()<3){
+									
+									OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+									OleAutomation worksheetAutomation = 
+											WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, sa.getSheetName());
+									WorksheetUtils.makeWorksheetActive(worksheetAutomation);
+									
+									int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+									MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+									mb.setMessage("The \""+sa.getSheetName()+"\" does not contain any or "
+											+ "contains very few annotations. Do you want to proceed ?"); 
+									int option = mb.open();
+									
+									if(option == SWT.YES){
+										wasUpdated=true;
+									}
+									
+									if(option == SWT.NO){
+										wasUpdated = false;
+										AnnotationHandler.clearRedoList();
+										AnnotationHandler.clearUndoList();
+										break;
+									}		
+									
+									hasPendingSheets = true; 
+								}
+							}
+						}
+						
+						if(hasPendingSheets){
+//							int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+//							MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+//							mb.setMessage("One or more sheets have no or very few annotations. "
+//									+ "Do you want to proceed ?"); 
+//							int option = mb.open();
+//							
+//							if(option == SWT.YES){
+//								wa.setCompleted(true);
+//								wasUpdated=true;
+//							}
+						}else{
+							wa.setCompleted(true);
+							wasUpdated=true;
+						}
+					}
+				}else{
+					wa.setCompleted(false);
+					wasUpdated=true;
+				}
 				
 				MenuUtils.adjustBarMenuForWorkbook();
 				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				String value = String.valueOf((workbookAnnotation.isCompleted())).toUpperCase();
-				mb.setMessage("File (Workbook) status was updated to Completed := "+value); 
-				mb.open();
+				if(wasUpdated){			
+					AnnotationHandler.clearRedoList();
+					AnnotationHandler.clearUndoList();
+					
+					MenuUtils.adjustBarMenuForWorkbook();
+					
+					int style = SWT.ICON_INFORMATION;
+					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					String value = String.valueOf((wa.isCompleted())).toUpperCase();
+					mb.setMessage("File (Workbook) status was updated to Completed := "+value); 
+					mb.open();
+				}
 			}
 		};
 	}
@@ -560,18 +713,49 @@ public class GUIListeners {
 			public void widgetSelected(SelectionEvent e){
 				
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();		
-				workbookAnnotation.setNotApplicable(!workbookAnnotation.isNotApplicable());
+				boolean wasUpdated = false;
 				
-				AnnotationHandler.clearRedoList();
-				AnnotationHandler.clearUndoList();
+				if(!workbookAnnotation.isNotApplicable()){
+					
+					if(!workbookAnnotation.getAllAnnotations().isEmpty()){
+						int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						mb.setMessage("Marking file (workbook) as not applicable will erase all the existing annotations. "
+								+ "Do you want to proceed ?"); 
+						int option = mb.open();
+						
+						if(option == SWT.YES){
+							OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+							AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
+							RangeAnnotationsSheet.deleteAllRangeAnnotationData(embeddedWorkbook);
+							
+							AnnotationHandler.clearRedoList();
+							AnnotationHandler.clearUndoList();
+							AnnotationHandler.getWorkbookAnnotation().removeAllAnnotations();
+							
+							workbookAnnotation.setNotApplicable(true);
+							wasUpdated = true;
+						}
+					}else{
+						workbookAnnotation.setNotApplicable(true);
+						wasUpdated = true;
+					}
+					
+				}else{
+					workbookAnnotation.setNotApplicable(false);
+					wasUpdated = true;
+				}
 				
 				MenuUtils.adjustBarMenuForWorkbook();
 				
-				int style = SWT.ICON_INFORMATION;
-				MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-				String value = String.valueOf((workbookAnnotation.isNotApplicable())).toUpperCase();
-				mb.setMessage("File (Workbook) status was updated to NotApplicable := "+value); 
-				mb.open();
+				if(wasUpdated){
+					
+					int style = SWT.ICON_INFORMATION;
+					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					String value = String.valueOf((workbookAnnotation.isNotApplicable())).toUpperCase();
+					mb.setMessage("File (Workbook) status was updated to NotApplicable := "+value); 
+					mb.open();
+				}
 			}
 		};
 	}
@@ -674,6 +858,7 @@ public class GUIListeners {
 				AnnotationHandler.removeLastFromRedoList();
 				if(!result){
 					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
+					MenuUtils.adjustBarMenuForSheet(ra.getSheetName());	
 					return;
 				}
 				
@@ -732,7 +917,7 @@ public class GUIListeners {
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				workbookAnnotation.removeAllAnnotations();
 				
-				RangeAnnotationsSheet.deleteAllRangeAnnotations(workbookAutomation);
+				RangeAnnotationsSheet.deleteAllRangeAnnotationData(workbookAutomation);
 				
 				AnnotationHandler.clearRedoList();
 				AnnotationHandler.clearUndoList();
@@ -754,12 +939,12 @@ public class GUIListeners {
 				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
 				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
 				
-				AnnotationHandler.deleteAnnotationsFromSheet(workbookAutomation, sheetName);
+				AnnotationHandler.deleteShapeAnnotationsInSheet(workbookAutomation, sheetName);
 				
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				workbookAnnotation.removeAllAnnotationsFromSheet(sheetName);
+				workbookAnnotation.removeAllRangeAnnotationsFromSheet(sheetName);
 				
-				RangeAnnotationsSheet.deleteRangeAnnotationsInSheet(workbookAutomation, sheetName, true);		
+				RangeAnnotationsSheet.deleteRangeAnnotationDataFromSheet(workbookAutomation, sheetName, true);		
 				
 				AnnotationHandler.clearRedoList();
 				AnnotationHandler.clearUndoList();

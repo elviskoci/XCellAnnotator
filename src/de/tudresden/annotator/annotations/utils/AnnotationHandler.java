@@ -79,6 +79,12 @@ public class AnnotationHandler {
 			
 			String name = WorksheetUtils.getWorksheetName(worksheet);
 			int index = WorksheetUtils.getWorksheetIndex(worksheet);
+			
+			if(name.compareToIgnoreCase(RangeAnnotationsSheet.getName())==0 ||
+			   name.compareToIgnoreCase(AnnotationStatusSheet.getName())==0){
+				continue;
+			}
+				
 			WorksheetAnnotation wa = new WorksheetAnnotation(name, index);
 			workbookAnnotation.getWorksheetAnnotations().put(name, wa);
 		}		
@@ -676,7 +682,7 @@ public class AnnotationHandler {
 	 * @param workbookAutomation an OleAutomation to access the functionalities of the embedded workbook
 	 * @param sheetName the name of the sheet for which the annotation shapes will be deleted
 	 */
-	public static void deleteAnnotationsFromSheet(OleAutomation workbookAutomation, String sheetName ){
+	public static void deleteShapeAnnotationsInSheet(OleAutomation workbookAutomation, String sheetName ){
 		
 		// can not apply this method to the worksheet that stores the annotation (meta-)data, as it does not contain any shapes 
 		if(sheetName.compareTo(RangeAnnotationsSheet.name)==0)

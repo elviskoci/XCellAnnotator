@@ -352,7 +352,7 @@ public class RangeAnnotationsSheet {
 	 * @param sheetName the name of the sheet where the annotation are placed (drawn)
 	 * @param permanentDelete if true the annotation data will be deleted permanently, otherwise they will just be hidden  
 	 */
-	public static void deleteRangeAnnotationsInSheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
+	public static void deleteRangeAnnotationDataFromSheet(OleAutomation workbookAutomation, String sheetName, boolean permanentDelete ){
 		deleteDataRows(workbookAutomation, "Sheet.Name", sheetName, permanentDelete);
 	}
 	
@@ -457,7 +457,7 @@ public class RangeAnnotationsSheet {
 	 * where the annotation data are stored, except of the header row. 
 	 * @param workbookAutomation
 	 */
-	public static void deleteAllRangeAnnotations(OleAutomation workbookAutomation){
+	public static void deleteAllRangeAnnotationData(OleAutomation workbookAutomation){
 		
 		// get the OleAutomation object for the sheet that stores the annotation metadata (a.k.a. annotation data sheet) 
 		OleAutomation annotationDataSheetBeforeDelete = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
