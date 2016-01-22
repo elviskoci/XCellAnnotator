@@ -5,8 +5,12 @@ package de.tudresden.annotator.oleutils;
 
 import java.util.Arrays;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
+import org.eclipse.swt.widgets.MessageBox;
+
+import de.tudresden.annotator.main.MainWindow;
 
 /**
  * @author Elvis Koci
@@ -150,6 +154,21 @@ public class WorksheetUtils {
 		return true;
 	}
 	
+	
+	/**
+	 * Get the Application automation from the given worksheet
+	 * @param sheetAutomation an OleAutomation that provides access to the functionalities of the Worksheet OLE object 
+	 * @return an OleAutomation to access the (Excel) application
+	 */
+	public static OleAutomation getApplicationAutomation(OleAutomation sheetAutomation){
+		
+		int[] applicationPropertyIds = sheetAutomation.getIDsOfNames(new String[]{"Application"}); 
+		Variant applicationVariant =  sheetAutomation.getProperty(applicationPropertyIds[0]);
+		OleAutomation applicationAutomation = applicationVariant.getAutomation();
+		applicationVariant.dispose();
+		
+		return applicationAutomation;
+	}
 	
 	/**
 	 * Get the specified range automation. The address of the top_left_cell and down_right_cell have to be provided.
@@ -405,9 +424,13 @@ public class WorksheetUtils {
 			
 			Variant result = worksheetAutomation.invoke(protectMethodIds[0], args, argsIds);	
 			if(result==null){
-				System.err.println("The worksheet.protect method returned null");
-				System.err.println(WorksheetUtils.getWorksheetName(worksheetAutomation));
-				System.exit(1);
+				MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+				messageBox.setText("ERROR");
+	            messageBox.setMessage("ERROR: Could not protect the sheet "
+	            		+ "\""+WorksheetUtils.getWorksheetName(worksheetAutomation)+"\"!");
+	            messageBox.open();
+	            
+	            MainWindow.getInstance().quitApplication();			
 				// return false;
 			}
 			
@@ -439,10 +462,14 @@ public class WorksheetUtils {
 		Variant result = worksheetAutomation.invoke(unprotectMethodIds[0]);
 
 		if(result==null){
-			System.err.println("The worksheet.unprotect method returned null");
-			System.err.println(WorksheetUtils.getWorksheetName(worksheetAutomation));
-			System.exit(1);
-			//return false;
+			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			messageBox.setText("ERROR");
+            messageBox.setMessage("ERROR: Could not unprotect the sheet "
+            		+ "\""+WorksheetUtils.getWorksheetName(worksheetAutomation)+"\"!");
+            messageBox.open();
+            
+            MainWindow.getInstance().quitApplication();
+         	// return false;
 		}	
 		
 		result.dispose();
@@ -466,12 +493,8 @@ public class WorksheetUtils {
 		int argsIds[] = Arrays.copyOfRange(saveAsMethodIds, 1, saveAsMethodIds.length); 
 		Variant result = worksheetAutomation.invoke(saveAsMethodIds[0], args, argsIds);
 		
-		if(result==null){
-			System.err.println("The Worksheet.SaveAs method returned null");
-			System.err.println(WorksheetUtils.getWorksheetName(worksheetAutomation));
-			System.exit(1);
-			// return false;
-		}
+		if(result==null)
+			return false;
 		
 		for (Variant arg : args) {
 			arg.dispose();
@@ -480,25 +503,4 @@ public class WorksheetUtils {
 		
 		return true;
 	}
-	
-//	/**
-//	 * Delete the specified worksheet
-//	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
-//	 * @return true if the worksheet was successfully deleted, false otherwise
-//	 */
-//	public static boolean deleteWorksheet(OleAutomation worksheetAutomation){
-//		
-//		int[] deleteMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Delete"});
-//		Variant result = worksheetAutomation.invoke(deleteMethodIds[0]);
-//		
-//		if(result!=null){		
-//			boolean isSuccess = result.getBoolean();
-//			result.dispose();
-//
-//			return isSuccess;
-//		}else{
-//			return false;
-//		}
-//	}
-
 }

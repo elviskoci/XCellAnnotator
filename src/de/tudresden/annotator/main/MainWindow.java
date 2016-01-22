@@ -244,14 +244,14 @@ public class MainWindow {
 		setDirectoryPath(excelFile.getParent());
 		setFileName(excelFile.getName());
 		
-		// prepare the display for the annotation process
-		setUpApplicationDisplay(application);
-		setUpWorkbook(workbook);
-		
 		// update display window
 	    Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 	    this.excelPanel.setBackground(green2);
 	    this.shell.setText("Annotator - "+excelFile.getName());
+	    
+		// prepare the display for the annotation process
+		setUpApplicationDisplay(application);
+		setUpWorkbook(workbook);
 	}
 	
 	
@@ -299,9 +299,8 @@ public class MainWindow {
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: Could not protect the workbook. Operation failed!");
 			message.open();
-			WorkbookUtils.closeEmbeddedWorkbook(workbook, false);
-			MainWindow.getInstance().disposeControlSite();
-			return;
+			
+			quitApplication();
 		}
 	    
 		// protect all the worksheet in the embedded workbook 
@@ -311,11 +310,9 @@ public class MainWindow {
 			MessageBox message = MainWindow.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: Could not protect one or more sheets. Operation failed!");
 			message.open();
-			WorkbookUtils.closeEmbeddedWorkbook(workbook, false);
-			MainWindow.getInstance().disposeControlSite();
-			return;
+			
+			quitApplication();
 		}
-		
 	}
 	
 	protected void setColorToExcelPanel(Color color){
@@ -623,6 +620,19 @@ public class MainWindow {
 	 */
 	public Image createImage(String fileName){
 		return new Image(this.display, fileName);
+	}
+	
+	/**
+	 * Quit this application
+	 * This method is meant to be used for abnormal exit
+	 * when exceptions occur. 
+	 */
+	public void  quitApplication(){
+		WorkbookUtils.closeEmbeddedWorkbook(this.embeddedWorkbook, false);
+		disposeControlSite();
+		disposeShell();
+		getDisplay().dispose();
+		System.exit(1);
 	}
 	
 	/**

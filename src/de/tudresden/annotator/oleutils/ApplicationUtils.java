@@ -293,13 +293,13 @@ public class ApplicationUtils {
 	public static boolean quitExcelApplication(OleAutomation application){
 		
 		if(application==null){
-			System.out.println("ERROR: Application is null!!!");
+			System.err.println("ERROR: Application is null!!!");
 			return false;
 		}
 			
 		int[] quitMethodIds = application.getIDsOfNames(new String[]{"Quit"});
 		if (quitMethodIds == null){			
-			System.out.println("\"Quit\" method not found for \"Application\" object!");
+			System.err.println("\"Quit\" method not found for \"Application\" object!");
 			return false;
 		}	
 		
