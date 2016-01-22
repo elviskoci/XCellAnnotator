@@ -236,6 +236,39 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e){
 				
+				// warn the user user if there exist an opened file
+				// offer them to save their progress
+				if(!MainWindow.getInstance().isControlSiteNull()  && 
+					AnnotationHandler.getWorkbookAnnotation().hashCode()!=
+						AnnotationHandler.getOldWorkbookAnnotationHash()){
+									
+	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
+	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	 	            messageBox.setMessage("Do you want to save the progress on the existing file ?");
+	 	            
+	 	            int response = messageBox.open();	 	 	            
+	 	            if( response== SWT.YES){	
+	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
+	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
+	 	            	
+	 	            	if(!isSaved){
+	 	            		int messageStyle = SWT.ICON_ERROR;
+	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						message.setMessage("ERROR: The file could not be saved!");
+	 						message.open();
+	 	            	}
+	 	            } 	 	            
+				}
+				
+				if(!MainWindow.getInstance().isControlSiteNull()) {
+					OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
+					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);		
+					MainWindow.getInstance().setEmbeddedWorkbook(null);
+					MainWindow.getInstance().disposeControlSite();
+				}
+
+				
 				// open the files selection window
 				FileUtils.fileOpen();
 				
@@ -342,10 +375,6 @@ public class GUIListeners {
 	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
 	 						message.setMessage("ERROR: The file could not be saved!");
 	 						message.open();
-	 	            	}else{					
-	 	            		//String directory = MainWindow.getInstance().getDirectoryPath();
-	 	            		//String fileName = MainWindow.getInstance().getFileName();
-	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
 	 	            	}
 	 	            } 
 	 	            
@@ -642,6 +671,7 @@ public class GUIListeners {
 						mb.setMessage("You can not mark the file (workbook) as \"Completed\". "
 								+ "It does not contain any annotations yet!"); 
 						mb.open();
+						
 					}else{
 					
 						Collection<WorksheetAnnotation> sheetAnnotations 
@@ -654,6 +684,8 @@ public class GUIListeners {
 							
 							if(!sa.isCompleted() && !sa.isNotApplicable()){
 								if(sa.getAllAnnotations().isEmpty() || sa.getAllAnnotations().size()<4){
+									
+									hasPendingSheets = true; 
 									
 									OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
 									OleAutomation worksheetAutomation = 
@@ -678,23 +710,11 @@ public class GUIListeners {
 										break;
 									}		
 									
-									hasPendingSheets = true; 
 								}
 							}
 						}
 						
-						if(hasPendingSheets){
-//							int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
-//							MessageBox mb = MainWindow.getInstance().createMessageBox(style);
-//							mb.setMessage("One or more sheets have no or very few annotations. "
-//									+ "Do you want to proceed ?"); 
-//							int option = mb.open();
-//							
-//							if(option == SWT.YES){
-//								wa.setCompleted(true);
-//								wasUpdated=true;
-//							}
-						}else{
+						if(!hasPendingSheets ){
 							wa.setCompleted(true);
 							wasUpdated=true;
 						}

@@ -88,7 +88,7 @@ public class MainWindow {
 	private void buildGUIWindow(){
 			
 		// this.display.addFilter(SWT.KeyDown, GUIListeners.createArrowButtonPressedEventListener());        		
-		// this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
+		this.display.addFilter(SWT.MouseVerticalWheel, GUIListeners.createMouseWheelEventListener());
 		
 		// shell properties
 		this.shell.setText("Annotator");
@@ -141,7 +141,7 @@ public class MainWindow {
 		// create the panel that will display the applied annotations for the current file
 		annotationsPanel =  new Composite(rightSash, SWT.BORDER );
 		annotationsPanel.setLayout(new FillLayout());
-		annotationsPanel.setVisible(true);
+		annotationsPanel.setVisible(false);
 		annotationsPanel.setBackground(lightGreyShade);
 		
 		//Label bottomPanelLabel = new Label(annotationsPanel, SWT.NONE);
