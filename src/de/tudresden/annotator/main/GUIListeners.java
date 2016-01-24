@@ -701,6 +701,7 @@ public class GUIListeners {
 									
 									if(option == SWT.YES){
 										wasUpdated=true;
+										wa.setCompleted(true);
 									}
 									
 									if(option == SWT.NO){
