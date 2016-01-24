@@ -286,6 +286,11 @@ public class ApplicationUtils {
 	}
 	
 	
+	public static boolean setVisibilityStatusBar(OleAutomation application, boolean visible){
+		int[] displayStatusBarMethodIds = application.getIDsOfNames(new String[]{"DisplayStatusBar"});
+		return  application.setProperty(displayStatusBarMethodIds[0], new Variant(visible));
+	}
+	
 	/**
 	 * Quit Excel application. Use the given Application OleAutomation to invoke the "Quit" method. 
 	 * @param application an OleAutomation that provides access to the functionalities of the (Excel) Application OLE object

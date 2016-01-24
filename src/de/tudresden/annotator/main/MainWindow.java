@@ -11,6 +11,7 @@ import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -270,6 +271,9 @@ public class MainWindow {
                 
 		// minimize ribbon.	
 	    ApplicationUtils.hideRibbon(application);	
+	    
+	    // show status bar
+	    // ApplicationUtils.setVisibilityStatusBar(application, true);
 	    
 	    // hide menu on right click of user at a worksheet tab
 	    CommandBarUtils.setEnabledForCommandBar(application, "Ply", false);
