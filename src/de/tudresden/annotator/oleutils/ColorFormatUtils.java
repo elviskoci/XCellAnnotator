@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.oleutils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
 
@@ -11,6 +13,8 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class ColorFormatUtils {
 	
+	private static final Logger logger = LogManager.getLogger(ColorFormatUtils.class.getName());
+			
 	/**
 	 * Set the fore color of the shape fill 
 	 * @param automation an OleAutomation that has the "ForeColor" property
@@ -18,21 +22,34 @@ public class ColorFormatUtils {
 	 * @return true if operation succeeded, false otherwise
 	 */
 	public static boolean setForeColor(OleAutomation automation, long color){
-	
+		
+		logger.debug("Is oleautomation null? ".concat(String.valueOf(automation==null)));
+		
 		int[] foreColorPropertyIds = automation.getIDsOfNames(new String[]{"ForeColor"}); 
 		
 		if(foreColorPropertyIds==null)	{		
-			System.out.println("The given OleObject does not have the \"ForeColor\" property");
+			logger.error("Could not retrieve id of property \"ForeColor\"");
 			return false;
 		}
 		
 		Variant foreColorVariant = automation.getProperty(foreColorPropertyIds[0]);
+		logger.debug("Invoking get property \"ForeColor\" returned variant: "+foreColorVariant);
 		OleAutomation foreColorAutomation = foreColorVariant.getAutomation();
 
 		int[] rgbPropertyIds = foreColorAutomation.getIDsOfNames(new String[]{"RGB"}); //alternatively use "SchemeColor" 
-		foreColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
-	
+		if(rgbPropertyIds==null)	{		
+			logger.error("Could not retrieve id of property \"RGB\" for \"ForeColor\" ole object");
+			return false;
+		}
+		
+		logger.debug("The BackColor to set is: "+color);
+		
+		boolean wasColorUpdated = foreColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
+		logger.debug("Invoking set property \"RGB\" for \"ForeColor\" ole object returned: "+wasColorUpdated);
+		
 		boolean isSuccess = automation.setProperty(foreColorPropertyIds[0], foreColorVariant);			
+		logger.debug("Invoking set property \"ForeColor\" returned: "+isSuccess);
+		
 		foreColorVariant.dispose();
 		foreColorAutomation.dispose();
 		
@@ -48,79 +65,32 @@ public class ColorFormatUtils {
 	 */
 	public static boolean setBackColor(OleAutomation automation,  long color){
 	
+		logger.debug("Is oleautomation null? ".concat(String.valueOf(automation==null)));
+		
 		int[] backColorPropertyIds = automation.getIDsOfNames(new String[]{"BackColor"}); 
 		
 		if(backColorPropertyIds==null)	{		
-			System.out.println("The given OleObject does not have the \"BackColor\" property");
+			logger.error("Could not retrieve id of property \"BackColor\"");
 			return false;
 		}
 		
 		Variant backColorVariant = automation.getProperty(backColorPropertyIds[0]);
+		logger.debug("Invoking get property \"BackColor\" returned variant: "+backColorVariant);
 		OleAutomation backColorAutomation = backColorVariant.getAutomation();
 	
 		int[] rgbPropertyIds = backColorAutomation.getIDsOfNames(new String[]{"RGB"}); //alternatively use "SchemeColor" 
-		backColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
-	
-		boolean isSuccess = automation.setProperty(backColorPropertyIds[0], backColorVariant);
-		
-		backColorVariant.dispose();
-		backColorAutomation.dispose();
-		
-		return isSuccess;
-	}
-	
-	
-	/**
-	 * Set the fore color of the shape fill 
-	 * @param automation an OleAutomation that has the "ForeColor" property
-	 * @param colorIndex an integer that represents the index of the color in the current color palette. 
-	 * @return true if operation succeeded, false otherwise
-	 */
-	public static boolean setForeColor(OleAutomation automation, int colorIndex){
-	
-		int[] foreColorPropertyIds = automation.getIDsOfNames(new String[]{"ForeColor"});
-		
-		if(foreColorPropertyIds==null)	{		
-			System.out.println("The given OleObject does not have the \"ForeColor\" property");
+		if(rgbPropertyIds==null)	{		
+			logger.error("Could not retrieve id of property \"RGB\" for \"BackColor\" ole object");
 			return false;
 		}
 		
-		Variant foreColorVariant = automation.getProperty(foreColorPropertyIds[0]);
-		OleAutomation foreColorAutomation = foreColorVariant.getAutomation();
-	
-		int[] schemeColorPropertyIds = foreColorAutomation.getIDsOfNames(new String[]{"SchemeColor"}); //alternatively use "RGB" 
-		foreColorAutomation.setProperty(schemeColorPropertyIds[0], new Variant(colorIndex)); 
-	
-		boolean isSuccess = automation.setProperty(foreColorPropertyIds[0], foreColorVariant);			
-		foreColorVariant.dispose();
-		foreColorAutomation.dispose();
+		logger.debug("The BackColor to set is: "+color);
 		
-		return isSuccess;
-	}
-	
-	
-	/**
-	 * Set the back color of the shape fill 
-	 * @param automation an OleAutomation that has the "BackColor" property
-	 * @param colorIndex an integer that represents the index of the color in the current color palette. 
-	 * @return true if operation succeeded, false otherwise
-	 */
-	public static boolean setBackColor(OleAutomation automation, int colorIndex){
-	
-		int[] backColorPropertyIds = automation.getIDsOfNames(new String[]{"BackColor"}); 
+		boolean wasColorUpdated = backColorAutomation.setProperty(rgbPropertyIds[0], new Variant(color)); 
+		logger.debug("Invoking set property \"RGB\" for \"BackColor\" ole object returned: "+wasColorUpdated);
 		
-		if(backColorPropertyIds==null)	{		
-			System.out.println("The given OleObject does not have the \"BackColor\" property");
-			return false;
-		}
-		
-		Variant backColorVariant = automation.getProperty(backColorPropertyIds[0]);
-		OleAutomation backColorAutomation = backColorVariant.getAutomation();
-	
-		int[] schemeColorPropertyIds = backColorAutomation.getIDsOfNames(new String[]{"SchemeColor"}); //alternatively use "RGB" 
-		backColorAutomation.setProperty(schemeColorPropertyIds[0], new Variant(colorIndex)); 
-	
 		boolean isSuccess = automation.setProperty(backColorPropertyIds[0], backColorVariant);
+		logger.debug("Invoking set property \"BackColor\" returned: "+isSuccess);
 		
 		backColorVariant.dispose();
 		backColorAutomation.dispose();

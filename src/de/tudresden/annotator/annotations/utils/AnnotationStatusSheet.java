@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.MessageBox;
 
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.main.MainWindow;
+import de.tudresden.annotator.main.Launcher;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -243,7 +243,7 @@ public class AnnotationStatusSheet {
 		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationStatusSheet);
 		if(usedRange==null){
 			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "The \"Annotation_Status\" sheet is empty.");
 			message.open();
@@ -259,7 +259,7 @@ public class AnnotationStatusSheet {
 			usedRange.dispose();
 						
 			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "The annotation status data are not in the expected format. "
 					+ "The expected number of columns is 3. Instead, the application found "+countColumns+" column/s.");
@@ -279,7 +279,7 @@ public class AnnotationStatusSheet {
 			values[2].compareToIgnoreCase("NotApplicable")==0)){
 			
 			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "The header row does not contain the expected fields.");
 			message.open();
@@ -373,7 +373,7 @@ public class AnnotationStatusSheet {
 		
 		if(data.length!=3){
 			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "The data are not in the expected format!");
 			message.open();
@@ -383,7 +383,7 @@ public class AnnotationStatusSheet {
 		if(!(data[1].compareToIgnoreCase("0")==0  || data[1].compareToIgnoreCase("-1")==0)){
 	
 			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "Could not recognize one or more values of the field \"isCompleted\"");
 			message.open();
@@ -393,7 +393,7 @@ public class AnnotationStatusSheet {
 		if(!(data[2].compareToIgnoreCase("0")==0  || data[2].compareToIgnoreCase("-1")==0)){
 	
 			int style = SWT.ICON_WARNING;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not recover the annotation status from the previous session. "
 					+ "Could not recognize one or more values of the field \"isNotApplicable\"");
 			message.open();

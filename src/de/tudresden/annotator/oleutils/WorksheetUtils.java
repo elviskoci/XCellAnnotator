@@ -5,18 +5,22 @@ package de.tudresden.annotator.oleutils;
 
 import java.util.Arrays;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
 import org.eclipse.swt.widgets.MessageBox;
 
-import de.tudresden.annotator.main.MainWindow;
+import de.tudresden.annotator.main.Launcher;
 
 /**
  * @author Elvis Koci
  */
 public class WorksheetUtils {
 		
+	private static final Logger logger = LogManager.getLogger(WorksheetUtils.class.getName());
+	
 	/**
 	 * Get the name of the given worksheet
 	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
@@ -24,15 +28,19 @@ public class WorksheetUtils {
 	 */
 	public static String getWorksheetName(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] namePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Name"});	
 		if (namePropertyIds == null){			
-			System.out.println("\"Name\" property not found for \"Worksheet\" object!");
+			logger.error("Could not get ids of property \"Name\" for \"Worksheet\" ole object!");
 			return null;
 		}		
 		
 		Variant nameVariant = worksheetAutomation.getProperty(namePropertyIds[0]);
+		
+		logger.debug("The result of invoking get \"Name\" property was "+nameVariant); 
 		if (nameVariant == null) {
-			System.out.println("\"Name\" variant is null!");
+			logger.error("Null variant was returned for the \"Name\" of \"Worksheet\" ole object!");
 			return null;
 		}
 		
@@ -51,15 +59,19 @@ public class WorksheetUtils {
 	 */
 	public static boolean setWorksheetName(OleAutomation worksheetAutomation, String name){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] namePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Name"});	
 		if (namePropertyIds == null){			
-			System.out.println("\"Name\" property not found for \"Worksheet\" object!");
+			logger.error("Could not get ids of property \"Name\" for \"Worksheet\" ole object!");
 			return false;
 		}		
 		
 		Variant nameVariant = new Variant(name); 
 		boolean isSuccess = worksheetAutomation.setProperty(namePropertyIds[0], nameVariant);
 		nameVariant.dispose();
+		
+		logger.debug("Was the action  of setting a name for the sheet successfull? "+isSuccess);
 		
 		return isSuccess;
 	}
@@ -72,15 +84,19 @@ public class WorksheetUtils {
 	 */
 	public static int getWorksheetIndex(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] indexPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Index"});	
-		if (indexPropertyIds == null){			
-			System.out.println("\"Index\" property not found for \"Worksheet\" object!");
+		if (indexPropertyIds == null){		
+			logger.error("Could not get ids of property \"Index\" for \"Worksheet\" ole object!");
 			return 0;
 		}		
 		
 		Variant indexVariant = worksheetAutomation.getProperty(indexPropertyIds[0]);
+		logger.debug("The result of invoking get \"Index\" property was "+indexVariant);
+		
 		if (indexVariant == null) {
-			System.out.println("\"Index\" variant is null!");
+			logger.error("Invoking get \"Index\" property returned  null variant for \"Worksheet\" ole object!");
 			return 0;
 		}
 		
@@ -98,6 +114,8 @@ public class WorksheetUtils {
 	 * @return true if operation was successful, false otherwise
 	 */
 	public static boolean setWorksheetVisibility(OleAutomation worksheetAutomation, boolean visible){
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
 		
 		if(worksheetAutomation==null)
 			return false;
@@ -118,15 +136,22 @@ public class WorksheetUtils {
 	 */
 	public static boolean makeWorksheetActive(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] activateMethodsIds = worksheetAutomation.getIDsOfNames(new String[]{"Activate"});	
 		if (activateMethodsIds == null){			
-			System.out.println("\"Activate\" method not found for \"Worksheet\" object!");
+			logger.error("Could not get ids of method \"Activate\" for \"Worksheet\" ole object! "+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			return false;
 		}		
 
 		Variant result = worksheetAutomation.invoke(activateMethodsIds[0]);
-		if(result==null)
+		logger.debug("The result of invoking method \"Activate\" for \"Worksheet\" ole object was "+result);
+		if(result==null){
+			logger.error("Invoking method \"Activate\" returned  null variant for \"Worksheet\" ole object! "+ 
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			return false;
+		}
 		
 		result.dispose();
 		return true;
@@ -140,15 +165,22 @@ public class WorksheetUtils {
 	 */
 	public static boolean showAllWorksheetData(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] showAllDataMethodsIds = worksheetAutomation.getIDsOfNames(new String[]{"ShowAllData"});	
 		if (showAllDataMethodsIds == null){			
-			System.out.println("\"ShowAllData\" method not found for \"Worksheet\" object!");
+			logger.error("Could not get ids of method \"ShowAllData\" for \"Worksheet\" ole object!"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			return false;
 		}		
 
 		Variant result = worksheetAutomation.invoke(showAllDataMethodsIds[0]);
-		if(result==null)
+		logger.debug("The result of invoking method \"ShowAllData\" for \"Worksheet\" ole object was "+result);
+		if(result==null){
+			logger.error("Invoking method \"ShowAllData\" returned  null variant for \"Worksheet\" ole object!"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			return false;
+		}
 		
 		result.dispose();
 		return true;
@@ -161,6 +193,8 @@ public class WorksheetUtils {
 	 * @return an OleAutomation to access the (Excel) application
 	 */
 	public static OleAutomation getApplicationAutomation(OleAutomation sheetAutomation){
+		
+		logger.debug("Is sheet automation null? "+sheetAutomation==null);
 		
 		int[] applicationPropertyIds = sheetAutomation.getIDsOfNames(new String[]{"Application"}); 
 		Variant applicationVariant =  sheetAutomation.getProperty(applicationPropertyIds[0]);
@@ -179,6 +213,8 @@ public class WorksheetUtils {
 	 * @return an OleAutomation that provides access the specified range 
 	 */
 	public static OleAutomation getRangeAutomation(OleAutomation worksheetAutomation, String topLeftCell, String downRightCell){
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
 		
 		// get the OleAutomation object for the selected range 
 		int[] rangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Range"});
@@ -218,6 +254,8 @@ public class WorksheetUtils {
 	 */
 	public static OleAutomation getRangeAutomation(OleAutomation worksheetAutomation, String rangeAddress){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		String[] subStrings = rangeAddress.split(":");
 		String topLeftCell = subStrings[0];
 		String downRightCell = null;
@@ -235,6 +273,8 @@ public class WorksheetUtils {
 	 * @return an OleAutomation that provides access to the multi-selection range 
 	 */
 	public static OleAutomation getMultiSelectionRangeAutomation(OleAutomation worksheetAutomation, String multiSelectionRange){
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
 		
 		// get the OleAutomation object for the multi-selection (multi-area) range 
 		int[] rangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Range"});
@@ -261,6 +301,8 @@ public class WorksheetUtils {
 	 */
 	public static OleAutomation getUsedRange(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] usedRangePropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"UsedRange"});	
 		Variant usedRangeVariant = worksheetAutomation.getProperty(usedRangePropertyIds[0]);
 		OleAutomation usedRangeAutomation = usedRangeVariant.getAutomation();
@@ -278,6 +320,8 @@ public class WorksheetUtils {
 	 * @return an OleAutomation that provides access to the cell. 
 	 */
 	public static OleAutomation getCell(OleAutomation worksheetAutomation, int row, int column){
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
 		
 		int[] cellsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Cells"}); 
 		
@@ -302,7 +346,9 @@ public class WorksheetUtils {
 	 * @return an OleAutomation that provides access to the collection of columns in the worksheet 
 	 */
 	public static OleAutomation getRangeColumns(OleAutomation worksheetAutomation){
-				
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] columnsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Columns"}); 
 		Variant columnsPropertyVariant = worksheetAutomation.getProperty(columnsPropertyIds[0]);	
 		
@@ -319,7 +365,9 @@ public class WorksheetUtils {
 	 * @return an OleAutomation that provides access to the range that represents the entire specified column in the worksheet
 	 */
 	public static OleAutomation getRangeColumn(OleAutomation worksheetAutomation, String column){
-				
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] columnsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Columns"}); 
 		
 		Variant[] args= new Variant[1];
@@ -342,6 +390,8 @@ public class WorksheetUtils {
 	 */
 	public static OleAutomation getRangeRows(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] rowsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Rows"}); 
 		Variant rowsPropertyVariant = worksheetAutomation.getProperty(rowsPropertyIds[0]);	
 		OleAutomation rowsAutomation = rowsPropertyVariant.getAutomation();
@@ -357,6 +407,8 @@ public class WorksheetUtils {
 	 * @return an OleAutomation that provides access to the range that represents the entire specified row in the worksheet
 	 */
 	public static OleAutomation getRangeRow(OleAutomation worksheetAutomation, int row){
+		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
 		
 		int[] rowsPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Rows"}); 
 
@@ -380,15 +432,21 @@ public class WorksheetUtils {
 	 */
 	public static OleAutomation getWorksheetShapes(OleAutomation worksheetAutomation){
 		
+		logger.debug("Is sheet automation null? ".concat(String.valueOf(worksheetAutomation==null)));
+		
 		int[] shapesPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Shapes"});	
-		if (shapesPropertyIds == null){			
-			System.out.println("\"Shapes\" property not found for \"Worksheet\" object!");
+		if (shapesPropertyIds == null){		
+			logger.error("Could not get the id of the \"Shapes\" property for \"Worksheet\" ole object"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));			
 			return null;
 		}		
 		
 		Variant shapesVariant = worksheetAutomation.getProperty(shapesPropertyIds[0]);
+		
+		logger.debug("Invoking get \"Shapes\" property for \"Worksheet\" object returned: "+shapesVariant);
 		if (shapesVariant == null) {
-			System.out.println("\"Shapes\" variant is null!");
+			logger.error("Invoking get \"Shapes\" property for \"Worksheet\" ole object returned null variant"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			return null;
 		}
 		
@@ -413,8 +471,9 @@ public class WorksheetUtils {
 				"AllowFormattingColumns", "AllowFormattingRows"});
 		
 		if (protectMethodIds == null) {
-			System.out.println("Method \"Protect\" of \"Worksheet\" OLE Object is not found!");
-			return false;
+			logger.fatal("Could not get the ids of the \"Protect\" method for \"Worksheet\" ole object"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
+			System.exit(1);
 		}else{
 			Variant[] args = new Variant[2];
 			args[0] = new Variant(true); // allow user to resize columns
@@ -423,14 +482,19 @@ public class WorksheetUtils {
 			int argsIds[] = Arrays.copyOfRange(protectMethodIds, 1, protectMethodIds.length);
 			
 			Variant result = worksheetAutomation.invoke(protectMethodIds[0], args, argsIds);	
-			if(result==null){
-				MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			logger.debug("Invoking \"Protect\" method for \"Worksheet\" object returned: "+result);
+			
+			if(result==null){	
+				logger.fatal("Invoking \"Protect\" method for \"Worksheet\" ole object returned null variant"+
+						"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
+				
+				MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 				messageBox.setText("ERROR");
 	            messageBox.setMessage("ERROR: Could not protect the sheet "
 	            		+ "\""+WorksheetUtils.getWorksheetName(worksheetAutomation)+"\"!");
 	            messageBox.open();
 	            
-	            MainWindow.getInstance().quitApplication();			
+	            Launcher.getInstance().quitApplication();			
 				// return false;
 			}
 			
@@ -454,21 +518,25 @@ public class WorksheetUtils {
 		// get the id of the "Unprotect" method for worksheet OLE object 
 		int[] unprotectMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Unprotect"});
 		if(unprotectMethodIds==null){
-			System.out.println("Method \"Unprotect\" of \"Worksheet\" OLE Object is not found!");
-			return false;
+			logger.error("Could not get the ids of the \"Unprotect\" method for \"Worksheet\" ole object"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
+			System.exit(1);
 		}
 		
 		// invoke the unprotect method  
 		Variant result = worksheetAutomation.invoke(unprotectMethodIds[0]);
-
+		logger.debug("Invoking \"Unprotect\" method for \"Worksheet\" object returned: "+result);
 		if(result==null){
-			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			logger.fatal("Invoking \"Unprotect\" method for \"Worksheet\" ole object returned null variant"+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
+			
+			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 			messageBox.setText("ERROR");
             messageBox.setMessage("ERROR: Could not unprotect the sheet "
             		+ "\""+WorksheetUtils.getWorksheetName(worksheetAutomation)+"\"!");
             messageBox.open();
             
-            MainWindow.getInstance().quitApplication();
+            Launcher.getInstance().quitApplication();
          	// return false;
 		}	
 		

@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Date;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
@@ -42,7 +43,7 @@ public class FileUtils {
 	 public static void fileOpen(){
 		
 		// Select the excel file
-		FileDialog dialog = MainWindow.getInstance().createFileDialog(SWT.OPEN);
+		FileDialog dialog = Launcher.getInstance().createFileDialog(SWT.OPEN);
 		String filePath = dialog.open();
 		fileOpen(filePath);
 	}
@@ -57,7 +58,7 @@ public class FileUtils {
 		// if no file was selected, return
 		if (filePath == null) return;
 		
-		MainWindow mw = MainWindow.getInstance();
+		Launcher mw = Launcher.getInstance();
 		
 		// dispose OleControlSite if it is not null. 
 		mw.disposeControlSite();
@@ -76,6 +77,7 @@ public class FileUtils {
 				        
 				        // embed the excel file and set up the user interface
 				        mw.embedExcelFile(excelFile);
+				    	Launcher.getInstance().setVisibilityForControlSite(true);
 				        
 				    } catch (SWTError e) {
 				        e.printStackTrace();
@@ -102,7 +104,9 @@ public class FileUtils {
 	 * @return true if progress was successfully saved, false otherwise. 
 	 */
 	public static boolean saveProgress(OleAutomation embeddedWorkbook, String filePath, boolean beforeFileClose){
-				 
+		
+		Launcher.getInstance().setVisibilityForControlSite(false);
+		
 		// save the status of all worksheet annotations and the workbook annotation 
 		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);
 		
@@ -123,14 +127,14 @@ public class FileUtils {
 		
 		// deactivate alerts before save
 		OleAutomation application = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
-		MainWindow.getInstance().deactivateControlSite();
+		Launcher.getInstance().deactivateControlSite();
 		ApplicationUtils.setDisplayAlerts(application, false);
 		
 		// save the file
-	
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-		MainWindow.getInstance().setEmbeddedWorkbook(null);
+		Launcher.getInstance().setEmbeddedWorkbook(null);
+		System.out.println("Was it saved? "+isSuccess);
 	
 		// activate alerts after save
 		ApplicationUtils.setDisplayAlerts(application, true);
@@ -143,15 +147,23 @@ public class FileUtils {
 			
 			fileOpen(newPath);
 					
-			OleAutomation reopenedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+			OleAutomation reopenedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 			
 			// draw again the range annotations  
 			Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
 			RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
-			if(rangeAnnotations!=null){		
+			if(rangeAnnotations!=null){			
+				Date startTime = new Date();
+				long start = startTime.getTime();
 				
 				// update workbook annotation and re-draw all the range annotations  
-				AnnotationHandler.drawManyRangeAnnotations(reopenedWorkbook, rangeAnnotations);	
+				// AnnotationHandler.drawManyRangeAnnotationsOptimized(reopenedWorkbook, rangeAnnotations, false);	
+				AnnotationHandler.drawManyRangeAnnotations(reopenedWorkbook, rangeAnnotations, false);
+						
+				Date endTime = new Date();
+				long end = endTime.getTime();
+				
+				System.out.println("Action duration in milliseconds: "+(end-start));
 			}
 						
 			// make range_annotations sheet again visible
@@ -169,8 +181,8 @@ public class FileUtils {
 	 */
 	public static String moveFileToStatusDirectory(){
 		
-		String fileName = MainWindow.getInstance().getFileName();
-		String fileDirPath = MainWindow.getInstance().getDirectoryPath();
+		String fileName = Launcher.getInstance().getFileName();
+		String fileDirPath = Launcher.getInstance().getDirectoryPath();
 		
 		File file = new File(fileDirPath+"\\"+fileName);
 		File directory = new File(fileDirPath); 
@@ -235,7 +247,7 @@ public class FileUtils {
 			Files.move(file.toPath(), directory.toPath());
 		} catch (IOException e) {
 			
-			MessageBox message = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			MessageBox message = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 			message.setText("ERROR");
 			message.setMessage("ERROR: Could not move file \""+file.getName()+"\" "
 					+ "to the directory \""+directory.getName()+"\". \n\n"

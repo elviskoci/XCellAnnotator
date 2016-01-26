@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.oleutils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.OleControlSite;
 import org.eclipse.swt.ole.win32.Variant;
@@ -11,6 +13,8 @@ import org.eclipse.swt.ole.win32.Variant;
  * @author Elvis Koci
  */
 public class ApplicationUtils {
+	
+	private static final Logger logger = LogManager.getLogger(ApplicationUtils.class.getName());
 	
 	/**
 	 * Get Excel application as an OleAutomation object
@@ -23,9 +27,9 @@ public class ApplicationUtils {
 		try {
 			excelClient = new OleAutomation(controlSite);
 		} catch (IllegalArgumentException iaEx) {
-			System.err.println("Illegal argument exception on creation of application OleAutomation");
+			logger.fatal("Illegal argument exception on creation of excel client OleAutomation", iaEx);
 		} catch (Exception e) {
-			System.err.println("A genereric exception was thrown on creation of application OleAutomation");
+			logger.error("Genereric exception on creation of excel client OleAutomationn", e);
 		} 
 		
 		OleAutomation application = null;
@@ -34,16 +38,17 @@ public class ApplicationUtils {
 			int[] dispIDs = excelClient.getIDsOfNames(new String[] {"Application"});
 			
 			if(dispIDs==null){	
-				System.out.println("\"Application\" object not found!");
+				logger.error("Could not get \"Application\" property ids for \"Excel Client\"!");
 				return null;
 			}
 			
 			Variant pVarResult = excelClient.getProperty(dispIDs[0]);
 			if(pVarResult==null){	
-				System.out.println("\"Application\" object is null!");
+				logger.error("Get \"Application\" property for \"Excel Client\" returned null variant!");
 				return null;
 			}
 			
+			logger.debug("Get \"Application\" property for \"Excel Client\" returned variant: "+pVarResult);
 			application = pVarResult.getAutomation();
 			
 			pVarResult.dispose();
@@ -63,16 +68,23 @@ public class ApplicationUtils {
 	 */
 	public static OleAutomation getActiveWorkbookAutomation(OleAutomation application){
 		
+		if(application==null){
+			logger.debug("Method getActiveWorkbookAutomation received null application OleAutomation object");
+		}
+		
 		int[] workbookIds = application.getIDsOfNames(new String[]{"ActiveWorkbook"});	
 		if (workbookIds == null){			
-			System.out.println("\"ActiveWorkbook\" property not found for \"Application\" object!");
+			logger.error("Could not get \"ActiveWorkbook\" property ids for \"Application\" object!");
 			return null;
 		}		
 		Variant workbookVariant = application.getProperty(workbookIds[0]);
 		if (workbookVariant == null) {
-			System.out.println("Workbook variant is null!");
+			logger.error("Get \"ActiveWorkbook\" property for \"Application\" returned null variant!");
 			return null;
 		}		
+		
+		logger.debug("Get \"ActiveWorkbook\" property for \"Application\" returned variant: "+workbookVariant);
+		
 		OleAutomation workbookAutomation =  workbookVariant.getAutomation();
 		workbookVariant.dispose();
 		

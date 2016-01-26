@@ -5,8 +5,11 @@ package de.tudresden.annotator.annotations.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
@@ -17,7 +20,8 @@ import de.tudresden.annotator.annotations.AnnotationTool;
 import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.main.MainWindow;
+import de.tudresden.annotator.main.GUIListeners;
+import de.tudresden.annotator.main.Launcher;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CharactersUtils;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
@@ -42,8 +46,7 @@ public class AnnotationHandler {
 	/**
 	 * This object stores and provides access to all annotations that are created in the embedded workbook  
 	 */
-	private static final WorkbookAnnotation workbookAnnotation = new WorkbookAnnotation();
-	
+	private static final WorkbookAnnotation workbookAnnotation = new WorkbookAnnotation();	
 	private static int oldWorkbookAnnotationHash;
 
 	/**
@@ -56,6 +59,9 @@ public class AnnotationHandler {
 	 */
 	private static final LinkedList<RangeAnnotation> redoList = new LinkedList<RangeAnnotation>();
 	
+	
+	private static final Logger logger = LogManager.getLogger(GUIListeners.class.getName());
+	
 	/**
 	 * Set up the base structure for keeping the annotation data in memory. This means having a WorkbookAnnotation 
 	 * object for the embedded workbook, as well as an WorksheetAnnotation object for each sheet in the workbook.  
@@ -64,10 +70,8 @@ public class AnnotationHandler {
 	public static void createBaseAnnotations(OleAutomation workbookAutomation){
 		
 		// save on memory metadata about the annotation
-		if(workbookAnnotation.getWorkbookName() == null || workbookAnnotation.getWorkbookName().compareTo("")==0){		
-			String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
-			workbookAnnotation.setWorkbookName(workbookName);
-		}
+		String workbookName = WorkbookUtils.getWorkbookName(workbookAutomation);
+		workbookAnnotation.setWorkbookName(workbookName);
 		
 		workbookAnnotation.setCompleted(false);
 		workbookAnnotation.setNotApplicable(false);
@@ -104,8 +108,15 @@ public class AnnotationHandler {
 		
 		WorkbookUtils.unprotectAllWorksheets(workbookAutomation);			
 		
-		for (int i=0; i< rangeAnnotations.length; i++) {			
-			boolean result = AnnotationHandler.drawRangeAnnotation(workbookAutomation, rangeAnnotations[i], true);
+		for (int i=0; i< rangeAnnotations.length; i++) {		
+			
+			boolean result = false;
+			try{
+				result = AnnotationHandler.drawRangeAnnotation(workbookAutomation, rangeAnnotations[i], true);
+			}catch (Exception ex){
+				logger.error("Generic error on drawing range annotation object", ex);
+			}
+			
 			if(result){
 				workbookAnnotation.addRangeAnnotation(rangeAnnotations[i]);
 			}
@@ -128,7 +139,7 @@ public class AnnotationHandler {
 								String selectedAreas[], AnnotationClass annotationClass) {
 	
 		if(selectedAreas==null){
-			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
             messageBox.setMessage( "You have not selected a range! "
 					+ "Please, first do a selection.");
             messageBox.open();
@@ -218,7 +229,7 @@ public class AnnotationHandler {
 		// check if the range is valid (e.i., the OleAutomation can be created for this range)
 		OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, annotation.getRangeAddress());
 		if(selectedAreaAuto==null){					
-			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
             messageBox.setMessage("Can not annotate range "+annotation.getRangeAddress()+". "
 					+ "Please, avoid selecting entire rows or columns for annotation.");
             messageBox.open();           
@@ -238,7 +249,7 @@ public class AnnotationHandler {
 		double notEmpty = methodResult.getDouble();
 		methodResult.dispose();
 		if(notEmpty==0){
-			MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
             messageBox.setMessage("The selected range does not contain any value!");
             messageBox.open();
 			return false;
@@ -265,7 +276,7 @@ public class AnnotationHandler {
 					boolean result = checkForOverlaps(dependentAnnotations, annotation.getRangeAddress(), false);
 					if(result){
 						 String classLabel =annotationClass.getLabel();
-						 MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+						 MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 			             messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation in \""+sheetName+"\" sheet!\n"
 								+ "The selected range \""+annotation.getRangeAddress()+"\" overlaps with an existing annotation.");
 			             messageBox.open();
@@ -276,7 +287,7 @@ public class AnnotationHandler {
 				
 			}else{
 				String classLabel = annotationClass.getLabel();
-				MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+				MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 	            messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation in \""+sheetName+"\" sheet!\n"
 						+ "The range it is not inside the borders of a "+containerLabel+" annotation range");
 	            messageBox.open();
@@ -299,7 +310,7 @@ public class AnnotationHandler {
 				 }
 				 
 				 String classLabel = annotationClass.getLabel();
-				 MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+				 MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 	             messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation in \""+sheetName+"\" sheet! \n"
 						+ "The selected range \""+annotation.getRangeAddress()+"\" overlaps with an existing annotation.");
 	             messageBox.open();
@@ -312,7 +323,7 @@ public class AnnotationHandler {
 				 
 				 if(result){
 					 String classLabel = annotationClass.getLabel();
-					 MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+					 MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 		             messageBox.setMessage( "Could not create the \""+classLabel+"\" annotation in \""+sheetName+"\" sheet!\n"
 							+ "The selected range \""+annotation.getRangeAddress()+"\" overlaps with an existing annotation.");
 		             messageBox.open();
@@ -446,18 +457,76 @@ public class AnnotationHandler {
 	/**
 	 * Draw many range annotations at once
 	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
-	 * @return true if all the range annotations were successfully drawn, false otherwise
+	 * @param rangeAnnotations the list of range annotations to draw
 	 */
-	public static void drawManyRangeAnnotations(OleAutomation workbookAutomation, RangeAnnotation[] rangeAnnotations){
+	public static void drawManyRangeAnnotations(OleAutomation workbookAutomation, RangeAnnotation[] rangeAnnotations, boolean validate){
 		
 		WorkbookUtils.unprotectAllWorksheets(workbookAutomation);			
 		
-		for (int i=0; i< rangeAnnotations.length; i++) {			
-			AnnotationHandler.drawRangeAnnotation(workbookAutomation, rangeAnnotations[i], false);
+		for (int i=0; i< rangeAnnotations.length; i++) {	
+			try{
+				AnnotationHandler.drawRangeAnnotation(workbookAutomation, rangeAnnotations[i], validate);
+			}catch (Exception ex){
+				logger.error("Generic exception on draw range annotation object", ex);
+			}
 		}
 		
 		WorkbookUtils.protectAllWorksheets(workbookAutomation);
 	}
+	
+	
+	/**
+	 * @deprecated
+	 * Draw many range annotations at once
+	 * @param workbookAutomation an OleAutomation for accessing the functionalities of the embedded workbook
+	 * @param annotations the list of range annotations to draw
+	 * @param true to validate the annotation before drawing, false to skip validation
+	 */
+	public static void drawManyRangeAnnotationsOptimized(OleAutomation workbookAutomation, RangeAnnotation[] annotations, boolean validate){
+		
+		HashMap<String, OleAutomation> sheetAutomations = new HashMap<String, OleAutomation>();
+		HashMap<String, OleAutomation> shapesAutomations = new HashMap<String, OleAutomation>();
+		OleAutomation rangeAutomations[] = new OleAutomation[annotations.length];
+				
+		for (int i=0; i< annotations.length; i++) {	
+
+			if(!sheetAutomations.containsKey(annotations[i].getSheetName())){
+				
+				sheetAutomations.put( annotations[i].getSheetName(), 
+						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, annotations[i].getSheetName()));
+				
+				OleAutomation sheetAnnotation = sheetAutomations.get(annotations[i].getSheetName());
+				WorksheetUtils.unprotectWorksheet(sheetAnnotation);				
+				WorksheetUtils.makeWorksheetActive(sheetAnnotation);
+				
+				shapesAutomations.put( annotations[i].getSheetName(), WorksheetUtils.getWorksheetShapes(sheetAnnotation));
+			}
+			
+			if(sheetAutomations.get(annotations[i].getSheetName())==null){
+				System.out.println("Found a null one"+annotations[i].getSheetName());
+			}
+			
+			rangeAutomations[i] = WorksheetUtils.getRangeAutomation(sheetAutomations.get(annotations[i].getSheetName()), 
+					annotations[i].getRangeAddress());
+			
+			AnnotationHandler.drawAnnotationShape(shapesAutomations.get(annotations[i].getSheetName()), 
+					rangeAutomations[i], annotations[i].getAnnotationClass(), annotations[i].getName());
+		}
+		
+		for (OleAutomation rangeAutomation : rangeAutomations) {		
+			rangeAutomation.dispose();
+		}
+		
+		for (OleAutomation sheetAutomation : sheetAutomations.values()) {
+			WorksheetUtils.protectWorksheet(sheetAutomation);		
+			sheetAutomation.dispose();
+		}
+		
+		for (OleAutomation shapeAutomation : shapesAutomations.values()) {		
+			shapeAutomation.dispose();
+		}
+	}
+	
 	
 	/**
 	 * Annotate the selected range by drawing a border around it 
@@ -513,7 +582,32 @@ public class AnnotationHandler {
 				
 		shapesAutomation.dispose();
 	}
-			
+	
+	public static void drawAnnotationShape(OleAutomation shapesAutomation, OleAutomation rangeAutomation, 
+													AnnotationClass annotationClass, String annotationName){
+
+		double left = RangeUtils.getRangeLeftPosition(rangeAutomation);  
+		double top = RangeUtils.getRangeTopPosition(rangeAutomation);
+		double width = RangeUtils.getRangeWidth(rangeAutomation);
+		double height = RangeUtils.getRangeHeight(rangeAutomation);
+		
+		if(annotationClass.getAnnotationTool()==AnnotationTool.TEXTBOX){	
+		
+		OleAutomation textboxAutomation = ShapeUtils.drawTextBox(shapesAutomation, left, top, width, height); 
+		setAnnotationProperties(textboxAutomation, annotationClass);
+		ShapeUtils.setShapeName(textboxAutomation, annotationName);
+		textboxAutomation.dispose();
+		}
+		
+		if(annotationClass.getAnnotationTool()==AnnotationTool.SHAPE){		
+		
+		OleAutomation shapeAuto = ShapeUtils.drawShape(shapesAutomation, annotationClass.getShapeType(), left, top, width, height);
+		setAnnotationProperties(shapeAuto, annotationClass);  
+		ShapeUtils.setShapeName(shapeAuto, annotationName);
+		shapeAuto.dispose();
+		}
+	}
+
 	
 	/**
 	 * Format the annotation object (shape, textbox, etc) 
@@ -638,7 +732,7 @@ public class AnnotationHandler {
 		boolean isUnprotected= WorksheetUtils.unprotectWorksheet(worksheetAutomation);
 		if(!isUnprotected){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: "+sheetName+" could not be unprotected!");
 			message.open();
 			return;
@@ -711,7 +805,7 @@ public class AnnotationHandler {
 		boolean isUnprotected= WorksheetUtils.unprotectWorksheet(worksheetAutomation);
 		if(!isUnprotected){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: "+sheetName+" could not be unprotected!");
 			message.open();
 			return;

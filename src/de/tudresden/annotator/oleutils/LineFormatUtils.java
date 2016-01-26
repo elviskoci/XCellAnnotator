@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.oleutils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
 
@@ -11,6 +13,8 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class LineFormatUtils {
 	
+	private static final Logger logger = LogManager.getLogger(LineFormatUtils.class.getName());
+			
 	/**
 	 * Set the line style
 	 * @param lineFormatAuto an OleAutomation object that provides access to the LineFormat object functionalities.
@@ -19,11 +23,19 @@ public class LineFormatUtils {
 	 */	
 	public static boolean setLineStyle(OleAutomation lineFormatAuto, int style ){
 		
-		int stylePropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Style"});
-		Variant styleVariant = new Variant(style); 
-		boolean isSuccess = lineFormatAuto.setProperty(stylePropertyIds[0], styleVariant);
-		styleVariant.dispose();
+		logger.debug("Is LineFormat oleautomation null? ".concat(String.valueOf(lineFormatAuto==null)));
 		
+		int stylePropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Style"});
+		if(stylePropertyIds==null)
+			logger.error("Could not get id of property \"Style\" for \"LineFormat\" ole object");
+		
+		Variant styleVariant = new Variant(style); 	
+		logger.debug("The value to set for property \"Style\" of \"LineFormat\" ole object is: "+style);
+		
+		boolean isSuccess = lineFormatAuto.setProperty(stylePropertyIds[0], styleVariant);
+		logger.debug("Invoking set property \"Style\" of \"LineFormat\" ole object returned: "+String.valueOf(isSuccess));
+		
+		styleVariant.dispose();		
 		return isSuccess;	
 	}
 	
@@ -35,11 +47,19 @@ public class LineFormatUtils {
 	 */	
 	public static boolean setLineWeight(OleAutomation lineFormatAuto, double weight ){
 		
-		int weightPropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Weight"});
-		Variant weightVariant = new Variant(weight); 
-		boolean isSuccess = lineFormatAuto.setProperty(weightPropertyIds[0], weightVariant);
-		weightVariant.dispose();
+		logger.debug("Is LineFormat oleautomation null? ".concat(String.valueOf(lineFormatAuto==null)));
 		
+		int weightPropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Weight"});
+		if(weightPropertyIds==null)
+			logger.error("Could not get id of property \"Weight\" for \"LineFormat\" ole object");
+		
+		Variant weightVariant = new Variant(weight); 
+		logger.debug("The value to set for property \"Weight\" of \"LineFormat\" ole object is: "+weight);
+		
+		boolean isSuccess = lineFormatAuto.setProperty(weightPropertyIds[0], weightVariant);
+		logger.debug("Invoking set property \"Weight\" of \"LineFormat\" ole object returned: "+String.valueOf(isSuccess));
+		
+		weightVariant.dispose();
 		return isSuccess;	
 	}
 	
@@ -51,11 +71,19 @@ public class LineFormatUtils {
 	 */	
 	public static boolean setLineVisibility(OleAutomation lineFormatAuto, boolean visible ){
 		
-		int visiblePropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Visible"});
-		Variant visibleVariant = new Variant(visible); 
-		boolean isSuccess = lineFormatAuto.setProperty(visiblePropertyIds[0], visibleVariant);
-		visibleVariant.dispose();
+		logger.debug("Is LineFormat oleautomation null? ".concat(String.valueOf(lineFormatAuto==null)));
 		
+		int visiblePropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Visible"});
+		if(visiblePropertyIds==null)
+			logger.error("Could not get id of property \"Visible\" for \"LineFormat\" ole object");
+		
+		Variant visibleVariant = new Variant(visible); 
+		logger.debug("The value to set for property \"Visible\" of \"LineFormat\" ole object is: "+String.valueOf(visible));
+		
+		boolean isSuccess = lineFormatAuto.setProperty(visiblePropertyIds[0], visibleVariant);
+		logger.debug("Invoking set property \"Visible\" of \"LineFormat\" ole object returned: "+String.valueOf(isSuccess));
+		
+		visibleVariant.dispose();
 		return isSuccess;	
 	}
 	
@@ -68,11 +96,19 @@ public class LineFormatUtils {
 	 */	
 	public static boolean setLineTransparency(OleAutomation lineFormatAuto, double transparency ){
 		
-		int transparencyPropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Transparency"});
-		Variant transparencyVariant = new Variant(transparency); 
-		boolean isSuccess = lineFormatAuto.setProperty(transparencyPropertyIds[0], transparencyVariant);
-		transparencyVariant.dispose();
+		logger.debug("Is LineFormat oleautomation null? ".concat(String.valueOf(lineFormatAuto==null)));
 		
+		int transparencyPropertyIds[] = lineFormatAuto.getIDsOfNames(new String[] {"Transparency"});
+		if(transparencyPropertyIds==null)
+			logger.error("Could not get id of property \"Transparency\" for \"LineFormat\" ole object");
+		
+		Variant transparencyVariant = new Variant(transparency); 
+		logger.debug("The value to set for property \"Transparency\" of \"LineFormat\" ole object is: "+transparency);
+		
+		boolean isSuccess = lineFormatAuto.setProperty(transparencyPropertyIds[0], transparencyVariant);
+		logger.debug("Invoking set property \"Transparency\" of \"LineFormat\" ole object returned: "+String.valueOf(isSuccess));
+		
+		transparencyVariant.dispose();
 		return isSuccess;	
 	}
 }

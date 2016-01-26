@@ -6,12 +6,13 @@ package de.tudresden.annotator.main;
 
 import java.io.File;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -34,7 +35,7 @@ import de.tudresden.annotator.oleutils.WorksheetUtils;
  * 
  * @author Elvis Koci
  */
-public class MainWindow {
+public class Launcher {
 	
 	// GUID Event Sink
 	private final String IID_AppEvents = "{00024413-0000-0000-C000-000000000046}";
@@ -72,15 +73,17 @@ public class MainWindow {
 	private Composite excelPanel;
 	
 		
-	private static MainWindow instance = null;
-	private MainWindow(){}
+	private static Launcher instance = null;
+	private Launcher(){}
 	
-	public static MainWindow getInstance() {
+	public static Launcher getInstance() {
 		if(instance == null) {
-			instance = new MainWindow();
+			instance = new Launcher();
 		}
 		return instance;  
 	}
+	
+	private static final Logger logger = LogManager.getLogger(Launcher.class.getName());
 	
 	/**
 	 * Create the window that will serve as the main Graphical User Interface (GUI) for user interaction
@@ -168,34 +171,40 @@ public class MainWindow {
 			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));        
 		} catch (IllegalArgumentException iaEx) {
 			
+			logger.fatal("IllegalArgumentException on embed file/creation of control site", iaEx);
+			
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: Control site could not be created. Illegal argument exception was thrown.");
 			message.open();
-			MainWindow.getInstance().disposeShell();
+			Launcher.getInstance().disposeShell();
 			
 			// iaEx.printStackTrace();
 			System.exit(1);
 			
 		} catch (SWTException swtEx) {
 		
+			logger.fatal("SWTException on embed file/creation of control site", swtEx);
+			
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: could not embedd the excel workbook. SWT Exception was thrown");
 			message.open();
-			MainWindow.getInstance().disposeShell();
+			Launcher.getInstance().disposeShell();
 			
 			// swtEx.printStackTrace();
 			System.exit(1);
 			
 		} catch (Exception ex) {
 			
+			logger.fatal("Exception on embed file/creation of control site", ex);
+			
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Something went wrong!!! Ensure that you have a version of Microsoft Office Excel"
 					+ " installed in your machine. Also, check that the file is not corrupted or wrong format.");
 			message.open();
-			MainWindow.getInstance().disposeShell();
+			Launcher.getInstance().disposeShell();
 			
 			// ex.printStackTrace();
 			System.exit(1);
@@ -208,7 +217,7 @@ public class MainWindow {
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
 	    if(application==null){
 	    	int style = SWT.ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Something went wrong!!! Please take the following actions.\n\n"
 					+ "1. Check if an instance of this application is already running.\n\n"
 					+ "2. Ensure that the excel file you are trying to open it is not used by another application.\n\n"
@@ -217,8 +226,8 @@ public class MainWindow {
 					+ "4. Open task manager and check if there is any excel process running in the background. "
 					+ "If there is such process, end it.");		
 			message.open();
-			MainWindow.getInstance().disposeControlSite();
-			MainWindow.getInstance().disposeShell();
+			Launcher.getInstance().disposeControlSite();
+			Launcher.getInstance().disposeShell();
 			return;
 	    }
 	        
@@ -300,7 +309,7 @@ public class MainWindow {
 		boolean isProtected = WorkbookUtils.protectWorkbook(workbook, true, false);		
 		if(!isProtected){
 			int style = SWT.ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: Could not protect the workbook. Operation failed!");
 			message.open();
 			
@@ -311,7 +320,7 @@ public class MainWindow {
 		boolean areProtected = WorkbookUtils.protectAllWorksheets(workbook);
 		if(!areProtected){
 			int style = SWT.ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("ERROR: Could not protect one or more sheets. Operation failed!");
 			message.open();
 			
@@ -488,6 +497,14 @@ public class MainWindow {
 	}
 	
 	/**
+	 * Set visibility for control site
+	 * @param visible true to set control site visible, false to hide it
+	 */
+	protected void setVisibilityForControlSite(boolean visible){	
+		controlSite.setVisible(visible);
+	}
+	
+	/**
 	 * @return the embeddedWorkbook
 	 */
 	protected OleAutomation getEmbeddedWorkbook() {
@@ -644,16 +661,20 @@ public class MainWindow {
 	 */
 	public static void main(String[] args) {
 
-		MainWindow main = MainWindow.getInstance(); 
+		Launcher main = Launcher.getInstance(); 
 	
 	    main.buildGUIWindow();
 	    
   		main.getShell().open();
-  			 
-  	    while (!main.getShell().isDisposed ()) {
-  	        if (!main.getDisplay().readAndDispatch ()) main.getDisplay().sleep();
-  	    }
-  	    
-	    main.getDisplay().dispose();
+  			
+  		try{
+	  	    while (!main.getShell().isDisposed ()) {
+	  	        if (!main.getDisplay().readAndDispatch ()) main.getDisplay().sleep();
+	  	    }
+	  	    
+		    main.getDisplay().dispose();
+  		}catch (Exception ex){
+  			logger.fatal("Generic exception thrown in main", ex);
+  		}
 	}		
 }

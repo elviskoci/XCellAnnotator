@@ -6,6 +6,8 @@ package de.tudresden.annotator.main;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -36,6 +38,8 @@ import de.tudresden.annotator.oleutils.WorksheetUtils;
  */
 public class GUIListeners {
 	
+	private static final Logger logger = LogManager.getLogger(GUIListeners.class.getName());
+	
 	/**
 	 * 
 	 * @return
@@ -46,16 +50,16 @@ public class GUIListeners {
 	    {
 	        public void handleEvent(Event event)
 	        {	
-	        	if(!MainWindow.getInstance().isControlSiteNull() && 
+	        	if(!Launcher.getInstance().isControlSiteNull() && 
 						AnnotationHandler.getWorkbookAnnotation().hashCode()!= AnnotationHandler.getOldWorkbookAnnotationHash()){
 	    			
-		    		MainWindow wm = MainWindow.getInstance();
+		    		Launcher wm = Launcher.getInstance();
 		    		String directoryPath = wm.getDirectoryPath();
 		    		String fileName = wm.getFileName();
 		    		OleAutomation embeddedWorkbook = wm.getEmbeddedWorkbook();
 
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Want to save your changes?");
 	 	            
 	 	            int response = messageBox.open();	 	 	            
@@ -66,33 +70,33 @@ public class GUIListeners {
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int styleError = SWT.ICON_ERROR;
-	 		        		MessageBox errorMessageBox = MainWindow.getInstance().createMessageBox(styleError);
+	 		        		MessageBox errorMessageBox = Launcher.getInstance().createMessageBox(styleError);
 	 		        		errorMessageBox.setMessage("ERROR: Could not save the file!");
 	 	            		event.doit = false;
 	 	            	}
 	 	            	
 	 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-	 	            	MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
+	 	            	Launcher.getInstance().disposeControlSite();
+	 	            	Launcher.getInstance().disposeShell();
 	 	            	event.doit = true;
 	 	            } 
 	 	            
 	 	            if(response == SWT.NO){
-	 	            	MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
+	 	            	Launcher.getInstance().disposeControlSite();
+	 	            	Launcher.getInstance().disposeShell();
 	 	            	event.doit = true;
 	 	            } 
 	 	            
 	 	            event.doit = false;
 	        	}else{
 	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Do you want to close the application?");
 	 	            
 	 	            int response = messageBox.open();
 	 	            if( response== SWT.YES){
-	 	        	    MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
+	 	        	    Launcher.getInstance().disposeControlSite();
+	 	            	Launcher.getInstance().disposeShell();
 	 	            	event.doit = true;
 	 	            }
 	 	            event.doit = false;
@@ -118,7 +122,7 @@ public class GUIListeners {
 	             * the first argument is a Range object. Get the number and range of selected areas 
 	             */	        	
 	        	OleAutomation rangeAutomation = args[0].getAutomation();
-	        	MainWindow.getInstance().setCurrentSelection(RangeUtils.getRangeAddress(rangeAutomation).split(","));
+	        	Launcher.getInstance().setCurrentSelection(RangeUtils.getRangeAddress(rangeAutomation).split(","));
 	        	args[0].dispose();
 	        	rangeAutomation.dispose();	
 	        	
@@ -126,13 +130,13 @@ public class GUIListeners {
 				 * the second argument is a Worksheet object. Get the name and index of the worksheet.
 				 */
 	        	OleAutomation worksheetAutomation = args[1].getAutomation();		        
-	        	MainWindow.getInstance().setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
-	        	MainWindow.getInstance().setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
+	        	Launcher.getInstance().setActiveWorksheetName(WorksheetUtils.getWorksheetName(worksheetAutomation));
+	        	Launcher.getInstance().setActiveWorksheetIndex(WorksheetUtils.getWorksheetIndex(worksheetAutomation));
 				args[1].dispose();	
 				worksheetAutomation.dispose();
 						
-				MainWindow.getInstance().setFocusToShell();
-				MainWindow.getInstance().setFocusToShell();
+				Launcher.getInstance().setFocusToShell();
+				Launcher.getInstance().setFocusToShell();
 
 	        }
 	    };	       
@@ -159,11 +163,11 @@ public class GUIListeners {
 				String activeSheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
 				int activeSheetIndex = WorksheetUtils.getWorksheetIndex(worksheetAutomation);
 				
-				String previousSheetName =MainWindow.getInstance().getActiveWorksheetName();
+				String previousSheetName =Launcher.getInstance().getActiveWorksheetName();
 	        	
 				// update the information about the active sheet
-				MainWindow.getInstance().setActiveWorksheetName(activeSheetName);
-				MainWindow.getInstance().setActiveWorksheetIndex(activeSheetIndex);
+				Launcher.getInstance().setActiveWorksheetName(activeSheetName);
+				Launcher.getInstance().setActiveWorksheetIndex(activeSheetIndex);
 				args[0].dispose();
 				worksheetAutomation.dispose();
 				
@@ -181,7 +185,7 @@ public class GUIListeners {
 						AnnotationHandler.clearUndoList();
 						
 						// should not remember selection from previous sheet
-						MainWindow.getInstance().setCurrentSelection(null);
+						Launcher.getInstance().setCurrentSelection(null);
 	        	}
 					
 					
@@ -189,8 +193,8 @@ public class GUIListeners {
 				BarMenuUtils.adjustBarMenuForWorkbook();		
 								
 				// return the focus to the embedded excel workbook, if it does not have it already
-				if(!MainWindow.getInstance().isControlSiteFocusControl())
-					MainWindow.getInstance().setFocusToControlSite();	
+				if(!Launcher.getInstance().isControlSiteFocusControl())
+					Launcher.getInstance().setFocusToControlSite();	
 	        }
 	    };	       
 	    return listener;
@@ -207,7 +211,7 @@ public class GUIListeners {
 	        	if(e.keyCode == SWT.ARROW_UP || e.keyCode == SWT.ARROW_DOWN || 
 	        	   e.keyCode == SWT.ARROW_LEFT || e.keyCode == SWT.ARROW_RIGHT)
 	            {
-	        		MainWindow.getInstance().setFocusToControlSite();
+	        		Launcher.getInstance().setFocusToControlSite();
 	            }
 	        }
 		};
@@ -221,7 +225,7 @@ public class GUIListeners {
 		return new Listener() {
 			@Override
 			public void handleEvent(Event e) {
-					MainWindow.getInstance().setFocusToControlSite();
+					Launcher.getInstance().setFocusToControlSite();
 			}		
 		};
 	}
@@ -238,34 +242,34 @@ public class GUIListeners {
 				
 				// warn the user user if there exist an opened file
 				// offer them to save their progress
-				if(!MainWindow.getInstance().isControlSiteNull()  && 
+				if(!Launcher.getInstance().isControlSiteNull()  && 
 					AnnotationHandler.getWorkbookAnnotation().hashCode()!=
 						AnnotationHandler.getOldWorkbookAnnotationHash()){
 									
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Do you want to save the progress on the existing file ?");
 	 	            
 	 	            int response = messageBox.open();	 	 	            
 	 	            if( response== SWT.YES){	
-	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
+	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
+	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
-	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						MessageBox message = Launcher.getInstance().createMessageBox(messageStyle);
 	 						message.setMessage("ERROR: The file could not be saved!");
 	 						message.open();
 	 	            	}
 	 	            } 	 	            
 				}
 				
-				if(!MainWindow.getInstance().isControlSiteNull()) {
-					OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
+				if(!Launcher.getInstance().isControlSiteNull()) {
+					OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);		
-					MainWindow.getInstance().setEmbeddedWorkbook(null);
-					MainWindow.getInstance().disposeControlSite();
+					Launcher.getInstance().setEmbeddedWorkbook(null);
+					Launcher.getInstance().disposeControlSite();
 				}
 
 				
@@ -273,7 +277,7 @@ public class GUIListeners {
 				FileUtils.fileOpen();
 				
 				// get the OleAutomation for the embedded workbook
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				if (workbookAutomation == null) {
 					return; // there is no embedded workbook (file)
 				}
@@ -313,16 +317,14 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				
-				OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				String fileName = MainWindow.getInstance().getFileName();
-				String directory = MainWindow.getInstance().getDirectoryPath();
+				OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
+				String fileName = Launcher.getInstance().getFileName();
+				String directory = Launcher.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
 				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath, false);
 				if(result){		
-					// TODO: Mark Annotated Files. 
-            		// FileUtils.markFileAsAnnotated(directory, fileName, 1);
 					
 					AnnotationHandler.clearRedoList();
 					AnnotationHandler.clearUndoList();
@@ -334,12 +336,12 @@ public class GUIListeners {
 					BarMenuUtils.adjustBarMenuForSheet(sheetName);
 					
             		int style = SWT.ICON_INFORMATION;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					MessageBox message = Launcher.getInstance().createMessageBox(style);
 					message.setMessage("The file was successfully saved.");
 					message.open();
 				}else{
 					int style = SWT.ICON_ERROR;
-					MessageBox message = MainWindow.getInstance().createMessageBox(style);
+					MessageBox message = Launcher.getInstance().createMessageBox(style);
 					message.setMessage("ERROR: The file could not be saved!");
 					message.open();
 				}				
@@ -361,31 +363,31 @@ public class GUIListeners {
 						AnnotationHandler.getOldWorkbookAnnotationHash()){
 									
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Want to save your changes?");
 	 	            
 	 	            int response = messageBox.open();	 	 	            
 	 	            if( response== SWT.YES){	
-	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
+	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
+	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
-	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						MessageBox message = Launcher.getInstance().createMessageBox(messageStyle);
 	 						message.setMessage("ERROR: The file could not be saved!");
 	 						message.open();
 	 	            	}
 	 	            } 
 	 	            
 	 	            if(response == SWT.NO || response == SWT.YES){
-	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
+	 	            	OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 	 					
-	 					MainWindow.getInstance().setEmbeddedWorkbook(null);
-	 					MainWindow.getInstance().disposeControlSite();
+	 					Launcher.getInstance().setEmbeddedWorkbook(null);
+	 					Launcher.getInstance().disposeControlSite();
 	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
-	 					MainWindow.getInstance().setColorToExcelPanel(lightGreyShade);
+	 					Launcher.getInstance().setColorToExcelPanel(lightGreyShade);
 	 					
 	 					BarMenuUtils.adjustBarMenuForFileClose();
 	 	            } 
@@ -393,18 +395,18 @@ public class GUIListeners {
 				}else{
 					
 	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Are you sure you want to close the file?");
 	 	            
 	 	            int response = messageBox.open();
 	 	            if( response== SWT.YES){
-	 	            	OleAutomation embeddedWorkbook  = MainWindow.getInstance().getEmbeddedWorkbook();
+	 	            	OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 	 					
-	 					MainWindow.getInstance().setEmbeddedWorkbook(null);
-	 					MainWindow.getInstance().disposeControlSite();
+	 					Launcher.getInstance().setEmbeddedWorkbook(null);
+	 					Launcher.getInstance().disposeControlSite();
 	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
-	 					MainWindow.getInstance().setColorToExcelPanel(lightGreyShade);
+	 					Launcher.getInstance().setColorToExcelPanel(lightGreyShade);
 	 					BarMenuUtils.adjustBarMenuForFileClose();
 	 	            }
 	        	}					
@@ -421,18 +423,18 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String directoryPath = MainWindow.getInstance().getDirectoryPath();
-				String fileName = MainWindow.getInstance().getFileName();				
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+				String directoryPath = Launcher.getInstance().getDirectoryPath();
+				String fileName = Launcher.getInstance().getFileName();				
 				boolean isSuccess = RangeAnnotationsSheet.exportRangeAnnotationsAsCSV(workbookAutomation, directoryPath, fileName);
 				
 				if(isSuccess){
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
+					MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_INFORMATION);
 					messageBox.setText("Information");
 		            messageBox.setMessage("The annotation data were successfully exported at:\n"+directoryPath);
 		            messageBox.open();
 				}else{
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+					MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 					messageBox.setText("Error Message");
 		            messageBox.setMessage("An error occured. Could not export the annotation data as csv.");
 		            messageBox.open();
@@ -451,7 +453,7 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_INFORMATION);
+					MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_INFORMATION);
 					messageBox.setText("Information");
 		            messageBox.setMessage("This option is not implemented yet");
 			}
@@ -468,22 +470,22 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {	
 				
-				if(!MainWindow.getInstance().isControlSiteNull() && 
+				if(!Launcher.getInstance().isControlSiteNull() && 
 					AnnotationHandler.getWorkbookAnnotation().hashCode()!= AnnotationHandler.getOldWorkbookAnnotationHash()){
 								
 	        		int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_WARNING ;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Want to save your changes?");
 	 	            
 	 	            int response = messageBox.open();	 	 	            
 	 	            if( response== SWT.YES){	
-	 	            	OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
-	 	            	String filePath =  MainWindow.getInstance().getDirectoryPath()+"\\"+MainWindow.getInstance().getFileName();
+	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
+	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
-	 						MessageBox message = MainWindow.getInstance().createMessageBox(messageStyle);
+	 						MessageBox message = Launcher.getInstance().createMessageBox(messageStyle);
 	 						message.setMessage("ERROR: The file could not be saved!");
 	 						message.open();
 	 	            	}else{
@@ -492,25 +494,25 @@ public class GUIListeners {
 	 	            		//FileUtils.markFileAsAnnotated(directory, fileName, 1);
 	 	            		
 		 	            	WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-		 	            	MainWindow.getInstance().disposeControlSite();
-		 	            	MainWindow.getInstance().disposeShell();
+		 	            	Launcher.getInstance().disposeControlSite();
+		 	            	Launcher.getInstance().disposeShell();
 	 	            	}
 	 	            } 
 	 	            
 	 	            if(response == SWT.NO){
-	 	            	MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
+	 	            	Launcher.getInstance().disposeControlSite();
+	 	            	Launcher.getInstance().disposeShell();
 	 	            } 
 	 	            
 	        	}else{
 	        		int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
-	        		MessageBox messageBox = MainWindow.getInstance().createMessageBox(style);
+	        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
 	 	            messageBox.setMessage("Do you want to close the application?");
 	 	            
 	 	            int response = messageBox.open();
 	 	            if( response== SWT.YES){
-	 	        	    MainWindow.getInstance().disposeControlSite();
-	 	            	MainWindow.getInstance().disposeShell();
+	 	        	    Launcher.getInstance().disposeControlSite();
+	 	            	Launcher.getInstance().disposeShell();
 	 	            }
 	        	}
 			}
@@ -525,7 +527,7 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 				
@@ -539,14 +541,14 @@ public class GUIListeners {
 				if(!sheetAnnotation.isCompleted()){
 					if( sheetAnnotation.getAllAnnotations().isEmpty()){
 						int style = SWT.ICON_WARNING ;
-						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						MessageBox mb = Launcher.getInstance().createMessageBox(style);
 						mb.setMessage("You can not mark this sheet as completed. "
 								+ "It does not contain any annotations yet!"); 
 						mb.open();
 					}else{
 						if(sheetAnnotation.getAllAnnotations().size()<4){
 							int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
-							MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+							MessageBox mb = Launcher.getInstance().createMessageBox(style);
 							mb.setMessage("This sheet contains very few annotations. "
 									+ "Do you still want to mark it as \"Completed\" ?"); 
 							int option = mb.open();
@@ -574,7 +576,7 @@ public class GUIListeners {
 					AnnotationHandler.clearUndoList();
 									
 					int style = SWT.ICON_INFORMATION;
-					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					MessageBox mb = Launcher.getInstance().createMessageBox(style);
 					String value = String.valueOf((sheetAnnotation.isCompleted())).toUpperCase();
 					mb.setMessage(" Sheet status was updated to Completed := "+value); 
 					mb.open();
@@ -591,7 +593,7 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 				
@@ -606,13 +608,13 @@ public class GUIListeners {
 					
 					if(!sheetAnnotation.getAllAnnotations().isEmpty()){
 						int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
-						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						MessageBox mb = Launcher.getInstance().createMessageBox(style);
 						mb.setMessage("Marking this sheet as \"Not Applicable\" will erase all the existing annotations "
 								+ "in the sheet. Do you want to proceed ?"); 
 						int option = mb.open();
 						
 						if(option == SWT.YES){
-							OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+							OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 							AnnotationHandler.deleteShapeAnnotationsInSheet(embeddedWorkbook, sheetName);
 							RangeAnnotationsSheet.deleteRangeAnnotationDataFromSheet(embeddedWorkbook, sheetName, true);
 							
@@ -642,7 +644,7 @@ public class GUIListeners {
 					AnnotationHandler.clearUndoList();
 					
 					int style = SWT.ICON_INFORMATION;
-					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					MessageBox mb = Launcher.getInstance().createMessageBox(style);
 					String value = String.valueOf((sheetAnnotation.isNotApplicable())).toUpperCase();
 					mb.setMessage(" Sheet status was updated to NotApplicable := "+value); 
 					mb.open();
@@ -667,7 +669,7 @@ public class GUIListeners {
 
 					if( wa.getAllAnnotations().isEmpty()){
 						int style = SWT.ICON_WARNING ;
-						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						MessageBox mb = Launcher.getInstance().createMessageBox(style);
 						mb.setMessage("You can not mark the file (workbook) as \"Completed\". "
 								+ "It does not contain any annotations yet!"); 
 						mb.open();
@@ -687,13 +689,13 @@ public class GUIListeners {
 									
 									hasPendingSheets = true; 
 									
-									OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+									OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 									OleAutomation worksheetAutomation = 
 											WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, sa.getSheetName());
 									WorksheetUtils.makeWorksheetActive(worksheetAutomation);
 									
 									int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
-									MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+									MessageBox mb = Launcher.getInstance().createMessageBox(style);
 									mb.setMessage("The \""+sa.getSheetName()+"\" does not contain any or "
 											+ "contains very few annotations. "
 											+ "\nDo you still want to mark this file (workbook) as \"Completed\" ?"); 
@@ -734,7 +736,7 @@ public class GUIListeners {
 					BarMenuUtils.adjustBarMenuForWorkbook();
 					
 					int style = SWT.ICON_INFORMATION;
-					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					MessageBox mb = Launcher.getInstance().createMessageBox(style);
 					String value = String.valueOf((wa.isCompleted())).toUpperCase();
 					mb.setMessage("File (Workbook) status was updated to Completed := "+value); 
 					mb.open();
@@ -759,14 +761,14 @@ public class GUIListeners {
 					
 					if(!workbookAnnotation.getAllAnnotations().isEmpty()){
 						int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
-						MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+						MessageBox mb = Launcher.getInstance().createMessageBox(style);
 						mb.setMessage("Marking this file (workbook) as \"Not Applicable\" "
 								+ "will erase all the existing annotations. "
 								+ "Do you want to proceed ?"); 
 						int option = mb.open();
 						
 						if(option == SWT.YES){
-							OleAutomation embeddedWorkbook = MainWindow.getInstance().getEmbeddedWorkbook();
+							OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 							AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
 							RangeAnnotationsSheet.deleteAllRangeAnnotationData(embeddedWorkbook);
 							
@@ -792,7 +794,7 @@ public class GUIListeners {
 				if(wasUpdated){
 					
 					int style = SWT.ICON_INFORMATION;
-					MessageBox mb = MainWindow.getInstance().createMessageBox(style);
+					MessageBox mb = Launcher.getInstance().createMessageBox(style);
 					String value = String.valueOf((workbookAnnotation.isNotApplicable())).toUpperCase();
 					mb.setMessage("File (Workbook) status was updated to NotApplicable := "+value); 
 					mb.open();
@@ -813,21 +815,25 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				 
-				 OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				 OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				 
-				 String sheetName = MainWindow.getInstance().getActiveWorksheetName();
-				 int sheetIndex = MainWindow.getInstance().getActiveWorksheetIndex();
-				 String[] currentSelection = MainWindow.getInstance().getCurrentSelection();
-
-				 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
+				 String sheetName = Launcher.getInstance().getActiveWorksheetName();
+				 int sheetIndex = Launcher.getInstance().getActiveWorksheetIndex();
+				 String[] currentSelection = Launcher.getInstance().getCurrentSelection();
+				 
+				 try{
+					 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
 				 		 currentSelection, annotationClass);				 
-				 	 
+				 }catch (Exception ex){
+					 logger.error("Generic exception on create new annotation", ex);
+				 }
+				 
 				 // if the sheet was empty, had no annotations, 
 				 // the menu needs to be updated
 				 BarMenuUtils.adjustBarMenuForSheet(sheetName);
 				 
-				 if(MainWindow.getInstance().isControlSiteFocusControl())
-					 	MainWindow.getInstance().setFocusToShell();			 
+				 if(Launcher.getInstance().isControlSiteFocusControl())
+					 	Launcher.getInstance().setFocusToShell();			 
 			}
 		};
 	}
@@ -845,7 +851,7 @@ public class GUIListeners {
 				if(ra==null)
 					return;
 				
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook(); 
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook(); 
 				OleAutomation sheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 				
@@ -862,12 +868,12 @@ public class GUIListeners {
 					
 					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
 						
-					MainWindow.getInstance().setActiveWorksheetIndex(ra.getSheetIndex());
-					MainWindow.getInstance().setActiveWorksheetName(ra.getSheetName());
-					MainWindow.getInstance().setCurrentSelection(new String[]{ra.getRangeAddress()});
+					Launcher.getInstance().setActiveWorksheetIndex(ra.getSheetIndex());
+					Launcher.getInstance().setActiveWorksheetName(ra.getSheetName());
+					Launcher.getInstance().setCurrentSelection(new String[]{ra.getRangeAddress()});
 									
 				}else{
-					MessageBox messageBox = MainWindow.getInstance().createMessageBox(SWT.ICON_ERROR);
+					MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
 	 	            messageBox.setMessage("Could not undo the last range annotation!!!");
 	 	            messageBox.open();
 				}
@@ -891,12 +897,20 @@ public class GUIListeners {
 					return;
 				}
 				
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook(); 
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook(); 
 				OleAutomation worksheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 				
 				WorksheetUtils.unprotectWorksheet(worksheetAutomation);		
-				Boolean result = AnnotationHandler.drawRangeAnnotation(workbookAutomation, ra, true);
+				
+				
+				Boolean result = false;
+				try{
+					result = AnnotationHandler.drawRangeAnnotation(workbookAutomation, ra, true);
+				}catch (Exception ex){			
+					logger.error("Generic exception on redo last annotation", ex);
+				}
+				
 				WorksheetUtils.protectWorksheet(worksheetAutomation);
 				worksheetAutomation.dispose();
 				
@@ -925,7 +939,7 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();	
 				AnnotationHandler.setVisilityForAllAnnotations(workbookAutomation, false);
 			}
 		};
@@ -939,8 +953,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				AnnotationHandler.setVisibilityForAnnotationsInSheet(workbookAutomation, sheetName, false);
 			}
 		};
@@ -955,7 +969,7 @@ public class GUIListeners {
 			
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				AnnotationHandler.setVisilityForAllAnnotations(workbookAutomation, true);
 			}			
 		};
@@ -970,8 +984,8 @@ public class GUIListeners {
 			
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				AnnotationHandler.setVisibilityForAnnotationsInSheet(workbookAutomation, sheetName, true);
 			}
 			
@@ -986,8 +1000,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();	
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();	
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				
 				AnnotationHandler.deleteAllShapeAnnotations(workbookAutomation);
 				
@@ -1013,8 +1027,8 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 
-				OleAutomation workbookAutomation = MainWindow.getInstance().getEmbeddedWorkbook();
-				String sheetName = MainWindow.getInstance().getActiveWorksheetName();
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				
 				AnnotationHandler.deleteShapeAnnotationsInSheet(workbookAutomation, sheetName);
 				

@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.oleutils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
 
@@ -10,6 +12,8 @@ import org.eclipse.swt.ole.win32.Variant;
  * @author Elvis Koci
  */
 public class ShapeUtils {
+	
+	private static final Logger logger = LogManager.getLogger(ShapeUtils.class.getName());
 	
 	/**
 	 * Draw a textbox at the specified location 
@@ -21,8 +25,13 @@ public class ShapeUtils {
 	 * @return an OleAutomation that provides access to the functionalities of the textbox that was just created
 	 */
 	public static OleAutomation drawTextBox(OleAutomation shapesAutomation, double left, double top, double width, double height){
-				
+		
+		logger.debug("Is Shapes OleAutomation null? ".concat(String.valueOf(shapesAutomation==null)));
+		
 		int[] addTextboxMethodIds = shapesAutomation.getIDsOfNames(new String[]{"AddTextbox", "Orientation", "Left", "Top", "Width", "Height"}); 
+		if(addTextboxMethodIds==null)
+			logger.error("Could not get ids of the method \"AddTextbox\" for the \"Shapes\" ole object");
+				
 		Variant methodParams[] = new Variant[5];
 		methodParams[0] = new Variant(1);
 		methodParams[1] = new Variant(left); 
@@ -31,21 +40,21 @@ public class ShapeUtils {
 		methodParams[4] = new Variant(height);	
 		
 		Variant textboxVariant = shapesAutomation.invoke(addTextboxMethodIds[0], methodParams);
+		logger.debug("Invoking the method \"AddTextbox\" for \"Shapes\" ole object returned variant: "+textboxVariant);
 		
-		shapesAutomation.dispose();
 		for (Variant v : methodParams) {
 			v.dispose();
 		}
 		
+		if(textboxVariant==null){
+			logger.error("Invoking the method \"AddTextbox\" for \"Shapes\" ole object returned a null variant");
+			return null;
+		}
+		
 		OleAutomation textboxAutomation = null;
-//		if(textboxVariant!=null){
 		textboxAutomation = textboxVariant.getAutomation();
 		textboxVariant.dispose();
-//		}else{
-//			System.out.println("ERROR: Failed to draw textbox annotation!!!");
-//			System.exit(1);
-//		}
-		
+
 		return textboxAutomation;
 	}
 	
@@ -61,7 +70,12 @@ public class ShapeUtils {
 	 */
 	public static OleAutomation drawShape(OleAutomation shapesAutomation, int msoAutoShapeType, double left, double top, double width, double height){
 		
+		logger.debug("Is Shapes OleAutomation null? ".concat(String.valueOf(shapesAutomation==null)));
+		
 		int[] addShapeMethodIds = shapesAutomation.getIDsOfNames(new String[]{"AddShape", "Type", "Left", "Top", "Width", "Height"}); 
+		if(addShapeMethodIds==null)
+			logger.error("Could not get ids of the method \"AddShape\" for the \"Shapes\" ole object");
+		
 		Variant methodParams[] = new Variant[5];
 		methodParams[0] = new Variant(msoAutoShapeType);
 		methodParams[1] = new Variant(left); 
@@ -70,8 +84,8 @@ public class ShapeUtils {
 		methodParams[4] = new Variant(height);	
 		
 		Variant shapeVariant = shapesAutomation.invoke(addShapeMethodIds[0], methodParams);
+		logger.debug("Invoking the method \"AddShape\" for \"Shapes\" ole object returned variant: "+shapeVariant);
 		
-		shapesAutomation.dispose();
 		for (Variant v : methodParams) {
 			v.dispose();
 		}
@@ -81,8 +95,7 @@ public class ShapeUtils {
 			shapeAutomation = shapeVariant.getAutomation();
 			shapeVariant.dispose();
 		}else{
-			System.out.println("ERROR: Failed to draw textbox annotation!!!");
-			System.exit(1);
+			logger.error("Invoking the method \"AddShape\" for \"Shapes\" ole object returned null variant");
 		}
 		
 		return shapeAutomation;	
@@ -96,8 +109,16 @@ public class ShapeUtils {
 	 */
 	public static String getShapeTitle(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] titlePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Title"}); 
+		
+		if(titlePropertyIds==null)
+			logger.error("Could not get id of property \"Title\" for \"Shape\" ole object");
+		
 		Variant titleVariant = shapeAutomation.getProperty(titlePropertyIds[0]);
+		logger.debug("Invoking get property \"Title\" for \"Shape\" ole object returned variant: "+titleVariant);
+		
 		String title = titleVariant.getString();
 		titleVariant.dispose();
 
@@ -113,9 +134,18 @@ public class ShapeUtils {
 	 */
 	public static boolean setShapeTitle(OleAutomation shapeAutomation, String title){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] titlePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Title"}); 
+		if(titlePropertyIds==null)
+			logger.error("Could not get id of property \"Title\" for \"Shape\" ole object");
+		
 		Variant titleVariant = new Variant(title);
+		logger.debug("The title to set for \"Shape\" ole object is: "+title);
+		
 		boolean isSuccess = shapeAutomation.setProperty(titlePropertyIds[0], titleVariant);
+		logger.debug("Was setting new \"Title\" for \"Shape\" ole object successfull? "+isSuccess);
+		
 		titleVariant.dispose();
 
 		return isSuccess;
@@ -129,9 +159,18 @@ public class ShapeUtils {
 	 */
 	public static String getShapeName(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] namePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Name"}); 
+		if(namePropertyIds==null)
+			logger.error("Could not get id of property \"Name\" for \"Shape\" ole object");
+		
 		Variant nameVariant = shapeAutomation.getProperty(namePropertyIds[0]);
+		logger.debug("Invoking get property \"Name\" for \"Shape\" ole object returned variant: "+nameVariant);
+		
 		String name = nameVariant.getString();
+		logger.debug("The value of the property \"Name\" for the \"Shape\" ole object is "+name);
+		
 		nameVariant.dispose();
 
 		return name;
@@ -146,9 +185,18 @@ public class ShapeUtils {
 	 */
 	public static boolean setShapeName(OleAutomation shapeAutomation, String name){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] namePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Name"}); 
+		if(namePropertyIds==null)
+			logger.error("Could not get id of property \"Name\" for \"Shape\" ole object");
+	
 		Variant nameVariant = new Variant(name);
+		logger.debug("The name to set for \"Shape\" ole object is: "+name);
+		
 		boolean isSuccess = shapeAutomation.setProperty(namePropertyIds[0], nameVariant);
+		logger.debug("Setting property \"Name\" for \"Shape\" ole object returned: "+isSuccess);
+		
 		nameVariant.dispose();
 
 		return isSuccess;
@@ -162,8 +210,14 @@ public class ShapeUtils {
 	 */
 	public static long getShapeID(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] shapeIdPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"ID"}); 
+		if(shapeIdPropertyIds==null)
+			logger.error("Could not get the id of the property \"ID\" for the \"Shape\" ole object");
+		
 		Variant idVariant = shapeAutomation.getProperty(shapeIdPropertyIds[0]);
+		logger.debug("Invoking get property \"ID\" for the \"Shape\" ole object returned variant "+idVariant);
 		long id = idVariant.getLong();
 		idVariant.dispose();
 
@@ -178,9 +232,15 @@ public class ShapeUtils {
 	 */
 	public static boolean setShapeVisibility(OleAutomation shapeAutomation, boolean visible){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] visiblePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Visible"});
+		if(visiblePropertyIds==null)
+			logger.error("Could not get the id of the property \"Visible\" for the \"Shape\" ole object");
+		
 		Variant visibilityVariant = new Variant(visible);
 		boolean isSuccess = shapeAutomation.setProperty(visiblePropertyIds[0], visibilityVariant);
+		logger.debug("Invoking set property \"ID\" for the \"Shape\" ole object returned: "+isSuccess);
 		visibilityVariant.dispose();
 		
 		return isSuccess;
@@ -193,8 +253,15 @@ public class ShapeUtils {
 	 */
 	public static OleAutomation getFillFormatAutomation(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] fillPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Fill"}); 
+		if(fillPropertyIds==null)
+			logger.error("Could not get the id of the property \"Fill\" for the \"Shape\" ole object");
+		
 		Variant fillFormatVariant = shapeAutomation.getProperty(fillPropertyIds[0]);
+		logger.debug("Invoking get property \"Fill\" for the \"Shape\" ole object returned variant: "+fillFormatVariant);
+		
 		OleAutomation fillFormatAutomation = fillFormatVariant.getAutomation();
 		fillFormatVariant.dispose();
 		
@@ -209,8 +276,15 @@ public class ShapeUtils {
 	 */
 	public static OleAutomation getTextFrameAutomation(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] textFramePropertyIds = shapeAutomation.getIDsOfNames(new String[]{"TextFrame"}); 
+		if(textFramePropertyIds==null)
+			logger.error("Could not get the id of the property \"TextFrame\" for the \"Shape\" ole object");
+
 		Variant textFrameVariant = shapeAutomation.getProperty(textFramePropertyIds[0]);
+		logger.debug("Invoking get property \"TextFrame\" for the \"Shape\" ole object returned variant: "+textFrameVariant);
+		
 		OleAutomation textFrameAutomation = textFrameVariant.getAutomation();
 		textFrameVariant.dispose();
 		
@@ -225,8 +299,15 @@ public class ShapeUtils {
 	 */
 	public static OleAutomation getLineFormatAutomation(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] lineFormatPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Line"}); 
+		if(lineFormatPropertyIds==null)
+			logger.error("Could not get the id of the property \"Line\" for the \"Shape\" ole object");
+		
 		Variant lineFormatVariant = shapeAutomation.getProperty(lineFormatPropertyIds[0]);
+		logger.debug("Invoking get property \"Line\" for the \"Shape\" ole object returned variant: "+lineFormatVariant);
+		
 		OleAutomation lineFormatAutomation = lineFormatVariant.getAutomation();
 		lineFormatVariant.dispose();
 		
@@ -240,8 +321,15 @@ public class ShapeUtils {
 	 */
 	public static OleAutomation getShadowFormatAutomation(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] shadowFormatPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Shadow"}); 
+		if(shadowFormatPropertyIds==null)
+			logger.error("Could not get the id of the property \"Shadow\" for the \"Shape\" ole object");
+		
 		Variant shadowFormatVariant = shapeAutomation.getProperty(shadowFormatPropertyIds[0]);
+		logger.debug("Invoking get property \"Shadow\" for the \"Shape\" ole object returned variant: "+shadowFormatVariant);
+		
 		OleAutomation shadowFormatAutomation = shadowFormatVariant.getAutomation();
 		shadowFormatVariant.dispose();
 		
@@ -254,8 +342,14 @@ public class ShapeUtils {
 	 */
 	public static boolean deleteShape(OleAutomation shapeAutomation){
 		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
 		int[] deleteMethodIds = shapeAutomation.getIDsOfNames(new String[]{"Delete"}); 
+		if(deleteMethodIds==null)
+			logger.error("Could not get the ids of the method \"Delete\" for the \"Shape\" ole object");
+		
 		Variant result = shapeAutomation.invoke(deleteMethodIds[0]);
+		logger.debug("Invoking the method \"Delete\" for the \"Shape\" ole object returned variant: "+result);
 		
 		if(result==null){
 			return false;
@@ -264,5 +358,4 @@ public class ShapeUtils {
 		result.dispose();
 		return true;
 	}
-	
 }

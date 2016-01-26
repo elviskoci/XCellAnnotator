@@ -3,6 +3,8 @@
  */
 package de.tudresden.annotator.oleutils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.ole.win32.Variant;
 
@@ -11,6 +13,7 @@ import org.eclipse.swt.ole.win32.Variant;
  */
 public class FillFormatUtils {
 	
+	private static final Logger logger = LogManager.getLogger(FillFormatUtils.class.getName());
 	
 	/**
 	 * Show or hide the fill of the shape.
@@ -20,9 +23,17 @@ public class FillFormatUtils {
 	 */
 	public static boolean setFillVisibility(OleAutomation fillFormatAutomation, boolean visible){
 		
-		int[] visiblePropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Visible"}); 
+		logger.debug("Is FillFormat oleautomation null? ".concat(String.valueOf(fillFormatAutomation==null)));
+		
+		int[] visiblePropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Visible"});
+		if(visiblePropertyIds==null)
+			logger.error("Could not get id of property \"Visible\" for \"FillFormat\" ole object");
+		
+		logger.debug("The value to set for property \"Visible\" of \"FillFormat\" ole object is: "+String.valueOf(visible));
 		Variant visiblePropertyVariant = new Variant(visible); 
+		
 		boolean isSuccess = fillFormatAutomation.setProperty(visiblePropertyIds[0], visiblePropertyVariant);
+		logger.debug("Invoking set property \"Visible\" for \"FillFormat\" ole object returned : "+String.valueOf(isSuccess));
 		visiblePropertyVariant.dispose();
 	
 		return isSuccess;
@@ -36,7 +47,14 @@ public class FillFormatUtils {
 	 * @return true if operation succeeded, false otherwise
 	 */
 	public static boolean setFillTransparency(OleAutomation fillFormatAutomation, double transparency){
+		
+		logger.debug("Is FillFormat oleautomation null? ".concat(String.valueOf(fillFormatAutomation==null)));
+		
 		int[] transparencyPropertyIds = fillFormatAutomation.getIDsOfNames(new String[]{"Transparency"}); 
+		if(transparencyPropertyIds==null)
+			logger.error("Could not get id of property \"Transparency\" for \"FillFormat\" ole object");
+		
+		logger.debug("The value to set for property \"Transparency\" of \"FillFormat\" ole object is: "+String.valueOf(transparency));
 		return fillFormatAutomation.setProperty(transparencyPropertyIds[0], new Variant(transparency));	
 	}
 }

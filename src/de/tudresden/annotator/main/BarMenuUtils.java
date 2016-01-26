@@ -18,7 +18,7 @@ public class BarMenuUtils {
 	
 	protected static void adjustBarMenuForSheet(String sheetName){
 					
-		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		BarMenu  menuBar = Launcher.getInstance().getMenuBar();
 		MenuItem[] menuItems = menuBar.getMenuItems();
 		
 		MenuItem annotationsMenu = null;
@@ -179,7 +179,7 @@ public class BarMenuUtils {
 		
 		WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 		
-		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		BarMenu  menuBar = Launcher.getInstance().getMenuBar();
 		MenuItem[] menuItems = menuBar.getMenuItems();
 		
 		MenuItem annotationsMenu = null;
@@ -274,7 +274,7 @@ public class BarMenuUtils {
 						}
 					}
 				}							
-				String activeSheetName = MainWindow.getInstance().getActiveWorksheetName();
+				String activeSheetName = Launcher.getInstance().getActiveWorksheetName();
 				adjustBarMenuForSheet(activeSheetName);
 			}			
 		}		
@@ -282,7 +282,7 @@ public class BarMenuUtils {
 	
 	protected static void adjustBarMenuForOpennedFile(){
 		
-		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		BarMenu  menuBar = Launcher.getInstance().getMenuBar();
 		MenuItem[] menuItems = menuBar.getMenuItems();
 		
 		MenuItem fileMenu = null;
@@ -317,7 +317,7 @@ public class BarMenuUtils {
 	}
 	
 	protected static void adjustBarMenuForFileClose(){
-		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		BarMenu  menuBar = Launcher.getInstance().getMenuBar();
 		MenuItem[] menuItems = menuBar.getMenuItems();
 		
 		MenuItem fileMenu = null;
@@ -348,7 +348,7 @@ public class BarMenuUtils {
 	
 	protected static void setEnabledForRangeAsMenuItem(boolean enabled){
 		
-		BarMenu  menuBar = MainWindow.getInstance().getMenuBar();
+		BarMenu  menuBar = Launcher.getInstance().getMenuBar();
 		MenuItem[] menuItems = menuBar.getMenuItems();
 		
 		MenuItem annotationsMenuItem = null;

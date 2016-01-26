@@ -15,7 +15,7 @@ import de.tudresden.annotator.annotations.AnnotationClass;
 import de.tudresden.annotator.annotations.RangeAnnotation;
 import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
-import de.tudresden.annotator.main.MainWindow;
+import de.tudresden.annotator.main.Launcher;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -176,7 +176,7 @@ public class RangeAnnotationsSheet {
 		OleAutomation usedRange = WorksheetUtils.getUsedRange(annotationDataSheet);
 		if(usedRange==null){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Annotation data sheet is empty. Header row is missing! "
 							+"Please delete the \""+name+"\" worksheet before proceeding with the annotation");
 			message.open();
@@ -190,7 +190,7 @@ public class RangeAnnotationsSheet {
 		
 		if(countAreas!=1){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Could not read the annotation data from the sheet "+name+".\n" +
 							"Data are not in the expected format. " +
 							"There seem to be empty rows or empty columns between the data!");
@@ -270,13 +270,13 @@ public class RangeAnnotationsSheet {
 		// check if the number of fields in the sheet match with the pre-defined (expected) ones.  
 		if(values.length < fields.size()){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("The number of fields in the annotation data sheet is larger than the declared (expected) fields");
 			message.open();
 			return false;
 		}else if(values.length > fields.size()){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("The number of fields in the annotation data sheet is smaller than the declared (expected) fields");
 			message.open();
 			return false;
@@ -288,7 +288,7 @@ public class RangeAnnotationsSheet {
 			String val = values[i];
 			if( val==null || val.compareTo("")==0){
 				int style = SWT.ICON_ERROR;
-				MessageBox message = MainWindow.getInstance().createMessageBox(style);
+				MessageBox message = Launcher.getInstance().createMessageBox(style);
 				message.setMessage("There are empty cells in the header row! Each field has to have a name.");
 				message.open();
 				return false;
@@ -296,7 +296,7 @@ public class RangeAnnotationsSheet {
 			
 			if(!fields.containsKey(val)){
 				int style = SWT.ICON_ERROR;
-				MessageBox message = MainWindow.getInstance().createMessageBox(style);
+				MessageBox message = Launcher.getInstance().createMessageBox(style);
 				message.setMessage("Field \""+val+"\" is not recognized. It is not part of the pre-defined (expected) fields");
 				message.open();
 				return false;
@@ -464,7 +464,7 @@ public class RangeAnnotationsSheet {
 		boolean isUnprotected= WorksheetUtils.unprotectWorksheet(annotationDataSheetBeforeDelete);
 		if(!isUnprotected){
 			int style = SWT.ICON_ERROR;
-			MessageBox message = MainWindow.getInstance().createMessageBox(style);
+			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("Annotation Data Sheet could not be unprotected!");
 			message.open();
 			return;

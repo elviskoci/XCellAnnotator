@@ -1,0 +1,13 @@
+<?xml version ="1.0" encoding="UTF-8"?>
+<Configuration>
+	<Appenders>
+		<File name="FileLogger" fileName="./logs/annotator.log" append="false">
+			<PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+		</File>	
+	</Appenders>
+	<Loggers>
+		<Logger name="de.tudresden.annotator" level="debug">
+			<AppenderRef ref="FileLogger"/>
+		</Logger>	
+	</Loggers>
+</Configuration>
