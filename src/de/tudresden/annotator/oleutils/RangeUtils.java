@@ -372,6 +372,23 @@ public class RangeUtils {
 	
 	
 	/**
+	 * Format the cells in the given range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @param format a string that represents the format that the cells should have 
+	 * @return true if the operation succeeded, false otherwise
+	 */
+	public static boolean formatCells(OleAutomation rangeAutomation, String format){
+		
+		int[] numberFormatMethodIds = rangeAutomation.getIDsOfNames(new String[]{"NumberFormat"});
+		
+		Variant formatVariant = new Variant(format);
+		boolean isSuccess = rangeAutomation.setProperty(numberFormatMethodIds[0], formatVariant);
+		formatVariant.dispose();
+		
+		return isSuccess;
+	}
+	
+	/**
 	 * Get special cells from the given range
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @param type an integer that represents the type of special cells to get. For more info see XlCellType enumeration. 

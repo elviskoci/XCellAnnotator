@@ -121,6 +121,7 @@ public class RangeAnnotationsSheet {
 		int i = 0;	
 		while (itr.hasNext()) {
 			OleAutomation cell = WorksheetUtils.getCell(annotationDataSheet, row, colNum+i);
+			RangeUtils.formatCells(cell, "@");
 			RangeUtils.setValue(cell, getFieldValue(itr.next(), annotation));	
 			i++;
 		}

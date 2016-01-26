@@ -117,14 +117,17 @@ public class AnnotationStatusSheet {
 	private static void createHeaderRow(OleAutomation annotationStatusSheet){
 		
 		OleAutomation field1 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex);
+		RangeUtils.formatCells(field1, "@");
 		RangeUtils.setValue(field1, "Name");
 		field1.dispose();
 		
 		OleAutomation field2 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex+1);
+		RangeUtils.formatCells(field2, "@");
 		RangeUtils.setValue(field2, "Completed");
 		field2.dispose();
 		
 		OleAutomation field3 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex+2);
+		RangeUtils.formatCells(field3, "@");
 		RangeUtils.setValue(field3, "NotApplicable");
 		field3.dispose();
 	}
@@ -145,6 +148,7 @@ public class AnnotationStatusSheet {
 		WorksheetUtils.unprotectWorksheet(annotationStatusSheet);
 		
 		OleAutomation field1 = WorksheetUtils.getCell(annotationStatusSheet, startRow, startColumnIndex);
+		RangeUtils.formatCells(field1, "@");
 		RangeUtils.setValue(field1, name);
 		field1.dispose();
 		
@@ -174,6 +178,7 @@ public class AnnotationStatusSheet {
 		for (WorksheetAnnotation worksheetAnnotation : worksheetAnnotations) {
 			
 			OleAutomation field1 = WorksheetUtils.getCell(annotationStatusSheet, rowIndex, startColumnIndex);
+			RangeUtils.formatCells(field1, "@");
 			RangeUtils.setValue(field1, worksheetAnnotation.getSheetName());
 			
 			OleAutomation field2 = WorksheetUtils.getCell(annotationStatusSheet, rowIndex, startColumnIndex+1);
@@ -200,6 +205,7 @@ public class AnnotationStatusSheet {
 		WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 
 		OleAutomation bookName = WorksheetUtils.getCell(annotationStatusSheet, startRow+1, startColumnIndex);
+		RangeUtils.formatCells(bookName, "@");
 		RangeUtils.setValue(bookName, "Workbook");
 		bookName.dispose();
 		
@@ -219,6 +225,7 @@ public class AnnotationStatusSheet {
 		for (WorksheetAnnotation worksheetAnnotation : worksheetAnnotations) {
 			
 			OleAutomation sheetName = WorksheetUtils.getCell(annotationStatusSheet, rowIndex, startColumnIndex);
+			RangeUtils.formatCells(sheetName, "@");
 			RangeUtils.setValue(sheetName, worksheetAnnotation.getSheetName());
 			
 			OleAutomation isSheetCompleted = WorksheetUtils.getCell(annotationStatusSheet, rowIndex, startColumnIndex+1);
