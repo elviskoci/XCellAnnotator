@@ -388,9 +388,7 @@ public class WorkbookUtils {
 		for (Variant arg : args) {
 			arg.dispose();
 		}
-		
-		System.out.println(pVarResult);
-		
+			
 		if(pVarResult==null){
 			return false;
 		}

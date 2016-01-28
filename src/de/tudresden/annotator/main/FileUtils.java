@@ -106,7 +106,7 @@ public class FileUtils {
 		OleAutomation application = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
 		Launcher.getInstance().deactivateControlSite();
 		ApplicationUtils.setDisplayAlerts(application, false);
-				
+		
 		// save the status of all worksheet annotations and the workbook annotation 
 		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);
 		
@@ -124,18 +124,16 @@ public class FileUtils {
 		// protect and hide the annotation_status sheet before save
 		AnnotationStatusSheet.protect(embeddedWorkbook);
 		AnnotationStatusSheet.setVisibility(embeddedWorkbook, false);
-		
-		Launcher.getInstance().getTooltip().setVisible(false);
-     	
+			
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
-		WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-		Launcher.getInstance().setEmbeddedWorkbook(null);
-		// System.out.println("Was it saved? "+isSuccess);
 	
 		// activate alerts after save
 		ApplicationUtils.setDisplayAlerts(application, true);
-		
+
+		WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
+		Launcher.getInstance().setEmbeddedWorkbook(null);
+				
 		String newPath =  moveFileToStatusDirectory();
 			
 		if(!beforeFileClose){			

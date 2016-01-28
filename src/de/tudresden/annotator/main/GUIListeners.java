@@ -40,6 +40,7 @@ import de.tudresden.annotator.oleutils.WorksheetUtils;
 public class GUIListeners {
 	
 	private static final Logger logger = LogManager.getLogger(GUIListeners.class.getName());
+	private static boolean includesFileSave = false;
 	
 	/**
 	 * 
@@ -67,7 +68,10 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){	
 	 	            	
 	 	            	String filePath = directoryPath+"\\"+fileName;
+	 	            	
+	 	            	includesFileSave = true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
+	 	            	includesFileSave = false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int styleError = SWT.ICON_ERROR;
@@ -80,6 +84,8 @@ public class GUIListeners {
 	 	            	Launcher.getInstance().disposeControlSite();
 	 	            	Launcher.getInstance().disposeShell();
 	 	            	event.doit = true;
+	 	            	
+	 	            	
 	 	            } 
 	 	            
 	 	            if(response == SWT.NO){
@@ -172,40 +178,44 @@ public class GUIListeners {
 				Launcher.getInstance().setActiveWorksheetName(activeSheetName);
 				Launcher.getInstance().setActiveWorksheetIndex(activeSheetIndex);				
 				
-				// when a new sheet is activate the redo and undo list are cleared.  
-				WorksheetAnnotation activeSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
-						.getWorksheetAnnotations().get(activeSheetName);
-				
-				WorksheetAnnotation previousSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
-						.getWorksheetAnnotations().get(previousSheetName);
-										
-				if(!Launcher.getInstance().isControlSiteNull() && ((activeSheetAnnotation!=null && 
-						!activeSheetAnnotation.getAllAnnotations().isEmpty()) || 
-						activeSheetName.compareTo(RangeAnnotationsSheet.getName())==0) && 
-						previousSheetAnnotation!=null ){ 		
-						
-						// Keep Redo and Undo list per sheet. Erase when sheet changes
-						AnnotationHandler.clearRedoList();
-						AnnotationHandler.clearUndoList();
-						
-						// should not remember selection from previous sheet
-						Launcher.getInstance().setCurrentSelection(null);
-						
-	        	}
+				if(!includesFileSave){
 					
-
-				if(!Launcher.getInstance().isControlSiteNull() && activeSheetAnnotation!=null && 
-						( previousSheetAnnotation!=null || previousSheetName.compareTo(RangeAnnotationsSheet.getName())==0)){
-						// update display (appearance) for activated sheet
-						Launcher.getInstance().updateActiveSheetDisplay();
-	        	}
-	        
-				// adjust the bar menu according to the properties of the workbook and the active sheet
-				BarMenuUtils.adjustBarMenuForWorkbook();		
-								
-				// return the focus to the embedded excel workbook, if it does not have it already
-				if(!Launcher.getInstance().isControlSiteFocusControl())
-					Launcher.getInstance().setFocusToControlSite();	
+					// when a new sheet is activate the redo and undo list are cleared.  
+					WorksheetAnnotation activeSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
+							.getWorksheetAnnotations().get(activeSheetName);
+					
+					WorksheetAnnotation previousSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
+							.getWorksheetAnnotations().get(previousSheetName);
+					
+				
+					if(!Launcher.getInstance().isControlSiteNull() && ((activeSheetAnnotation!=null && 
+							!activeSheetAnnotation.getAllAnnotations().isEmpty()) || 
+							activeSheetName.compareTo(RangeAnnotationsSheet.getName())==0) && 
+							previousSheetAnnotation!=null ){ 		
+							
+							// Keep Redo and Undo list per sheet. Erase when sheet changes
+							AnnotationHandler.clearRedoList();
+							AnnotationHandler.clearUndoList();
+							
+							// should not remember selection from previous sheet
+							Launcher.getInstance().setCurrentSelection(null);
+							
+		        	}
+						
+	
+					if(!Launcher.getInstance().isControlSiteNull() && activeSheetAnnotation!=null && 
+							( previousSheetAnnotation!=null || previousSheetName.compareTo(RangeAnnotationsSheet.getName())==0)){
+							// update display (appearance) for activated sheet
+							Launcher.getInstance().updateActiveSheetDisplay();
+		        	}
+		        
+					// adjust the bar menu according to the properties of the workbook and the active sheet
+					BarMenuUtils.adjustBarMenuForWorkbook();		
+									
+					// return the focus to the embedded excel workbook, if it does not have it already
+					if(!Launcher.getInstance().isControlSiteFocusControl())
+						Launcher.getInstance().setFocusToControlSite();
+				}
 	        }
 	    };	       
 	    return listener;
@@ -263,9 +273,13 @@ public class GUIListeners {
 	 	            
 	 	            int response = messageBox.open();	 	 	            
 	 	            if( response== SWT.YES){	
+	 	            
 	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
+	 	            	
+	 	            	includesFileSave=true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
+	 	            	includesFileSave=false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
@@ -273,6 +287,8 @@ public class GUIListeners {
 	 						message.setMessage("ERROR: The file could not be saved!");
 	 						message.open();
 	 	            	}
+	 	            	
+	 	            	
 	 	            } 	 	            
 				}
 				
@@ -346,7 +362,10 @@ public class GUIListeners {
 				String directory = Launcher.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
+				includesFileSave=true;
 				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath, false);
+				includesFileSave=false;
+				
 				if(result){		
 					
 					AnnotationHandler.clearRedoList();
@@ -367,7 +386,9 @@ public class GUIListeners {
 					MessageBox message = Launcher.getInstance().createMessageBox(style);
 					message.setMessage("ERROR: The file could not be saved!");
 					message.open();
-				}				
+				}		
+				
+				
 			}
 		};
 	}
@@ -393,7 +414,10 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){	
 	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
+	 	            	
+	 	            	includesFileSave=true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
+	 	            	includesFileSave=false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
@@ -513,7 +537,10 @@ public class GUIListeners {
 	 	            if( response== SWT.YES){	
 	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
+	 	            	
+	 	            	includesFileSave=true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
+	 	            	includesFileSave=false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
