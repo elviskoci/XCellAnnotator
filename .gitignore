@@ -43,3 +43,4 @@ local.properties
 SpreadsheetAnnotator.jar
 .svn/
 Desktop.ini
+src/log4j2.xml
