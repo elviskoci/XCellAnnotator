@@ -3,7 +3,9 @@
  */
 package de.tudresden.annotator.main;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import org.apache.logging.log4j.LogManager;
@@ -926,7 +928,7 @@ public class GUIListeners {
 				Launcher.getInstance().setShellCapture(true);
 				 
 				WorksheetUtils.unprotectWorksheet(sheetAutomation);		
-				boolean isSuccess = AnnotationHandler.deleteAnnotationFromSheet(sheetAutomation, ra);
+				boolean isSuccess = AnnotationHandler.deleteShapeAnnotation(sheetAutomation, ra);
 				WorksheetUtils.protectWorksheet(sheetAutomation);
 				sheetAutomation.dispose();
 				
@@ -1099,7 +1101,7 @@ public class GUIListeners {
 	 * 
 	 * @return
 	 */
-	protected static SelectionListener createDeleteInSheetAnnotationsSelectionListener(){
+	protected static SelectionListener createDeleteAnnotationsInSheetSelectionListener(){
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -1118,6 +1120,58 @@ public class GUIListeners {
 				AnnotationHandler.clearUndoList();
 				
 				BarMenuUtils.adjustBarMenuForSheet(sheetName);
+			}
+		};
+	}
+	
+	
+	/**
+	 * 
+	 * @return
+	 */
+	protected static SelectionListener createDeleteAnnotationsInRangeSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+
+				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+				String sheetName = Launcher.getInstance().getActiveWorksheetName();
+				String[] selection = Launcher.getInstance().getCurrentSelection();
+				
+				WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
+				WorksheetAnnotation sa = wa.getWorksheetAnnotations().get(sheetName);
+				ArrayList<RangeAnnotation> annotations = new ArrayList<RangeAnnotation>(sa.getAllAnnotations());
+				
+				HashSet<RangeAnnotation> contained = new HashSet<RangeAnnotation>();
+				for (RangeAnnotation ra : annotations) {
+					for (String area : selection) {
+						boolean isContained = RangeUtils.checkForContainment(area, ra.getRangeAddress());
+						if(isContained){
+							contained.add(ra);
+						}
+					}					
+				}
+				
+				if(!contained.isEmpty()){
+				
+					OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+					WorksheetUtils.unprotectWorksheet(sheetAuto);
+					
+					for (RangeAnnotation cra : contained) {
+						
+						AnnotationHandler.deleteShapeAnnotation(sheetAuto, cra);		
+						wa.removeRangeAnnotation(cra);
+						RangeAnnotationsSheet.deleteRangeAnnotationData(workbookAutomation, cra, true);
+					}
+					
+					WorksheetUtils.protectWorksheet(sheetAuto);
+					sheetAuto.dispose();
+					
+					AnnotationHandler.clearRedoList();
+					AnnotationHandler.clearUndoList();
+					
+					BarMenuUtils.adjustBarMenuForSheet(sheetName);
+				}			
 			}
 		};
 	}

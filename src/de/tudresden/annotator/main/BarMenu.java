@@ -471,12 +471,20 @@ public class BarMenu {
 		menuItemDeleteAll.addSelectionListener(GUIListeners.createDeleteAllAnnotationsSelectionListener());
 		
 		/*
-		 * Hide In Sheet menu item
+		 * Delete In Sheet menu item
 		 */
 		MenuItem menuItemDeleteInSheet = new MenuItem(menuDelete, SWT.CASCADE);
 		menuItemDeleteInSheet.setID(2050200);
 		menuItemDeleteInSheet.setText("In Sheet");
-		menuItemDeleteInSheet.addSelectionListener(GUIListeners.createDeleteInSheetAnnotationsSelectionListener());
+		menuItemDeleteInSheet.addSelectionListener(GUIListeners.createDeleteAnnotationsInSheetSelectionListener());
+		
+		/*
+		 * Delete In Sheet menu item
+		 */
+		MenuItem menuItemDeleteInRange = new MenuItem(menuDelete, SWT.CASCADE);
+		menuItemDeleteInRange.setID(2050300);
+		menuItemDeleteInRange.setText("In Range");
+		menuItemDeleteInRange.addSelectionListener(GUIListeners.createDeleteAnnotationsInRangeSelectionListener());
 		
 		return deleteMenuItem;
 	}

@@ -773,7 +773,7 @@ public class AnnotationHandler {
 			OleAutomation sheet = CollectionsUtils.getItemByIndex(worksheets, i++, false);
 			if(sheet==null)
 				break;
-			deleteAnnotationsFromSheet(sheet);
+			deleteShapeAnnotationsInSheet(sheet);
 		}
 	}
 		
@@ -790,14 +790,14 @@ public class AnnotationHandler {
 		
 		// get the OleAutomation object for the active worksheet using its name
 		OleAutomation worksheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
-		deleteAnnotationsFromSheet(worksheetAutomation);
+		deleteShapeAnnotationsInSheet(worksheetAutomation);
 	}
 	
 	/**
 	 * Delete all the shapes used for annotations in the given sheet 
 	 * @param worksheetAutomation an OleAutoamtion to access the functionalities of the sheet that action will be applied on
 	 */
-	public static void deleteAnnotationsFromSheet(OleAutomation worksheetAutomation){
+	public static void deleteShapeAnnotationsInSheet(OleAutomation worksheetAutomation){
 		
 		String sheetName = WorksheetUtils.getWorksheetName(worksheetAutomation);
 		
@@ -845,7 +845,7 @@ public class AnnotationHandler {
 	 * @param annotation a RangeAnnotation object 
 	 * @return true if deletion was successful, false otherwise
 	 */
-	public static boolean deleteAnnotationFromSheet(OleAutomation worksheetAutomation, RangeAnnotation annotation){
+	public static boolean deleteShapeAnnotation(OleAutomation worksheetAutomation, RangeAnnotation annotation){
 				
 		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(worksheetAutomation);
 		OleAutomation shapeAutomation = CollectionsUtils.getItemByName(shapesAutomation, annotation.getName(), true);	 
