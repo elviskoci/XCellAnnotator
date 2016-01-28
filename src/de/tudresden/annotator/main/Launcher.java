@@ -13,6 +13,7 @@ import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.ole.win32.OLE;
 import org.eclipse.swt.ole.win32.OleAutomation;
@@ -24,10 +25,16 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.ToolTip;
 
+import de.tudresden.annotator.annotations.WorkbookAnnotation;
+import de.tudresden.annotator.annotations.WorksheetAnnotation;
+import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
 import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CommandBarUtils;
+import de.tudresden.annotator.oleutils.RangeUtils;
+import de.tudresden.annotator.oleutils.WindowUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
@@ -42,20 +49,20 @@ public class Launcher {
 	// Event IDs
 	private final int SheetSelectionChange = 0x00000616;
 	private final int SheetActivate        = 0x00000619;
-//	private final int WindowActivate       = 0x00000614;
-//	private final int WindowDeactivate     = 0x00000615;
-//	private final int WorkbookActivate     = 0x00000620;
-//	private final int WorkbookDeactivate   = 0x00000621;
 		
 	private final Display display = new Display();
 	private final Shell shell = new Shell(display);
+	private ToolTip tooltip = new ToolTip(shell, SWT.NONE);
 	
 	private OleFrame oleFrame;
 	private OleControlSite controlSite;
+	
 	private BarMenu menuBar;
 	
 	private OleAutomation embeddedWorkbook;
 	private String embeddedWorkbookName;
+	
+	private OleAutomation embeddedWindow;
 	
 	private String directoryPath;
 	private String fileName;
@@ -178,10 +185,7 @@ public class Launcher {
 			message.setMessage("ERROR: Control site could not be created. Illegal argument exception was thrown.");
 			message.open();
 			Launcher.getInstance().disposeShell();
-			
-			// iaEx.printStackTrace();
-			System.exit(1);
-			
+
 		} catch (SWTException swtEx) {
 		
 			logger.fatal("SWTException on embed file/creation of control site", swtEx);
@@ -191,9 +195,6 @@ public class Launcher {
 			message.setMessage("ERROR: could not embedd the excel workbook. SWT Exception was thrown");
 			message.open();
 			Launcher.getInstance().disposeShell();
-			
-			// swtEx.printStackTrace();
-			System.exit(1);
 			
 		} catch (Exception ex) {
 			
@@ -205,14 +206,11 @@ public class Launcher {
 					+ " installed in your machine. Also, check that the file is not corrupted or wrong format.");
 			message.open();
 			Launcher.getInstance().disposeShell();
-			
-			// ex.printStackTrace();
-			System.exit(1);
 		}
 			
 		// activate and display excel workbook
 		getControlSite().doVerb(OLE.OLEIVERB_INPLACEACTIVATE);
-				
+			
 		// get excel application as OLE automation object
 	    OleAutomation application = ApplicationUtils.getApplicationAutomation(getControlSite());
 	    if(application==null){
@@ -240,10 +238,14 @@ public class Launcher {
 	    String workbookName = WorkbookUtils.getWorkbookName(workbook);
 	    setEmbeddedWorkbookName(workbookName);
 	    
+	    // get the active excel window 
+	    OleAutomation window = ApplicationUtils.getActiveWindowAutomation(application);
+	    setEmbeddedWindow(window);
+	    
 	    // get the active sheet automation, i.e. the one that is on top of the other worksheet
 	    OleAutomation worksheet = WorkbookUtils.getActiveWorksheetAutomation(workbook);
 	    
-	    // get and store the name and index for thesheet that is "active"
+	    // get and store the name and index for the sheet that is "active"
 	    String sheetName = WorksheetUtils.getWorksheetName(worksheet);
 	    setActiveWorksheetName(sheetName);
 	    int sheetIndex = WorksheetUtils.getWorksheetIndex(worksheet);
@@ -257,7 +259,9 @@ public class Launcher {
 		// update display window
 	    Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 	    this.excelPanel.setBackground(green2);
-	    this.shell.setText("Annotator - "+excelFile.getName());
+	    getShell().setText("Annotator - "+excelFile.getName());
+	    
+	    // deactivateControlSite();
 	    
 		// prepare the display for the annotation process
 		setUpApplicationDisplay(application);
@@ -297,6 +301,7 @@ public class Launcher {
 	 */
 	protected void setUpWorkbook(OleAutomation workbook){
 		
+		
 		// show the annotation_data_sheet if it exists
 	    OleAutomation  annotationDataSheet = 
 			WorkbookUtils.getWorksheetAutomationByName(workbook, RangeAnnotationsSheet.getName()); 
@@ -325,13 +330,95 @@ public class Launcher {
 			message.open();
 			
 			quitApplication();
+		}		
+	}
+	
+	
+	/**
+	 * prepare the sheet display for annotation 		
+	 */
+	protected void updateActiveSheetDisplay(){
+		
+		WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();		
+		WorksheetAnnotation sa= wa.getWorksheetAnnotations().get(this.activeWorksheetName);
+		
+		// set up display for activated sheet
+		if(wa!=null && sa!=null){
+			
+			// Move horizontal scroll to left most column
+			WindowUtils.setScrollColumn(this.embeddedWindow, 1);
+			// Move vertical scroll to the top row
+			WindowUtils.setScrollRow(this.embeddedWindow, 1);
+			
+			// display tooltip if one of the following cases holds
+			this.tooltip.setVisible(false);
+			
+			if(wa.isCompleted()){
+				
+				recreateToolTipWithStyle(SWT.ICON_INFORMATION);
+				this.tooltip.setText("Information");
+				this.tooltip.setMessage("This workbook was marked as \"Completed\".");
+				placeToolTipOnExcelPanel();
+				this.tooltip.setVisible(true);			
+				
+			}else if(wa.isNotApplicable()){
+				
+				recreateToolTipWithStyle(SWT.ICON_INFORMATION);
+				this.tooltip.setText("Information");
+				this.tooltip.setMessage("This workbook was marked as \"Not Applicable\".");
+				placeToolTipOnExcelPanel();
+				this.tooltip.setVisible(true);	
+				
+			}else if(sa.isCompleted()){
+				
+				recreateToolTipWithStyle(SWT.ICON_INFORMATION);
+				this.tooltip.setText("Information");
+				this.tooltip.setMessage("This sheet was marked as \"Completed\".");
+				placeToolTipOnExcelPanel();
+				this.tooltip.setVisible(true);
+			
+			}else if(sa.isNotApplicable()){
+			
+				recreateToolTipWithStyle(SWT.ICON_INFORMATION);
+				this.tooltip.setText("Information");
+				this.tooltip.setMessage("This sheet was marked as \"Not Applicable\".");
+				placeToolTipOnExcelPanel();
+				this.tooltip.setVisible(true);
+			
+			}else if(!sa.isCompleted() && !sa.isNotApplicable()){
+				
+				OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(
+						embeddedWorkbook, activeWorksheetName);
+						
+				OleAutomation cells = WorksheetUtils.getCells(sheetAutomation);
+				if(cells!=null){
+					WorksheetUtils.unprotectWorksheet(sheetAutomation);
+					OleAutomation formulaCells = RangeUtils.getSpecialCells(cells, -4123);
+					if(formulaCells!=null){
+						if(RangeUtils.count(formulaCells)>0){
+							recreateToolTipWithStyle(SWT.ICON_WARNING);
+							this.tooltip.setText("Warning");
+							this.tooltip.setMessage("This sheet contains formulas!");
+							placeToolTipOnExcelPanel();
+							// this.tooltip.setAutoHide(false);
+							this.tooltip.setVisible(true);						
+						}
+					}
+					WorksheetUtils.protectWorksheet(sheetAutomation);
+					cells.dispose();
+				}
+			}		
 		}
 	}
 	
+	/**
+	 * Set background color to the excel panel
+	 * @param color an object that represents the color to set
+	 */
 	protected void setColorToExcelPanel(Color color){
 		excelPanel.setBackground(color);
 	}
-				
+	
 	/**
 	 * @return the display
 	 */
@@ -345,7 +432,7 @@ public class Launcher {
 	private Shell getShell() {
 		return shell;
 	}
-	
+		
 	/**
 	 * Dispose shell
 	 */
@@ -362,8 +449,8 @@ public class Launcher {
 		this.shell.setFocus();
 		
 		// Color red = new Color (Display.getCurrent(), 255, 0, 0);
-		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
 		// Color blue = new  Color (Display.getCurrent(), 125, 176, 223);
+		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
 		excelPanel.setBackground(lightRed);
 	}
 	
@@ -373,9 +460,17 @@ public class Launcher {
 	protected void forceFocusToShell(){
 		this.shell.forceFocus();
 		// Color red = new Color (Display.getCurrent(), 255, 0, 0);
-		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
 		// Color blue = new  Color (Display.getCurrent(), 125, 176, 223);
+		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
 		excelPanel.setBackground(lightRed);
+	}
+	
+	/**
+	 * Set capture for shell
+	 * @param capture true to capture all mouse events, false to release
+	 */
+	protected void setShellCapture(boolean capture){
+		this.shell.setCapture(capture);		
 	}
 	
 	/**
@@ -387,6 +482,36 @@ public class Launcher {
 	}
 	
 	/**
+	 * @return the tooltip
+	 */
+	protected ToolTip getTooltip() {
+		return tooltip;
+	}
+	
+	/**
+	 * Replace the existing tooltip with one that has the specified style
+	 * 
+	 * @param style one of the SWT values relevant to tooltip style
+	 */
+	protected void recreateToolTipWithStyle(int style){	
+		this.tooltip = new ToolTip(shell, style);
+	}
+	
+	/**
+	 * Place tooltip on top of the embedded excel spreadsheet
+	 */
+	public void placeToolTipOnExcelPanel(){
+		
+		Point shellLoc = shell.getLocation();
+		Point csLoc = controlSite.getLocation();
+		
+		int x = shellLoc.x + csLoc.x + 20;
+		int y = shellLoc.y + csLoc.y + 20;
+		
+		this.tooltip.setLocation(x, y);
+	}
+		
+	/**
 	 * Get OleFrame
 	 * @return
 	 */
@@ -396,7 +521,6 @@ public class Launcher {
 	
 	/**
 	 * Set OleFrame
-	 * 
 	 * @param oleFrame
 	 */
 	private void setOleFrame(OleFrame oleFrame) {
@@ -426,8 +550,8 @@ public class Launcher {
 		if(controlSite!=null)
 			this.controlSite.setFocus();
 		
-		Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 		//Color green = new Color (Display.getCurrent(), 51, 204, 51);
+		Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 		excelPanel.setBackground(green2);
 	}
 	
@@ -438,8 +562,8 @@ public class Launcher {
 		if(controlSite!=null)
 			this.controlSite.forceFocus();
 		
-		Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 		//Color green = new Color (Display.getCurrent(), 51, 204, 51);
+		Color green2 = new Color (Display.getCurrent(), 154, 200, 122);
 		excelPanel.setBackground(green2);
 	}
 	
@@ -505,6 +629,14 @@ public class Launcher {
 	}
 	
 	/**
+	 * Set capture for control site
+	 * @param capture true to capture all mouse events, false to release
+	 */
+	protected void setControlSiteCapture(boolean capture){
+		this.controlSite.setCapture(capture);		
+	}
+	
+	/**
 	 * @return the embeddedWorkbook
 	 */
 	protected OleAutomation getEmbeddedWorkbook() {
@@ -532,6 +664,20 @@ public class Launcher {
 		this.embeddedWorkbookName = activeWorkbookName;
 	}
 		
+	/**
+	 * @return the embeddedWindow
+	 */
+	protected OleAutomation getEmbeddedWindow() {
+		return embeddedWindow;
+	}
+
+	/**
+	 * @param embeddedWindow the embeddedWindow to set
+	 */
+	protected void setEmbeddedWindow(OleAutomation embeddedWindow) {
+		this.embeddedWindow = embeddedWindow;
+	}
+
 	/**
 	 * @return the filePath
 	 */
@@ -652,10 +798,10 @@ public class Launcher {
 		WorkbookUtils.closeEmbeddedWorkbook(this.embeddedWorkbook, false);
 		disposeControlSite();
 		disposeShell();
-		getDisplay().dispose();
-		System.exit(1);
+		// getDisplay().dispose();
+		// System.exit(1);
 	}
-	
+		
 	/**
 	 * @param args
 	 */

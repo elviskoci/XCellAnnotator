@@ -164,7 +164,6 @@ public class WorkbookUtils {
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
 		if(worksheetsAutomation==null){
 			logger.fatal("Could not retrieve \"Worksheets\" automation for the \"Workbook\" object");
-			System.exit(1);
 		}	
 		
 		OleAutomation worksheetAutomation = CollectionsUtils.getItemByName(worksheetsAutomation, sheetName, false);
@@ -186,7 +185,6 @@ public class WorkbookUtils {
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
 		if(worksheetsAutomation==null){
 			logger.fatal("Could not retrieve \"Worksheets\" automation for the \"Workbook\" object");
-			System.exit(1);
 		}	
 		
 		OleAutomation worksheetAutomation = CollectionsUtils.getItemByIndex(worksheetsAutomation, index, false);
@@ -194,7 +192,6 @@ public class WorkbookUtils {
 		if(worksheetAutomation==null){
 			logger.fatal("Could not retrieve worksheet with index \""+index+"\" for workbook \""+
 					WorkbookUtils.getWorkbookName(workbookAutomation)+"\"");
-			System.exit(1);
 		}	
 		
 		worksheetsAutomation.dispose();
@@ -215,7 +212,6 @@ public class WorkbookUtils {
 		OleAutomation worksheetsAutomation = getWorksheetsAutomation(workbookAutomation);
 		if(worksheetsAutomation==null){
 			logger.fatal("Could not retrieve \"Worksheets\" automation for the \"Workbook\" object");
-			System.exit(1);
 		}	
 		
 		int count = CollectionsUtils.countItemsInCollection(worksheetsAutomation);

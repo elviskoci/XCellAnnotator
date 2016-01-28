@@ -428,7 +428,7 @@ public class AnnotationHandler {
 		case SHAPE  : annotateWithShape(sheetAutomation, rangeAutomation, annotationClass, annotationName); break;
 		case TEXTBOX  :  annotateWithShape(sheetAutomation, rangeAutomation, annotationClass, annotationName); break;
 		case BORDERAROUND: annotateByBorderAround(rangeAutomation, annotationClass, annotationName); break;
-		default: System.out.println("Option not recognized"); System.exit(1); break;
+		default: logger.fatal("Option "+annotationClass.getAnnotationTool()+" not recognized.");break;
 		}	
 	}
 	

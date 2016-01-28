@@ -127,9 +127,8 @@ public class BarMenuUtils {
 					if(!hasAnnotations){
 						for (MenuItem menuItem : annotationsMenuItems) { 
 							if(menuItem.getID() == 2040000 || menuItem.getID() == 2050000 || 
-							   menuItem.getID() == 2060000 || menuItem.getID() == 2070000 ||
-							   menuItem.getID() == 2080000 ){
-							   // &Hide, &Delete, Show Formulas, &Show Annotations, Undo Annotation
+							   menuItem.getID() == 2070000 || menuItem.getID() == 2080000 ){
+							   // &Hide, &Delete, &Show Annotations, Undo Annotation
 							   menuItem.setEnabled(false);
 							   disableAllSubMenus(menuItem.getMenu());
 							}else if(menuItem.getID() == 2090000){ // Redo last annotation

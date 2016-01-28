@@ -91,6 +91,37 @@ public class ApplicationUtils {
 		return workbookAutomation;
 	}
 	
+	/**
+	 * Get OleAutomation for the active window using the "ActiveWindow" property. 
+	 * Excel application considers the window which is on top to be the "active" one.
+	 *  
+	 * @param application an OleAutomation that provides access to the functionalities of the (Excel) Application OLE object
+	 * @return an OleAutomation that provides access to the functionalities of the Active Window OLE object
+	 */
+	public static OleAutomation getActiveWindowAutomation(OleAutomation application){
+		
+		if(application==null){
+			logger.debug("Method getActiveWindowAutomation received a null Application OleAutomation object");
+		}
+		
+		int[] workbookIds = application.getIDsOfNames(new String[]{"ActiveWindow"});	
+		if (workbookIds == null){			
+			logger.error("Could not get \"ActiveWindow\" property ids for \"Application\" object!");
+			return null;
+		}		
+		Variant workbookVariant = application.getProperty(workbookIds[0]);
+		if (workbookVariant == null) {
+			logger.error("Get \"ActiveWindow\" property for \"Application\" returned null variant!");
+			return null;
+		}		
+		
+		logger.debug("Get \"ActiveWindow\" property for \"Application\" returned variant: "+workbookVariant);
+		
+		OleAutomation workbookAutomation =  workbookVariant.getAutomation();
+		workbookVariant.dispose();
+		
+		return workbookAutomation;
+	}
 	
 	/**
 	 * Get the OleAutomation object for the embedded workbook using (given) its name   

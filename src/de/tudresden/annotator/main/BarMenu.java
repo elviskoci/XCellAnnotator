@@ -161,15 +161,16 @@ public class BarMenu {
 		MenuItem menuItemDelete = addDeleteMenu(menuAnnotations);
 		menuItemDelete.setEnabled(false);
 		
-//		/*
-//		 * Show Formulas menu item  
-//		 */
-//		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CASCADE);
-//		menuItemShowFormulas.setID(2060000);
-//		menuItemShowFormulas.setText("Show Formulas");
-//		menuItemShowFormulas.setEnabled(false);
-//		
-			
+		/*
+		 * Show Formulas menu item  
+		 */
+		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CHECK);
+		menuItemShowFormulas.setID(2060000);
+		menuItemShowFormulas.setText("Show Formulas\tCtrl+`");
+		menuItemShowFormulas.setEnabled(false);
+		menuItemShowFormulas.addSelectionListener(GUIListeners.createShowFormulasSelectionListener());
+		menuItemShowFormulas.setAccelerator(SWT.MOD1 + '`');
+		
 		/*
 		 * Show Annotations menu item  
 		 */

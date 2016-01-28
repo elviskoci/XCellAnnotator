@@ -430,7 +430,7 @@ public class RangeAnnotationsSheet {
 		if(!permanentDelete){ 
 			for (int i = 0; i < filteredRows.size(); i++) {
 				int rowIndex = filteredRows.get(i);
-				OleAutomation rowAuto= WorksheetUtils.getRangeRow(annotationDataSheetAfterFilter, rowIndex);	
+				OleAutomation rowAuto= WorksheetUtils.getRow(annotationDataSheetAfterFilter, rowIndex);	
 				RangeUtils.setRangeVisibility(rowAuto, false);
 			}
 		}else{

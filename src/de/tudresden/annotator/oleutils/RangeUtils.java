@@ -344,6 +344,42 @@ public class RangeUtils {
 	
 	
 	/**
+	 * Select the given range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 */
+	public static boolean selectRange(OleAutomation rangeAutomation){
+		
+		int[] selectMethodIds = rangeAutomation.getIDsOfNames(new String[]{"Select"});
+		Variant result = rangeAutomation.invoke(selectMethodIds[0]);
+		
+		if(result==null)
+			return false;
+		
+		boolean isSuccess = result.getBoolean();
+		result.dispose();
+		
+		return isSuccess;
+	}
+	
+	/**
+	 * Select the given range
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 */
+	public static boolean showRangeFormulas(OleAutomation rangeAutomation){
+		
+		int[] selectMethodIds = rangeAutomation.getIDsOfNames(new String[]{"Select"});
+		Variant result = rangeAutomation.invoke(selectMethodIds[0]);
+		
+		if(result==null)
+			return false;
+		
+		boolean isSuccess = result.getBoolean();
+		result.dispose();
+		
+		return isSuccess;
+	}
+	
+	/**
 	 * Filter range based on a criteria applied to a single field  
 	 * @param rangeAutomation an OleAutomation to access a Range of cells
 	 * @return true if the operation succeeded, false otherwise
@@ -387,6 +423,7 @@ public class RangeUtils {
 		
 		return isSuccess;
 	}
+	
 	
 	/**
 	 * Get special cells from the given range

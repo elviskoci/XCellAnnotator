@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
-import java.util.Date;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
@@ -72,12 +71,10 @@ public class FileUtils {
 							fileExtension.equalsIgnoreCase("xlsm")) { // including macro enabled ?	
 					
 					try {		    	
-				        
 						File excelFile = new File(filePath);
 				        
 				        // embed the excel file and set up the user interface
 				        mw.embedExcelFile(excelFile);
-				    	Launcher.getInstance().setVisibilityForControlSite(true);
 				        
 				    } catch (SWTError e) {
 				        e.printStackTrace();
@@ -105,8 +102,11 @@ public class FileUtils {
 	 */
 	public static boolean saveProgress(OleAutomation embeddedWorkbook, String filePath, boolean beforeFileClose){
 		
-		Launcher.getInstance().setVisibilityForControlSite(false);
-		
+		// deactivate alerts before save
+		OleAutomation application = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
+		Launcher.getInstance().deactivateControlSite();
+		ApplicationUtils.setDisplayAlerts(application, false);
+				
 		// save the status of all worksheet annotations and the workbook annotation 
 		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);
 		
@@ -125,16 +125,11 @@ public class FileUtils {
 		AnnotationStatusSheet.protect(embeddedWorkbook);
 		AnnotationStatusSheet.setVisibility(embeddedWorkbook, false);
 		
-		// deactivate alerts before save
-		OleAutomation application = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
-		Launcher.getInstance().deactivateControlSite();
-		ApplicationUtils.setDisplayAlerts(application, false);
-		
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 		Launcher.getInstance().setEmbeddedWorkbook(null);
-		System.out.println("Was it saved? "+isSuccess);
+		// System.out.println("Was it saved? "+isSuccess);
 	
 		// activate alerts after save
 		ApplicationUtils.setDisplayAlerts(application, true);
@@ -153,17 +148,22 @@ public class FileUtils {
 			Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
 			RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
 			if(rangeAnnotations!=null){			
-				Date startTime = new Date();
-				long start = startTime.getTime();
+				// Date startTime = new Date();
+				// long start = startTime.getTime();
 				
+				Launcher.getInstance().setControlSiteCapture(false);
+				Launcher.getInstance().setShellCapture(true);
+		
 				// update workbook annotation and re-draw all the range annotations  
 				// AnnotationHandler.drawManyRangeAnnotationsOptimized(reopenedWorkbook, rangeAnnotations, false);	
 				AnnotationHandler.drawManyRangeAnnotations(reopenedWorkbook, rangeAnnotations, false);
-						
-				Date endTime = new Date();
-				long end = endTime.getTime();
 				
-				System.out.println("Action duration in milliseconds: "+(end-start));
+				Launcher.getInstance().setShellCapture(false);
+				
+				// Date endTime = new Date();
+				// long end = endTime.getTime();
+				
+				// System.out.println("Action duration in milliseconds: "+(end-start));
 			}
 						
 			// make range_annotations sheet again visible
