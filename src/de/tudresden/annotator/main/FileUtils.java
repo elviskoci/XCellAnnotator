@@ -125,6 +125,8 @@ public class FileUtils {
 		AnnotationStatusSheet.protect(embeddedWorkbook);
 		AnnotationStatusSheet.setVisibility(embeddedWorkbook, false);
 		
+		Launcher.getInstance().getTooltip().setVisible(false);
+     	
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
 		WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);

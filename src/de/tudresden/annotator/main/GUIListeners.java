@@ -179,7 +179,8 @@ public class GUIListeners {
 				WorksheetAnnotation previousSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
 						.getWorksheetAnnotations().get(previousSheetName);
 										
-				if(((activeSheetAnnotation!=null && !activeSheetAnnotation.getAllAnnotations().isEmpty()) || 
+				if(!Launcher.getInstance().isControlSiteNull() && ((activeSheetAnnotation!=null && 
+						!activeSheetAnnotation.getAllAnnotations().isEmpty()) || 
 						activeSheetName.compareTo(RangeAnnotationsSheet.getName())==0) && 
 						previousSheetAnnotation!=null ){ 		
 						
@@ -193,8 +194,8 @@ public class GUIListeners {
 	        	}
 					
 
-				if(activeSheetAnnotation!=null && ( previousSheetAnnotation!=null || 
-						previousSheetName.compareTo(RangeAnnotationsSheet.getName())==0)){
+				if(!Launcher.getInstance().isControlSiteNull() && activeSheetAnnotation!=null && 
+						( previousSheetAnnotation!=null || previousSheetName.compareTo(RangeAnnotationsSheet.getName())==0)){
 						// update display (appearance) for activated sheet
 						Launcher.getInstance().updateActiveSheetDisplay();
 	        	}
@@ -403,11 +404,15 @@ public class GUIListeners {
 	 	            } 
 	 	            
 	 	            if(response == SWT.NO || response == SWT.YES){
+	 	            	
+	 	            	Launcher.getInstance().getTooltip().setVisible(false);
+	 	            	
 	 	            	OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-	 					
 	 					Launcher.getInstance().setEmbeddedWorkbook(null);
+	 					
 	 					Launcher.getInstance().disposeControlSite();
+	 					
 	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
 	 					Launcher.getInstance().setColorToExcelPanel(lightGreyShade);
 	 					
@@ -422,13 +427,18 @@ public class GUIListeners {
 	 	            
 	 	            int response = messageBox.open();
 	 	            if( response== SWT.YES){
+	 	            	
+	 	            	Launcher.getInstance().getTooltip().setVisible(false);
+	 	            	
 	 	            	OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
-	 					
 	 					Launcher.getInstance().setEmbeddedWorkbook(null);
+	 					
 	 					Launcher.getInstance().disposeControlSite();
+	 					
 	 					Color lightGreyShade = new Color (Display.getCurrent(), 247, 247, 247);
 	 					Launcher.getInstance().setColorToExcelPanel(lightGreyShade);
+	 					
 	 					BarMenuUtils.adjustBarMenuForFileClose();
 	 	            }
 	        	}					

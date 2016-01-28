@@ -26,17 +26,18 @@ public class ClassGenerator {
 		
 	private static AnnotationClass[] createAnnotationClasses(){
 		
-		AnnotationClass[] classes =  new AnnotationClass[5];
+		AnnotationClass[] classes =  new AnnotationClass[6];
 		
 		// long white =  ColorFormatUtils.getRGBColorAsLong(255, 255, 255);
 		// long bordo = ColorFormatUtils.getRGBColorAsLong(192, 0, 0);
 		long blue_accent5 = ColorFormatUtils.getRGBColorAsLong(68, 114, 196);
-		long blue_accent1 = ColorFormatUtils.getRGBColorAsLong(255, 255, 49);
+		long yellow = ColorFormatUtils.getRGBColorAsLong(255, 255, 49);
 		long green_accent6 = ColorFormatUtils.getRGBColorAsLong(112, 173, 71);
 		long orange_accent2 = ColorFormatUtils.getRGBColorAsLong(237, 125, 49);
-		long yellow = ColorFormatUtils.getRGBColorAsLong(91, 155, 213);
+		long blue_accent1 = ColorFormatUtils.getRGBColorAsLong(91, 155, 213);
 		long greyLight =  ColorFormatUtils.getRGBColorAsLong(217, 217, 217);
 		long greyDark = ColorFormatUtils.getRGBColorAsLong(118, 113, 113);
+		long purple = ColorFormatUtils.getRGBColorAsLong(112, 48, 160);
 		
 		// table can contains all the other classes
 		classes[0] = createShapeAnnotationClass("Table", 1, 0, true, blue_accent5, 2, true, greyDark, true, false, false, null); 
@@ -44,10 +45,11 @@ public class ClassGenerator {
 		// metadata can be outside of a table or inside. Tables can share metadata
 		classes[1] = createTextBoxAnnotationClass("Metadata", orange_accent2, true, greyLight, true, false, null); 
 		
-		classes[2] = createTextBoxAnnotationClass("Header", yellow,  true, greyLight, true, true, classes[0]);
-		classes[3] = createTextBoxAnnotationClass("Data", green_accent6,  true, greyLight, true, true, classes[0]);
-		classes[4] = createTextBoxAnnotationClass("Attributes", blue_accent1, true, greyLight, true, true, classes[0]);
-	
+		classes[2] = createTextBoxAnnotationClass("Header", blue_accent1,  true, greyLight, true, true, classes[0]);
+		classes[3] = createTextBoxAnnotationClass("Attributes", purple, true, greyLight, true, true, classes[0]);
+		classes[4] = createTextBoxAnnotationClass("Data", green_accent6,  true, greyLight, true, true, classes[0]);
+		classes[5] = createTextBoxAnnotationClass("Derived", yellow,  true, greyLight, true, true, classes[0]);
+		
 		return classes;
 	}
 	
