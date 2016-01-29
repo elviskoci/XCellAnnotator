@@ -54,6 +54,8 @@ public class GUIListeners {
 	    {
 	        public void handleEvent(Event event)
 	        {	
+	        	Launcher.getInstance().setExcelPanelEnabled(false);
+	        	
 	        	if(!Launcher.getInstance().isControlSiteNull() && 
 						AnnotationHandler.getWorkbookAnnotation().hashCode()!= AnnotationHandler.getOldWorkbookAnnotationHash()){
 	    			
@@ -110,6 +112,8 @@ public class GUIListeners {
 	 	            }
 	 	            event.doit = false;
 	        	}
+	        	
+	        	Launcher.getInstance().setExcelPanelEnabled(true);
 	        }
 	    };
 	}	
@@ -146,7 +150,7 @@ public class GUIListeners {
 						
 				Launcher.getInstance().setFocusToShell();
 				Launcher.getInstance().setFocusToShell();
-
+				
 	        }
 	    };	       
 	    return listener;
@@ -162,7 +166,8 @@ public class GUIListeners {
 		
 		OleListener listener = new OleListener() {
 	        public void handleEvent (OleEvent e) {
-	        	
+	        	        	
+	       	
 	        	Variant[] args = e.arguments;
 	        	
 	        	/*
@@ -180,7 +185,10 @@ public class GUIListeners {
 				Launcher.getInstance().setActiveWorksheetName(activeSheetName);
 				Launcher.getInstance().setActiveWorksheetIndex(activeSheetIndex);				
 				
-				if(!includesFileSave){
+				// hide any existing tooltip, before showing new one about the active (current) sheet
+	            Launcher.getInstance().getTooltip().setVisible(false);
+				
+	            if(!includesFileSave){
 					
 					// when a new sheet is activate the redo and undo list are cleared.  
 					WorksheetAnnotation activeSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
@@ -188,8 +196,7 @@ public class GUIListeners {
 					
 					WorksheetAnnotation previousSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
 							.getWorksheetAnnotations().get(previousSheetName);
-					
-				
+									
 					if(!Launcher.getInstance().isControlSiteNull() && ((activeSheetAnnotation!=null && 
 							!activeSheetAnnotation.getAllAnnotations().isEmpty()) || 
 							activeSheetName.compareTo(RangeAnnotationsSheet.getName())==0) && 
@@ -200,11 +207,9 @@ public class GUIListeners {
 							AnnotationHandler.clearUndoList();
 							
 							// should not remember selection from previous sheet
-							Launcher.getInstance().setCurrentSelection(null);
-							
+							Launcher.getInstance().setCurrentSelection(null);						
 		        	}
-						
-	
+							
 					if(!Launcher.getInstance().isControlSiteNull() && activeSheetAnnotation!=null && 
 							( previousSheetAnnotation!=null || previousSheetName.compareTo(RangeAnnotationsSheet.getName())==0)){
 							// update display (appearance) for activated sheet
@@ -217,7 +222,7 @@ public class GUIListeners {
 					// return the focus to the embedded excel workbook, if it does not have it already
 					if(!Launcher.getInstance().isControlSiteFocusControl())
 						Launcher.getInstance().setFocusToControlSite();
-				}
+				}			
 	        }
 	    };	       
 	    return listener;
@@ -262,6 +267,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				// warn the user user if there exist an opened file
 				// and offer them to save their progress
@@ -314,36 +321,29 @@ public class GUIListeners {
 				// clear all existing annotations in memory structure, 
 				// if they exist from the previously opened file 
 				AnnotationHandler.getWorkbookAnnotation().removeAllAnnotations();
-					
-				// bind mouse and keyboard action (events) to shell, not to the control site
-				// this will prevent user from interacting with the embedded workbook, while
-				// the following tasks are performed
-				Launcher.getInstance().setControlSiteCapture(false);
-				Launcher.getInstance().setShellCapture(true);	
+								
+				// create the base in memory structure for storing annotation data
+				// retrieve the annotation statuses from previous session
+				AnnotationStatusSheet.readAnnotationStatuses(workbookAutomation);
 				
-					// create the base in memory structure for storing annotation data
-					// retrieve the annotation statuses from previous session
-					AnnotationStatusSheet.readAnnotationStatuses(workbookAutomation);
-					
-					// read the data and re-create the range annotation objects
-					RangeAnnotation[] rangeAnnotations = RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
-					
-					if(rangeAnnotations!=null){		
-						// update workbook annotation and re-draw all the range annotations  
-						AnnotationHandler.recreateRangeAnnotations(workbookAutomation, rangeAnnotations);	
-					}
-					
-					AnnotationHandler.setOldWorkbookAnnotationHash(
-							AnnotationHandler.getWorkbookAnnotation().hashCode()); 
-					
-					//adjust display of active sheet for annotation
-					Launcher.getInstance().updateActiveSheetDisplay();
-						
-					// adjust the menu items in the menu bar for the file that was just openned
-					BarMenuUtils.adjustBarMenuForOpennedFile();
+				// read the data and re-create the range annotation objects
+				RangeAnnotation[] rangeAnnotations = RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
 				
-				// mouse and keyboard action are not anymore bounded to shell
-				Launcher.getInstance().setShellCapture(false);
+				if(rangeAnnotations!=null){		
+					// update workbook annotation and re-draw all the range annotations  
+					AnnotationHandler.recreateRangeAnnotations(workbookAutomation, rangeAnnotations);	
+				}
+				
+				AnnotationHandler.setOldWorkbookAnnotationHash(
+						AnnotationHandler.getWorkbookAnnotation().hashCode()); 
+				
+				//adjust display of active sheet for annotation
+				Launcher.getInstance().updateActiveSheetDisplay();
+					
+				// adjust the menu items in the menu bar for the file that was just openned
+				BarMenuUtils.adjustBarMenuForOpennedFile();
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -357,6 +357,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
@@ -390,7 +392,7 @@ public class GUIListeners {
 					message.open();
 				}		
 				
-				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -404,7 +406,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-															
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				if(AnnotationHandler.getWorkbookAnnotation().hashCode()!=
 						AnnotationHandler.getOldWorkbookAnnotationHash()){
 									
@@ -431,8 +435,6 @@ public class GUIListeners {
 	 	            
 	 	            if(response == SWT.NO || response == SWT.YES){
 	 	            	
-	 	            	Launcher.getInstance().getTooltip().setVisible(false);
-	 	            	
 	 	            	OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 	 					Launcher.getInstance().setEmbeddedWorkbook(null);
@@ -453,9 +455,7 @@ public class GUIListeners {
 	 	            
 	 	            int response = messageBox.open();
 	 	            if( response== SWT.YES){
-	 	            	
-	 	            	Launcher.getInstance().getTooltip().setVisible(false);
-	 	            	
+	 	            	 	            	
 	 	            	OleAutomation embeddedWorkbook  = Launcher.getInstance().getEmbeddedWorkbook();
 	 					WorkbookUtils.closeEmbeddedWorkbook(embeddedWorkbook, false);
 	 					Launcher.getInstance().setEmbeddedWorkbook(null);
@@ -467,7 +467,9 @@ public class GUIListeners {
 	 					
 	 					BarMenuUtils.adjustBarMenuForFileClose();
 	 	            }
-	        	}					
+	        	}		
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -481,6 +483,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				String directoryPath = Launcher.getInstance().getDirectoryPath();
 				String fileName = Launcher.getInstance().getFileName();				
@@ -497,6 +502,8 @@ public class GUIListeners {
 		            messageBox.setMessage("An error occured. Could not export the annotation data as csv.");
 		            messageBox.open();
 				}
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -527,6 +534,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {	
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				if(!Launcher.getInstance().isControlSiteNull() && 
 					AnnotationHandler.getWorkbookAnnotation().hashCode()!= AnnotationHandler.getOldWorkbookAnnotationHash()){
@@ -576,6 +585,8 @@ public class GUIListeners {
 	 	            	Launcher.getInstance().disposeShell();
 	 	            }
 	        	}
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -588,6 +599,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
@@ -642,6 +656,8 @@ public class GUIListeners {
 					mb.setMessage(" Sheet status was updated to Completed := "+value); 
 					mb.open();
 				}
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -654,6 +670,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
@@ -710,6 +729,8 @@ public class GUIListeners {
 					mb.setMessage(" Sheet status was updated to NotApplicable := "+value); 
 					mb.open();
 				}
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -722,6 +743,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();		
 				boolean wasUpdated = false; 
@@ -802,6 +825,8 @@ public class GUIListeners {
 					mb.setMessage("File (Workbook) status was updated to Completed := "+value); 
 					mb.open();
 				}
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -814,6 +839,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e){
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();		
 				boolean wasUpdated = false;
@@ -860,6 +887,8 @@ public class GUIListeners {
 					mb.setMessage("File (Workbook) status was updated to NotApplicable := "+value); 
 					mb.open();
 				}
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -876,15 +905,15 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				 
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				 OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				 
 				 String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				 int sheetIndex = Launcher.getInstance().getActiveWorksheetIndex();
 				 String[] currentSelection = Launcher.getInstance().getCurrentSelection();
 				 
-				 // Launcher.getInstance().setVisibilityForControlSite(false);
-				 Launcher.getInstance().setControlSiteCapture(false);
-				 Launcher.getInstance().setShellCapture(true);
+
 				 try{
 					 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
 				 		 currentSelection, annotationClass);								 
@@ -892,16 +921,15 @@ public class GUIListeners {
 					 logger.error("Generic exception on create new annotation", ex);
 				 }
 				 
-				 Launcher.getInstance().setShellCapture(false);
-				 //Launcher.getInstance().setVisibilityForControlSite(true);
-
-				 
+ 
 				 // if the sheet was empty, had no annotations, 
 				 // the menu needs to be updated
 				 BarMenuUtils.adjustBarMenuForSheet(sheetName);
 				 
 				 if(Launcher.getInstance().isControlSiteFocusControl())
-					 	Launcher.getInstance().setFocusToShell();			 
+					 	Launcher.getInstance().setFocusToShell();	
+				 
+				 Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -914,7 +942,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-		
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				RangeAnnotation  ra = AnnotationHandler.getLastFromUndoList();	
 				if(ra==null)
 					return;
@@ -923,10 +953,7 @@ public class GUIListeners {
 				OleAutomation sheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 				
-				
-				Launcher.getInstance().setControlSiteCapture(false);
-				Launcher.getInstance().setShellCapture(true);
-				 
+							 
 				WorksheetUtils.unprotectWorksheet(sheetAutomation);		
 				boolean isSuccess = AnnotationHandler.deleteShapeAnnotation(sheetAutomation, ra);
 				WorksheetUtils.protectWorksheet(sheetAutomation);
@@ -950,9 +977,9 @@ public class GUIListeners {
 	 	            messageBox.open();
 				}
 				
-				Launcher.getInstance().setShellCapture(false);
-				
 				BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}	
@@ -966,6 +993,8 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				RangeAnnotation  ra = AnnotationHandler.getLastFromRedoList();		
 				if(ra==null){
 					return;
@@ -975,9 +1004,6 @@ public class GUIListeners {
 				OleAutomation worksheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
 				
-				
-				Launcher.getInstance().setControlSiteCapture(false);
-				Launcher.getInstance().setShellCapture(true);
 				
 				WorksheetUtils.unprotectWorksheet(worksheetAutomation);						
 				Boolean result = false;
@@ -1001,10 +1027,10 @@ public class GUIListeners {
 				
 				RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);
 				AnnotationHandler.getWorkbookAnnotation().addRangeAnnotation(ra);
-				
-				Launcher.getInstance().setShellCapture(false);
-				
+							
 				BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());			
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}	
@@ -1017,8 +1043,12 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();	
 				AnnotationHandler.setVisilityForAllAnnotations(workbookAutomation, false);
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -1031,9 +1061,13 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				AnnotationHandler.setVisibilityForAnnotationsInSheet(workbookAutomation, sheetName, false);
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -1047,8 +1081,12 @@ public class GUIListeners {
 			
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				AnnotationHandler.setVisilityForAllAnnotations(workbookAutomation, true);
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}			
 		};
 	}
@@ -1062,9 +1100,13 @@ public class GUIListeners {
 			
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				Launcher.getInstance().setExcelPanelEnabled(false);		
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
-				AnnotationHandler.setVisibilityForAnnotationsInSheet(workbookAutomation, sheetName, true);
+				AnnotationHandler.setVisibilityForAnnotationsInSheet(workbookAutomation, sheetName, true);				
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 			
 		};
@@ -1078,6 +1120,8 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();	
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				
@@ -1093,6 +1137,9 @@ public class GUIListeners {
 				AnnotationHandler.clearUndoList();
 				
 				BarMenuUtils.adjustBarMenuForSheet(sheetName);
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
+				
 			}
 		};
 	}
@@ -1105,7 +1152,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				
@@ -1120,6 +1169,8 @@ public class GUIListeners {
 				AnnotationHandler.clearUndoList();
 				
 				BarMenuUtils.adjustBarMenuForSheet(sheetName);
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}
@@ -1133,7 +1184,9 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				String[] selection = Launcher.getInstance().getCurrentSelection();
@@ -1171,6 +1224,8 @@ public class GUIListeners {
 					AnnotationHandler.clearUndoList();
 					
 					BarMenuUtils.adjustBarMenuForSheet(sheetName);
+					
+					Launcher.getInstance().setExcelPanelEnabled(true);
 				}			
 			}
 		};
@@ -1181,9 +1236,14 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
+				Launcher.getInstance().setExcelPanelEnabled(false);
+				
 				OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
 				boolean areFormulasDisplayed = WindowUtils.getDisplayFormulas(window);		
 				WindowUtils.setDisplayFormulas(window, !areFormulasDisplayed);
+				
+				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}

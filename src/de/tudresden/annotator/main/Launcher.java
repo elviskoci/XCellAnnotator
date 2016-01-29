@@ -417,6 +417,16 @@ public class Launcher {
 	 */
 	protected void setColorToExcelPanel(Color color){
 		excelPanel.setBackground(color);
+		
+	}
+	
+	/**
+	 * 
+	 * @param enabled
+	 */
+	protected void setExcelPanelEnabled(boolean enabled){
+		excelPanel.setEnabled(enabled);
+		
 	}
 	
 	/**
@@ -447,7 +457,7 @@ public class Launcher {
 	 */
 	protected void setFocusToShell(){
 		this.shell.setFocus();
-		
+
 		// Color red = new Color (Display.getCurrent(), 255, 0, 0);
 		// Color blue = new  Color (Display.getCurrent(), 125, 176, 223);
 		Color lightRed= new Color(Display.getCurrent(), 243, 121, 121);
