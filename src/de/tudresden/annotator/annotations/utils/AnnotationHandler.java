@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.ole.win32.OleAutomation;
-import org.eclipse.swt.ole.win32.Variant;
 import org.eclipse.swt.widgets.MessageBox;
 
 import de.tudresden.annotator.annotations.AnnotationClass;
@@ -22,7 +21,6 @@ import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.main.GUIListeners;
 import de.tudresden.annotator.main.Launcher;
-import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CharactersUtils;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
 import de.tudresden.annotator.oleutils.ColorFormatUtils;
@@ -34,7 +32,6 @@ import de.tudresden.annotator.oleutils.ShadowFormatUtils;
 import de.tudresden.annotator.oleutils.ShapeUtils;
 import de.tudresden.annotator.oleutils.TextFrameUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
-import de.tudresden.annotator.oleutils.WorksheetFunctionUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 /**
@@ -226,34 +223,33 @@ public class AnnotationHandler {
 	public static boolean validateRangeAnnotation(OleAutomation  embeddedWorkbook, 
 														OleAutomation sheetAutomation, RangeAnnotation annotation){
 		
-		// check if the range is valid (e.i., the OleAutomation can be created for this range)
-		OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, annotation.getRangeAddress());
-		if(selectedAreaAuto==null){					
-			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
-            messageBox.setMessage("Can not annotate range "+annotation.getRangeAddress()+". "
-					+ "Please, avoid selecting entire rows or columns for annotation.");
-            messageBox.open();           
-			return false;
-		}
-		
-		// ensure that the range contains data (i.e., range not empty)
-		OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
-		OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAuto);
-		applicationAuto.dispose();
-		
-		Variant rangeVariant = new Variant(selectedAreaAuto);
-		Variant methodResult = WorksheetFunctionUtils.callFunction(worksheetFunctionAuto, "COUNTA", new Variant[]{rangeVariant}); 
-		worksheetFunctionAuto.dispose();
-		selectedAreaAuto.dispose();
-		
-		double notEmpty = methodResult.getDouble();
-		methodResult.dispose();
-		if(notEmpty==0){
-			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
-            messageBox.setMessage("The selected range does not contain any value!");
-            messageBox.open();
-			return false;
-		}
+//		// check if the range is valid (e.i., the OleAutomation can be created for this range)
+//		OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, annotation.getRangeAddress());
+//		if(selectedAreaAuto==null){					
+//			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
+//            messageBox.setMessage("Can not annotate range "+annotation.getRangeAddress()+". "
+//					+ "Please, avoid selecting entire rows or columns for annotation.");
+//            messageBox.open();           
+//			return false;
+//		}
+//		
+//		// ensure that the range contains data (i.e., range not empty)
+//		OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
+//		OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAuto);
+//		
+//		Variant rangeVariant = new Variant(selectedAreaAuto);
+//		Variant methodResult = WorksheetFunctionUtils.callFunction(worksheetFunctionAuto, "COUNTA", new Variant[]{rangeVariant}); 
+//		worksheetFunctionAuto.dispose();
+//		selectedAreaAuto.dispose();
+//		
+//		double notEmpty = methodResult.getDouble();
+//		methodResult.dispose();
+//		if(notEmpty==0){
+//			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
+//            messageBox.setMessage("The selected range does not contain any value!");
+//            messageBox.open();
+//			return false;
+//		}
 		
 		// ensure that the range annotation satisfies the dependencies and containment constrains  
 		AnnotationClass annotationClass =  annotation.getAnnotationClass();
