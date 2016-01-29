@@ -446,6 +446,8 @@ public class AnnotationHandler {
 		}
 	
 		drawRangeAnnotation(sheetAutomation, rangeAutomation, ra.getAnnotationClass(), ra.getName());
+		rangeAutomation.dispose();
+		sheetAutomation.dispose();
 		return true;
 	}
 	
@@ -480,46 +482,30 @@ public class AnnotationHandler {
 	 */
 	public static void drawManyRangeAnnotationsOptimized(OleAutomation workbookAutomation, RangeAnnotation[] annotations, boolean validate){
 		
-		HashMap<String, OleAutomation> sheetAutomations = new HashMap<String, OleAutomation>();
 		HashMap<String, OleAutomation> shapesAutomations = new HashMap<String, OleAutomation>();
-		OleAutomation rangeAutomations[] = new OleAutomation[annotations.length];
-				
-		for (int i=0; i< annotations.length; i++) {	
 
-			if(!sheetAutomations.containsKey(annotations[i].getSheetName())){
-				
-				sheetAutomations.put( annotations[i].getSheetName(), 
-						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, annotations[i].getSheetName()));
-				
-				OleAutomation sheetAnnotation = sheetAutomations.get(annotations[i].getSheetName());
-				WorksheetUtils.unprotectWorksheet(sheetAnnotation);				
-				WorksheetUtils.makeWorksheetActive(sheetAnnotation);
-				
-				shapesAutomations.put( annotations[i].getSheetName(), WorksheetUtils.getWorksheetShapes(sheetAnnotation));
+		for (int i=0; i< annotations.length; i++) {	
+						
+			String currentSheetName = annotations[i].getSheetName();
+			
+			OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, currentSheetName);
+			OleAutomation rangeAuto = WorksheetUtils.getRangeAutomation(sheetAuto, annotations[i].getRangeAddress());
+			
+			if(!shapesAutomations.keySet().contains(currentSheetName)){			
+				OleAutomation shapesAuto = WorksheetUtils.getWorksheetShapes(sheetAuto);
+				shapesAutomations.put(currentSheetName, shapesAuto);
+				WorksheetUtils.unprotectWorksheet(sheetAuto);
+				sheetAuto.dispose();
 			}
-			
-			if(sheetAutomations.get(annotations[i].getSheetName())==null){
-				System.out.println("Found a null one"+annotations[i].getSheetName());
-			}
-			
-			rangeAutomations[i] = WorksheetUtils.getRangeAutomation(sheetAutomations.get(annotations[i].getSheetName()), 
-					annotations[i].getRangeAddress());
-			
-			AnnotationHandler.drawAnnotationShape(shapesAutomations.get(annotations[i].getSheetName()), 
-					rangeAutomations[i], annotations[i].getAnnotationClass(), annotations[i].getName());
+					
+			drawAnnotationShape(shapesAutomations.get(currentSheetName), rangeAuto,
+					annotations[i].getAnnotationClass(), annotations[i].getName());
 		}
 		
-		for (OleAutomation rangeAutomation : rangeAutomations) {		
-			rangeAutomation.dispose();
-		}
-		
-		for (OleAutomation sheetAutomation : sheetAutomations.values()) {
-			WorksheetUtils.protectWorksheet(sheetAutomation);		
-			sheetAutomation.dispose();
-		}
-		
-		for (OleAutomation shapeAutomation : shapesAutomations.values()) {		
-			shapeAutomation.dispose();
+		for (String sheetName : shapesAutomations.keySet()) {
+			shapesAutomations.get(sheetName).dispose();
+			OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+			WorksheetUtils.protectWorksheet(sheetAutomation);			
 		}
 	}
 	

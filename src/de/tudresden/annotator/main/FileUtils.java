@@ -166,9 +166,17 @@ public class FileUtils {
 			RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
 			if(rangeAnnotations!=null){			
 		
-				// update workbook annotation and re-draw all the range annotations  
-				// AnnotationHandler.drawManyRangeAnnotationsOptimized(reopenedWorkbook, rangeAnnotations, false);	
+//				Date s = new Date();
+//				long start = s.getTime();
+				
+				// update workbook annotation and re-draw all the range annotations  	
 				AnnotationHandler.drawManyRangeAnnotations(reopenedWorkbook, rangeAnnotations, false);
+//				AnnotationHandler.drawManyRangeAnnotationsOptimized(reopenedWorkbook, rangeAnnotations, false);
+								
+//				Date e = new Date();
+//				long end = e.getTime();
+//				
+//				System.out.println("Duration in milliseconds: "+String.valueOf(end-start));
 			}
 						
 			// make range_annotations sheet again visible
