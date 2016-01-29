@@ -3,6 +3,7 @@
  */
 package de.tudresden.annotator.main;
 
+import org.eclipse.swt.ole.win32.OleAutomation;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
@@ -10,6 +11,7 @@ import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
+import de.tudresden.annotator.oleutils.WindowUtils;
 
 /**
  * @author Elvis Koci
@@ -139,7 +141,14 @@ public class BarMenuUtils {
 								}
 								
 							}else{
+								
 								menuItem.setEnabled(true);
+								
+								if(menuItem.getID()==2060000){
+									updateShowFormulas(menuItem);
+									continue;
+								}
+								
 								enableAllSubMenus(menuItem.getMenu());
 								unselectAllSubMenus(menuItem.getMenu());
 							}
@@ -162,7 +171,14 @@ public class BarMenuUtils {
 								}
 							
 							}else{
+								
 								menuItem.setEnabled(true);
+								
+								if(menuItem.getID()==2060000){
+									updateShowFormulas(menuItem);
+									continue;
+								}
+								
 								enableAllSubMenus(menuItem.getMenu());
 								unselectAllSubMenus(menuItem.getMenu());
 							}
@@ -365,6 +381,14 @@ public class BarMenuUtils {
 				break;
 			}
 		}
+	}
+	
+	
+	protected static void updateShowFormulas(MenuItem showFormulasMenuItem){
+		OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+		boolean areFormulasDisplayed = WindowUtils.getDisplayFormulas(window);		
+		
+		showFormulasMenuItem.setSelection(areFormulasDisplayed);
 	}
 	
 	

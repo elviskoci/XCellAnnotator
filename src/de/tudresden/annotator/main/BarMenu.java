@@ -166,10 +166,10 @@ public class BarMenu {
 		 */
 		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CHECK);
 		menuItemShowFormulas.setID(2060000);
-		menuItemShowFormulas.setText("Show Formulas\tCtrl+`");
+		menuItemShowFormulas.setText("Show Formulas\tCtrl+F2");
 		menuItemShowFormulas.setEnabled(false);
 		menuItemShowFormulas.addSelectionListener(GUIListeners.createShowFormulasSelectionListener());
-		menuItemShowFormulas.setAccelerator(SWT.MOD1 + '`');
+		menuItemShowFormulas.setAccelerator(SWT.MOD1 + SWT.F2);
 		
 		/*
 		 * Show Annotations menu item  
