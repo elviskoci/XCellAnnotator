@@ -334,8 +334,17 @@ public class GUIListeners {
 					AnnotationHandler.recreateRangeAnnotations(workbookAutomation, rangeAnnotations);	
 				}
 				
+				// save the current hash of the workbook annotation
+				// will be used later to determine if user has made some changes 
+				// and the file needs to be saved
 				AnnotationHandler.setOldWorkbookAnnotationHash(
 						AnnotationHandler.getWorkbookAnnotation().hashCode()); 
+				
+				// Move to the first sheet in the workbook
+				OleAutomation sheetAuto = 
+						WorkbookUtils.getWorksheetAutomationByIndex(workbookAutomation, 1);	
+				WorksheetUtils.makeWorksheetActive(sheetAuto);
+				sheetAuto.dispose();
 				
 				//adjust display of active sheet for annotation
 				Launcher.getInstance().updateActiveSheetDisplay();
@@ -360,17 +369,23 @@ public class GUIListeners {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				
-				OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 				String sheetName = Launcher.getInstance().getActiveWorksheetName();
-				String fileName = Launcher.getInstance().getFileName();
+				String fileName = Launcher.getInstance().getFileName()+"";
 				String directory = Launcher.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
 				includesFileSave=true;
-				boolean result = FileUtils.saveProgress(embeddedWorkbook, filePath, false);
+				boolean result = FileUtils.saveProgress(
+						Launcher.getInstance().getEmbeddedWorkbook(), filePath, false);
 				includesFileSave=false;
-				
+					
 				if(result){		
+					
+					OleAutomation activeSheet = 
+							WorkbookUtils.getWorksheetAutomationByName(
+									Launcher.getInstance().getEmbeddedWorkbook(), sheetName);
+					WorksheetUtils.makeWorksheetActive(activeSheet);
+					activeSheet.dispose();
 					
 					AnnotationHandler.clearRedoList();
 					AnnotationHandler.clearUndoList();
@@ -379,7 +394,7 @@ public class GUIListeners {
 					int hash = AnnotationHandler.getWorkbookAnnotation().hashCode();
 					AnnotationHandler.setOldWorkbookAnnotationHash(hash);
 					
-					BarMenuUtils.adjustBarMenuForSheet(sheetName);
+					BarMenuUtils.adjustBarMenuForWorkbook();
 					
             		int style = SWT.ICON_INFORMATION;
 					MessageBox message = Launcher.getInstance().createMessageBox(style);
