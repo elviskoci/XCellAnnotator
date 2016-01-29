@@ -464,6 +464,18 @@ public class AnnotationStatusSheet {
 		return result;
 	}
 	
+	public static boolean delete(OleAutomation embeddedWorkbook){
+		
+		OleAutomation annotationStatusSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(annotationStatusSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.deleteWorksheet(annotationStatusSheet);
+		annotationStatusSheet.dispose();
+		return result;	
+	}
+	
 	/**
 	 * @return the name
 	 */

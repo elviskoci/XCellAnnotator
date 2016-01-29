@@ -459,7 +459,7 @@ public class WorksheetUtils {
 		
 		int[] shapesPropertyIds = worksheetAutomation.getIDsOfNames(new String[]{"Shapes"});	
 		if (shapesPropertyIds == null){		
-			logger.error("Could not get the id of the \"Shapes\" property for \"Worksheet\" ole object "+
+			logger.error("Could not get the id of the \"Shapes\" property for \"Worksheet\" ole object. "+
 					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));			
 			return null;
 		}		
@@ -468,7 +468,7 @@ public class WorksheetUtils {
 		
 		logger.debug("Invoking get \"Shapes\" property for \"Worksheet\" object returned: "+shapesVariant);
 		if (shapesVariant == null) {
-			logger.error("Invoking get \"Shapes\" property for \"Worksheet\" ole object returned null variant "+
+			logger.error("Invoking get \"Shapes\" property for \"Worksheet\" ole object returned null variant. "+
 					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			return null;
 		}
@@ -494,7 +494,7 @@ public class WorksheetUtils {
 				"AllowFormattingColumns", "AllowFormattingRows"});
 		
 		if (protectMethodIds == null) {
-			logger.fatal("Could not get the ids of the \"Protect\" method for \"Worksheet\" ole object "+
+			logger.fatal("Could not get the ids of the \"Protect\" method for \"Worksheet\" ole object. "+
 					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 		}else{
 			Variant[] args = new Variant[2];
@@ -507,7 +507,7 @@ public class WorksheetUtils {
 			logger.debug("Invoking \"Protect\" method for \"Worksheet\" object returned: "+result);
 			
 			if(result==null){	
-				logger.fatal("Invoking \"Protect\" method for \"Worksheet\" ole object returned null variant "+
+				logger.fatal("Invoking \"Protect\" method for \"Worksheet\" ole object returned null variant. "+
 						"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 				
 				MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
@@ -548,7 +548,7 @@ public class WorksheetUtils {
 		Variant result = worksheetAutomation.invoke(unprotectMethodIds[0]);
 		logger.debug("Invoking \"Unprotect\" method for \"Worksheet\" object returned: "+result);
 		if(result==null){
-			logger.fatal("Invoking \"Unprotect\" method for \"Worksheet\" ole object returned null variant "+
+			logger.fatal("Invoking \"Unprotect\" method for \"Worksheet\" ole object returned null variant. "+
 					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
 			
 			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
@@ -591,5 +591,34 @@ public class WorksheetUtils {
 		result.dispose();
 		
 		return true;
+	}
+	
+	
+	/**
+	 * Delete the specified worksheet 
+	 * @param worksheetAutomation an OleAutomation for accessing the Worksheet OLE object
+	 * @return true if operation succeeded, false otherwise
+	 */
+	public static boolean deleteWorksheet(OleAutomation worksheetAutomation){
+		
+		// get the id of the "Unprotect" method for worksheet OLE object 
+		int[] deleteMethodIds = worksheetAutomation.getIDsOfNames(new String[]{"Delete"});
+		if(deleteMethodIds==null){
+			logger.error("Could not get the ids of the \"Delete\" method for \"Worksheet\" ole object "+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
+		}
+		
+		// invoke the unprotect method  
+		Variant result = worksheetAutomation.invoke(deleteMethodIds[0]);
+		logger.debug("Invoking \"Delete\" method for \"Worksheet\" object returned: "+result);
+		if(result==null){
+			logger.error("Invoking \"Delete\" method for \"Worksheet\" ole object returned null variant. "+
+					"The worksheet name is "+WorksheetUtils.getWorksheetName(worksheetAutomation));
+		}	
+		
+		boolean isSuccess = result.getBoolean();
+		result.dispose();
+		
+		return isSuccess;
 	}
 }

@@ -551,13 +551,13 @@ public class RangeAnnotationsSheet {
 	 */
 	public static boolean setVisibility(OleAutomation embeddedWorkbook, boolean visible){
 		
-		OleAutomation annotationDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		OleAutomation rangeAnnotationsDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
 		
-		if(annotationDataSheet==null)
+		if(rangeAnnotationsDataSheet==null)
 			return false; 
 		
-		boolean result = WorksheetUtils.setWorksheetVisibility(annotationDataSheet, visible);
-		annotationDataSheet.dispose();
+		boolean result = WorksheetUtils.setWorksheetVisibility(rangeAnnotationsDataSheet, visible);
+		rangeAnnotationsDataSheet.dispose();
 		return result;
 	}
 	
@@ -569,13 +569,13 @@ public class RangeAnnotationsSheet {
 	 */
 	public static boolean protect(OleAutomation embeddedWorkbook){
 		
-		OleAutomation annotationDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		OleAutomation rangeAnnotationsDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
 		
-		if(annotationDataSheet==null)
+		if(rangeAnnotationsDataSheet==null)
 			return false; 
 		
-		boolean result = WorksheetUtils.protectWorksheet(annotationDataSheet);
-		annotationDataSheet.dispose();
+		boolean result = WorksheetUtils.protectWorksheet(rangeAnnotationsDataSheet);
+		rangeAnnotationsDataSheet.dispose();
 		return result;
 	}
 	
@@ -586,16 +586,29 @@ public class RangeAnnotationsSheet {
 	 */
 	public static boolean unprotect(OleAutomation embeddedWorkbook){
 		
-		OleAutomation annotationDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		OleAutomation rangeAnnotationsDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
 		
-		if(annotationDataSheet==null)
+		if(rangeAnnotationsDataSheet==null)
 			return false; 
 		
-		boolean result = WorksheetUtils.unprotectWorksheet(annotationDataSheet);
-		annotationDataSheet.dispose();
+		boolean result = WorksheetUtils.unprotectWorksheet(rangeAnnotationsDataSheet);
+		rangeAnnotationsDataSheet.dispose();
 		return result;
 	}
 
+	
+	public static boolean delete(OleAutomation embeddedWorkbook){
+		
+		OleAutomation rangeAnnotationsDataSheet = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, name);
+		
+		if(rangeAnnotationsDataSheet==null)
+			return false; 
+		
+		boolean result = WorksheetUtils.deleteWorksheet(rangeAnnotationsDataSheet);
+		rangeAnnotationsDataSheet.dispose();
+		return result;	
+	}
+	
 
 	/**
 	 * @return the name

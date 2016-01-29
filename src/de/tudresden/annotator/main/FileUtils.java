@@ -107,27 +107,44 @@ public class FileUtils {
 		Launcher.getInstance().deactivateControlSite();
 		ApplicationUtils.setDisplayAlerts(application, false);
 		
-		// save the status of all worksheet annotations and the workbook annotation 
-		AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);
-		
-		// delete all shape annotations
-		AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
-						
-		// unprotect the workbook structure and all the sheets
-		WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
-		WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
-
-		// protect and hide the range_annotations sheet before save
-		RangeAnnotationsSheet.protect(embeddedWorkbook);
-		RangeAnnotationsSheet.setVisibility(embeddedWorkbook, false);
-		
-		// protect and hide the annotation_status sheet before save
-		AnnotationStatusSheet.protect(embeddedWorkbook);
-		AnnotationStatusSheet.setVisibility(embeddedWorkbook, false);
+		if(!AnnotationHandler.getWorkbookAnnotation().getAllAnnotations().isEmpty()){
 			
+			// save the status of all worksheet annotations and the workbook annotation 
+			AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);			
+			// delete all shape annotations
+			AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
+			
+			// unprotect the workbook structure
+			WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
+			// unprotect all the sheets
+		    WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
+						
+			// protect and hide the range_annotations sheet before save
+			RangeAnnotationsSheet.protect(embeddedWorkbook);
+			RangeAnnotationsSheet.setVisibility(embeddedWorkbook, false);
+			
+			// protect and hide the annotation_status sheet before save
+			AnnotationStatusSheet.protect(embeddedWorkbook);
+			AnnotationStatusSheet.setVisibility(embeddedWorkbook, false);
+						
+		}else{
+			
+			// unprotect the workbook structure
+			WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
+			// delete all sheets that store metadata about the annotations, 
+			// if there are no annotation
+			RangeAnnotationsSheet.delete(embeddedWorkbook);
+			AnnotationStatusSheet.delete(embeddedWorkbook);
+			
+			// unprotect all the sheets
+			WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
+		}
+							
+		
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
-	
+
+		
 		// activate alerts after save
 		ApplicationUtils.setDisplayAlerts(application, true);
 
