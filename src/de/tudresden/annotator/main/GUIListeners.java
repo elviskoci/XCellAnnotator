@@ -381,11 +381,10 @@ public class GUIListeners {
 					
 				if(result){		
 					
-					OleAutomation activeSheet = 
-							WorkbookUtils.getWorksheetAutomationByName(
-									Launcher.getInstance().getEmbeddedWorkbook(), sheetName);
-					WorksheetUtils.makeWorksheetActive(activeSheet);
-					activeSheet.dispose();
+					OleAutomation firstSheet = WorkbookUtils.getWorksheetAutomationByIndex(
+									Launcher.getInstance().getEmbeddedWorkbook(), 1);
+					WorksheetUtils.makeWorksheetActive(firstSheet);
+					firstSheet.dispose();
 					
 					AnnotationHandler.clearRedoList();
 					AnnotationHandler.clearUndoList();
@@ -1135,24 +1134,36 @@ public class GUIListeners {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				
 				Launcher.getInstance().setExcelPanelEnabled(false);
-				
-				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();	
-				String sheetName = Launcher.getInstance().getActiveWorksheetName();
-				
-				AnnotationHandler.deleteAllShapeAnnotations(workbookAutomation);
-				
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				workbookAnnotation.removeAllAnnotations();
-				AnnotationHandler.createBaseAnnotations(workbookAutomation);
-				
-				RangeAnnotationsSheet.deleteAllRangeAnnotationData(workbookAutomation);
-				
-				AnnotationHandler.clearRedoList();
-				AnnotationHandler.clearUndoList();
-				
-				BarMenuUtils.adjustBarMenuForSheet(sheetName);
-				
+				   
+				int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION;
+        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
+ 	            messageBox.setMessage("Are you sure you want to delete all annotations?");
+ 	            
+ 	            int response = messageBox.open();
+ 	            if( response== SWT.YES){
+ 	            	
+// 	        	    Launcher.getInstance().disposeControlSite();
+// 	            	Launcher.getInstance().disposeShell();
+ 	            	
+					OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();	
+					String sheetName = Launcher.getInstance().getActiveWorksheetName();
+					
+					AnnotationHandler.deleteAllShapeAnnotations(workbookAutomation);
+					
+					WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
+					workbookAnnotation.removeAllAnnotations();
+					AnnotationHandler.createBaseAnnotations(workbookAutomation);
+					
+					RangeAnnotationsSheet.deleteAllRangeAnnotationData(workbookAutomation);
+					
+					AnnotationHandler.clearRedoList();
+					AnnotationHandler.clearUndoList();
+					
+					BarMenuUtils.adjustBarMenuForSheet(sheetName);
+ 	            }
+ 	    	    
 				Launcher.getInstance().setExcelPanelEnabled(true);
 				
 			}
@@ -1169,22 +1180,31 @@ public class GUIListeners {
 			public void widgetSelected(SelectionEvent e) {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
-				
-				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
-				String sheetName = Launcher.getInstance().getActiveWorksheetName();
-				
-				AnnotationHandler.deleteShapeAnnotationsInSheet(workbookAutomation, sheetName);
-				
-				WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
-				workbookAnnotation.removeAllRangeAnnotationsFromSheet(sheetName);
-				
-				RangeAnnotationsSheet.deleteRangeAnnotationDataFromSheet(workbookAutomation, sheetName, true);		
-				
-				AnnotationHandler.clearRedoList();
-				AnnotationHandler.clearUndoList();
-				
-				BarMenuUtils.adjustBarMenuForSheet(sheetName);
-				
+				   
+				int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION;
+        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
+ 	            messageBox.setMessage("Are you sure you want to delete the annotations in this sheet?");
+ 	            
+ 	            int response = messageBox.open();
+ 	            if( response== SWT.YES){
+ 	            	
+					OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+					String sheetName = Launcher.getInstance().getActiveWorksheetName();
+					
+					AnnotationHandler.deleteShapeAnnotationsInSheet(workbookAutomation, sheetName);
+					
+					WorkbookAnnotation workbookAnnotation = AnnotationHandler.getWorkbookAnnotation();
+					workbookAnnotation.removeAllRangeAnnotationsFromSheet(sheetName);
+					
+					RangeAnnotationsSheet.deleteRangeAnnotationDataFromSheet(workbookAutomation, 
+							sheetName, true);		
+					
+					AnnotationHandler.clearRedoList();
+					AnnotationHandler.clearUndoList();
+					
+					BarMenuUtils.adjustBarMenuForSheet(sheetName);
+					
+ 	            }
 				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
@@ -1201,47 +1221,57 @@ public class GUIListeners {
 			public void widgetSelected(SelectionEvent e) {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
+				   
+				int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION;
+        		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
+ 	            messageBox.setMessage("Are you sure you want to delete the annotations inside the selected range?");
+ 	            
+ 	            int response = messageBox.open();
+ 	            if( response== SWT.YES){
 				
-				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
-				String sheetName = Launcher.getInstance().getActiveWorksheetName();
-				String[] selection = Launcher.getInstance().getCurrentSelection();
-				
-				WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
-				WorksheetAnnotation sa = wa.getWorksheetAnnotations().get(sheetName);
-				ArrayList<RangeAnnotation> annotations = new ArrayList<RangeAnnotation>(sa.getAllAnnotations());
-				
-				HashSet<RangeAnnotation> contained = new HashSet<RangeAnnotation>();
-				for (RangeAnnotation ra : annotations) {
-					for (String area : selection) {
-						boolean isContained = RangeUtils.checkForContainment(area, ra.getRangeAddress());
-						if(isContained){
-							contained.add(ra);
-						}
-					}					
-				}
-				
-				if(!contained.isEmpty()){
-				
-					OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
-					WorksheetUtils.unprotectWorksheet(sheetAuto);
+					OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
+					String sheetName = Launcher.getInstance().getActiveWorksheetName();
+					String[] selection = Launcher.getInstance().getCurrentSelection();
 					
-					for (RangeAnnotation cra : contained) {
-						
-						AnnotationHandler.deleteShapeAnnotation(sheetAuto, cra);		
-						wa.removeRangeAnnotation(cra);
-						RangeAnnotationsSheet.deleteRangeAnnotationData(workbookAutomation, cra, true);
+					WorkbookAnnotation wa = AnnotationHandler.getWorkbookAnnotation();
+					WorksheetAnnotation sa = wa.getWorksheetAnnotations().get(sheetName);
+					ArrayList<RangeAnnotation> annotations = new ArrayList<RangeAnnotation>(sa.getAllAnnotations());
+					
+					HashSet<RangeAnnotation> contained = new HashSet<RangeAnnotation>();
+					for (RangeAnnotation ra : annotations) {
+						for (String area : selection) {
+							boolean isContained = RangeUtils.checkForContainment(area, ra.getRangeAddress());
+							if(isContained){
+								contained.add(ra);
+							}
+						}					
 					}
 					
-					WorksheetUtils.protectWorksheet(sheetAuto);
-					sheetAuto.dispose();
+					if(!contained.isEmpty()){
 					
-					AnnotationHandler.clearRedoList();
-					AnnotationHandler.clearUndoList();
+						OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+						WorksheetUtils.unprotectWorksheet(sheetAuto);
+						
+						for (RangeAnnotation cra : contained) {
+							
+							AnnotationHandler.deleteShapeAnnotation(sheetAuto, cra);		
+							wa.removeRangeAnnotation(cra);
+							RangeAnnotationsSheet.deleteRangeAnnotationData(workbookAutomation, cra, true);
+						}
+						
+						WorksheetUtils.protectWorksheet(sheetAuto);
+						sheetAuto.dispose();
+						
+						AnnotationHandler.clearRedoList();
+						AnnotationHandler.clearUndoList();
+						
+						BarMenuUtils.adjustBarMenuForSheet(sheetName);
+						
 					
-					BarMenuUtils.adjustBarMenuForSheet(sheetName);
-					
-					Launcher.getInstance().setExcelPanelEnabled(true);
-				}			
+					}			
+				}
+ 	            
+ 	            Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
 	}

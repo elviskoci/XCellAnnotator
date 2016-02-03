@@ -43,6 +43,13 @@ public class RangeAnnotationsSheet {
 		fields.put("Annotation.Name", 3); // required
 		fields.put("Annotation.Range", 4); // required
 		fields.put("Annotation.Parent", 5); // required
+		fields.put("TotalCells", 6); // optional
+		fields.put("EmptyCells", 7); // optional
+		fields.put("ConstantCells", 8); // optional
+		fields.put("FormulaCells", 9); // optional
+		fields.put("HasMergedCells", 10); // optional
+		fields.put("Rows", 11); // optional
+		fields.put("Columns", 12); // optional
     }
 	
 	
@@ -149,6 +156,13 @@ public class RangeAnnotationsSheet {
 			case "Annotation.Range"  : value = annotation.getRangeAddress(); break;
 			case "Annotation.Parent" : value = annotation.getParent() instanceof  RangeAnnotation ? 
 											   ((RangeAnnotation) annotation.getParent()).getName() : annotation.getSheetName(); break;
+			case "TotalCells" : value =  String.valueOf(annotation.getCells()); break;
+			case "EmptyCells" : value =  String.valueOf(annotation.getEmptyCells()); break;
+			case "ConstantCells" : value =  String.valueOf(annotation.getConstantCells()); break;
+			case "FormulaCells" : value =  String.valueOf(annotation.getFormulaCells()); break;
+			case "HasMergedCells" : value =  String.valueOf(annotation.containsMergedCells()); break;
+			case "Rows" : value =  String.valueOf(annotation.getRows()); break;
+			case "Columns": value =  String.valueOf(annotation.getColumns()); break;
 			default: value = "Field not recognized!"; break;
 		}
 		return value;
@@ -213,7 +227,8 @@ public class RangeAnnotationsSheet {
 		
 		// ensure that the header row contains all the expected fields
 		// if all required fields are present, save their order
-		validateHeaderRow(annotationDataSheet, topLeftRow, topLeftColumn, downRightColumn);
+		if(!validateHeaderRow(annotationDataSheet, topLeftRow, topLeftColumn, downRightColumn))
+			return null;
 		
 		// read all the data rows and re-create the range annotations and their dependencies
 		LinkedHashMap<String, RangeAnnotation> rangeAnnotations = new LinkedHashMap<String, RangeAnnotation>();	
@@ -269,16 +284,10 @@ public class RangeAnnotationsSheet {
 		rangeAutomation.dispose();
 		
 		// check if the number of fields in the sheet match with the pre-defined (expected) ones.  
-		if(values.length < fields.size()){
+		if(values.length > fields.size()){
 			int style = SWT.ICON_ERROR;
 			MessageBox message = Launcher.getInstance().createMessageBox(style);
 			message.setMessage("The number of fields in the annotation data sheet is larger than the declared (expected) fields");
-			message.open();
-			return false;
-		}else if(values.length > fields.size()){
-			int style = SWT.ICON_ERROR;
-			MessageBox message = Launcher.getInstance().createMessageBox(style);
-			message.setMessage("The number of fields in the annotation data sheet is smaller than the declared (expected) fields");
 			message.open();
 			return false;
 		}

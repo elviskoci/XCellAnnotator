@@ -361,23 +361,6 @@ public class RangeUtils {
 		return isSuccess;
 	}
 	
-	/**
-	 * Select the given range
-	 * @param rangeAutomation an OleAutomation to access a Range of cells
-	 */
-	public static boolean showRangeFormulas(OleAutomation rangeAutomation){
-		
-		int[] selectMethodIds = rangeAutomation.getIDsOfNames(new String[]{"Select"});
-		Variant result = rangeAutomation.invoke(selectMethodIds[0]);
-		
-		if(result==null)
-			return false;
-		
-		boolean isSuccess = result.getBoolean();
-		result.dispose();
-		
-		return isSuccess;
-	}
 	
 	/**
 	 * Filter range based on a criteria applied to a single field  
@@ -424,6 +407,78 @@ public class RangeUtils {
 		return isSuccess;
 	}
 	
+	/**
+	 * Check if the given range contains merged cells 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return 1 if all cells in the range are merged, 0 if the range contains merged cells, 
+	 * -1 if the range does not contain any merged cells
+	 */
+	public static int getMergeCells(OleAutomation rangeAutomation){
+		
+		int[] mergeCellsPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"MergeCells"});
+		
+		Variant result = rangeAutomation.getProperty(mergeCellsPropertyIds[0]);
+				
+		if(result==null)
+			return -1;
+		
+		if(result.getType()==1){
+			result.dispose();
+			return 0;
+		}
+		
+		boolean hasMergedCells = result.getBoolean();
+		result.dispose();
+		
+		return hasMergedCells? 1 : -1;
+	}
+	
+	/**
+	 * Check if the given range is part of a merged area 
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 * @return an OleAutomation of a Range object that represents a merged area
+	 */
+	public static OleAutomation getMergeArea(OleAutomation rangeAutomation){
+		
+		int[] mergeAreaPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"MergeArea"});
+		
+		Variant result = rangeAutomation.getProperty(mergeAreaPropertyIds[0]);
+		
+		if(result==null)
+			return null;
+		
+		OleAutomation mergeArea = result.getAutomation();
+		result.dispose();
+		
+		return mergeArea;
+	}
+	
+	
+	/**
+	 * Check if the given range contains formulas
+	 * @param rangeAutomation an OleAutomation to access a Range of cells
+	 *  @return 1 if all cells in the range have formulas, 0 if the range contains at least one 
+	 *  cell that has formula, -1 if the range does not contain any formula
+	 */
+	public static int hasFormula(OleAutomation rangeAutomation){
+		
+		int[] hasFormulaPropertyIds = rangeAutomation.getIDsOfNames(new String[]{"HasFormula"});
+		
+		Variant result = rangeAutomation.getProperty(hasFormulaPropertyIds[0]);
+		
+		if(result==null)
+			return -1;
+		
+		if(result.getType()==1){
+			result.dispose();
+			return 0;
+		}
+			
+		boolean hasFormula = result.getBoolean();
+		result.dispose();
+		
+		return hasFormula? 1 : -1;
+	}
 	
 	/**
 	 * Get special cells from the given range
@@ -630,6 +685,12 @@ public class RangeUtils {
 		String col1 =  cell1Address.replaceAll("[0-9\\$]+","");
 		String col2 =  cell2Address.replaceAll("[0-9\\$]+","");
 		
+		if(col1.length()>col2.length())
+			return 1;
+		
+		if(col1.length()<col2.length())
+			return -1;
+			
 		return col1.compareTo(col2);
 	}
 	

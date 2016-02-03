@@ -224,6 +224,148 @@ public class ShapeUtils {
 		return id;
 	}
 	
+	
+	/**
+	 * Create a copy of the given shape
+	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
+	 * @return an OleAutomation that represents a copy of the given shape
+	 */
+	public static OleAutomation copyShape(OleAutomation shapeAutomation){
+		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
+		int[] copyMethodIds = shapeAutomation.getIDsOfNames(new String[]{"Copy"}); 
+		if(copyMethodIds==null)
+			logger.error("Could not get the ids of the method \"Copy\" for the \"Shape\" ole object");
+		
+		Variant result = shapeAutomation.invoke(copyMethodIds[0]);
+		logger.debug("Invoking method \"Copy\" for the \"Shape\" ole object returned variant "+result);
+		
+		if(result==null){
+			return null;
+		}
+		
+		OleAutomation shapeCopy = result.getAutomation();
+		result.dispose();
+		
+		return shapeCopy;
+	}
+	
+	/**
+	 * Duplicate of the given shape
+	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
+	 * @return an OleAutomation that represents the duplicate of the given shape
+	 */
+	public static OleAutomation duplicateShape(OleAutomation shapeAutomation){
+		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
+		int[] duplicateMethodIds = shapeAutomation.getIDsOfNames(new String[]{"Duplicate"}); 
+		if(duplicateMethodIds==null)
+			logger.error("Could not get the ids of the method \"Duplicate\" for the \"Shape\" ole object");
+		
+		Variant result = shapeAutomation.invoke(duplicateMethodIds[0]);
+		logger.debug("Invoking method \"Duplicate\" for the \"Shape\" ole object returned variant "+result);
+		
+		if(result==null){
+			return null;
+		}
+		
+		OleAutomation shapeCopy = result.getAutomation();
+		result.dispose();
+		
+		return shapeCopy;
+	}
+	
+	/**
+	 * Set the distance, in points, from the left edge of column A to the left edge of the shape.
+	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
+	 * @return true if the property was updated, false otherwise
+	 */
+	public static boolean setShapeLeftPosition(OleAutomation shapeAutomation, double points){
+		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
+		int[] leftPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Left"});
+		if(leftPropertyIds==null)
+			logger.error("Could not get the id of the property \"Left\" for the \"Shape\" ole object");
+		
+		Variant distance = new Variant(points);
+		Boolean isSuccess = shapeAutomation.setProperty(leftPropertyIds[0], distance);
+		
+		logger.debug("Invoking set property \"Left\" for the \"Shape\" ole object returned: "+isSuccess);
+		
+		distance.dispose();
+		return isSuccess;
+	}
+
+	/**
+	 * Set the distance, in points, from the top edge of the worksheet to the top edge of the shape.
+	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
+	 * @return true if the property was updated, false otherwise
+	 */
+	public static boolean setShapeTopPosition(OleAutomation shapeAutomation, double points){
+		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
+		int[] topPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Top"});
+		if(topPropertyIds==null)
+			logger.error("Could not get the id of the property \"Top\" for the \"Shape\" ole object");
+		
+		Variant distance = new Variant(points);
+		Boolean isSuccess = shapeAutomation.setProperty(topPropertyIds[0], distance);
+		
+		logger.debug("Invoking set property \"Top\" for the \"Shape\" ole object returned: "+isSuccess);
+		
+		distance.dispose();
+		return isSuccess;
+	}
+	
+	/**
+	 * Set the height for the given shape
+	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
+	 * @return true if the property was updated, false otherwise
+	 */
+	public static boolean setShapeHeight(OleAutomation shapeAutomation, double points){
+		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
+		int[] heightPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Height"});
+		if(heightPropertyIds==null)
+			logger.error("Could not get the id of the property \"Height\" for the \"Shape\" ole object");
+		
+		Variant distance = new Variant(points);
+		Boolean isSuccess = shapeAutomation.setProperty(heightPropertyIds[0], distance);
+		
+		logger.debug("Invoking set property \"Height\" for the \"Shape\" ole object returned: "+isSuccess);
+		
+		distance.dispose();
+		return isSuccess;
+	}
+	
+	
+	/**
+	 * Set the width for the given shape
+	 * @param shapeAutomation an OleAutomation that provides access to a Shape object. It represents an individual shape. 
+	 * @return true if the property was updated, false otherwise
+	 */
+	public static boolean setShapeWidth(OleAutomation shapeAutomation, double points){
+		
+		logger.debug("Is Shape OleAutomation null? ".concat(String.valueOf(shapeAutomation==null)));
+		
+		int[] widthPropertyIds = shapeAutomation.getIDsOfNames(new String[]{"Width"});
+		if(widthPropertyIds==null)
+			logger.error("Could not get the id of the property \"Width\" for the \"Shape\" ole object");
+		
+		Variant distance = new Variant(points);
+		Boolean isSuccess = shapeAutomation.setProperty(widthPropertyIds[0], distance);
+		
+		logger.debug("Invoking set property \"Width\" for the \"Shape\" ole object returned: "+isSuccess);
+		
+		distance.dispose();
+		return isSuccess;
+	}
+	
 	/**
 	 * Set the visibility of the given shape
 	 * @param shapeAutomation an OleAutomation that provides access to the "Shape" Ole object. It represents a single shape.

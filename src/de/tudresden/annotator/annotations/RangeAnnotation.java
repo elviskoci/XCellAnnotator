@@ -3,8 +3,6 @@
  */
 package de.tudresden.annotator.annotations;
 
-import de.tudresden.annotator.annotations.utils.AnnotationHandler;
-
 /**
  * @author Elvis Koci
  */
@@ -16,11 +14,21 @@ public class RangeAnnotation extends DependentAnnotation<DependentAnnotation<?>>
 	private String name;
 	private String rangeAddress;
 	
+	private int cells;
+	private int emptyCells;
+	private int constantCells;
+	private int formulaCells;
+	private int rows;
+	private int nonEmptyRows;
+	private int columns; 
+	private int nonEmptyColumns;
+	
+	private boolean containsMergedCells;
 	
 	/**
 	 * Create a new RangeAnnotation
-	 * @param sheetName the name of the worksheet where the RangeAnnotation is placed 
-	 * @param sheetIndex the index of the worksheet where the RangeAnnotation is placed 
+	 * @param sheetName the name of the sheet where the RangeAnnotation is placed 
+	 * @param sheetIndex the index of the sheet where the RangeAnnotation is placed 
 	 * @param annotationClass the AnnotationClass that this RangeAnnotation is member of
 	 * @param name a string that represents the name of the RangeAnnotation
 	 * @param rangeAddress the address of the range that was annotated 
@@ -103,12 +111,132 @@ public class RangeAnnotation extends DependentAnnotation<DependentAnnotation<?>>
 		this.rangeAddress = rangeAddress;
 	}
 
-		
-	public static String generateKey(String sheetName, String classLabel, String rangeAddress) {
-		// TODO: Remove this method
-		return AnnotationHandler.getStartOfRangeAnnotationName(sheetName)+"_"+classLabel+"_"+rangeAddress;
+	/**
+	 * @return the cells
+	 */
+	public int getCells() {
+		return cells;
 	}
-	
+
+	/**
+	 * @param cells the cells to set
+	 */
+	public void setCells(int cells) {
+		this.cells = cells;
+	}
+
+	/**
+	 * @return the emptyCells
+	 */
+	public int getEmptyCells() {
+		return emptyCells;
+	}
+
+	/**
+	 * @param emptyCells the emptyCells to set
+	 */
+	public void setEmptyCells(int emptyCells) {
+		this.emptyCells = emptyCells;
+	}
+
+	/**
+	 * @return the constantCells
+	 */
+	public int getConstantCells() {
+		return constantCells;
+	}
+
+	/**
+	 * @param constantCells the constantCells to set
+	 */
+	public void setConstantCells(int constantCells) {
+		this.constantCells = constantCells;
+	}
+
+	/**
+	 * @return the formulaCells
+	 */
+	public int getFormulaCells() {
+		return formulaCells;
+	}
+
+	/**
+	 * @param formulaCells the formulaCells to set
+	 */
+	public void setFormulaCells(int formulaCells) {
+		this.formulaCells = formulaCells;
+	}
+
+	/**
+	 * @return the rows
+	 */
+	public int getRows() {
+		return rows;
+	}
+
+	/**
+	 * @param rows the rows to set
+	 */
+	public void setRows(int rows) {
+		this.rows = rows;
+	}
+
+	/**
+	 * @return the nonEmptyRows
+	 */
+	public int getNonEmptyRows() {
+		return nonEmptyRows;
+	}
+
+	/**
+	 * @param nonEmptyRows the nonEmptyRows to set
+	 */
+	public void setNonEmptyRows(int nonEmptyRows) {
+		this.nonEmptyRows = nonEmptyRows;
+	}
+
+	/**
+	 * @return the columns
+	 */
+	public int getColumns() {
+		return columns;
+	}
+
+	/**
+	 * @param columns the columns to set
+	 */
+	public void setColumns(int columns) {
+		this.columns = columns;
+	}
+
+	/**
+	 * @return the nonEmptyColumns
+	 */
+	public int getNonEmptyColumns() {
+		return nonEmptyColumns;
+	}
+
+	/**
+	 * @param nonEmptyColumns the nonEmptyColumns to set
+	 */
+	public void setNonEmptyColumns(int nonEmptyColumns) {
+		this.nonEmptyColumns = nonEmptyColumns;
+	}
+
+	/**
+	 * @return the hasMergedCells
+	 */
+	public boolean containsMergedCells() {
+		return containsMergedCells;
+	}
+
+	/**
+	 * @param hasMergedCells the hasMergedCells to set
+	 */
+	public void setContainsMergedCells(boolean hasMergedCells) {
+		this.containsMergedCells = hasMergedCells;
+	}
+
 	@Override 
 	public String toString() {
 			return this.name+" = "+this.allAnnotations.values().toString();

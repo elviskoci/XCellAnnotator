@@ -32,6 +32,7 @@ import de.tudresden.annotator.oleutils.ShadowFormatUtils;
 import de.tudresden.annotator.oleutils.ShapeUtils;
 import de.tudresden.annotator.oleutils.TextFrameUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
+import de.tudresden.annotator.oleutils.WorksheetFunctionUtils;
 import de.tudresden.annotator.oleutils.WorksheetUtils;
 
 /**
@@ -142,15 +143,19 @@ public class AnnotationHandler {
             messageBox.open();
             return;
 		}
-
+		
 		// get the OleAutomation object for the worksheet using its name
-		OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
-
+		OleAutomation sheetAutoBeforeUnprotect = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+					
 		// unprotect the worksheet in order to create the annotations
-		WorksheetUtils.unprotectWorksheet(sheetAutomation);
-							
+		WorksheetUtils.unprotectWorksheet(sheetAutoBeforeUnprotect);
+		sheetAutoBeforeUnprotect.dispose();
+				
 		// for each area in the range create an annotation
 		for (String selectedArea : selectedAreas) {
+			
+			// get the OleAutomation object for the worksheet using its name
+			OleAutomation sheetAutomation = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
 			
 			// create annotation object			
 			String classLabel = annotationClass.getLabel();
@@ -168,8 +173,12 @@ public class AnnotationHandler {
 			
 			// range automation has to re-created here because was disposed when checked if range is empty 
 			OleAutomation rangeAutomation = WorksheetUtils.getRangeAutomation(sheetAutomation, selectedArea);
+			
 			// draw annotation
 			drawRangeAnnotation(sheetAutomation, rangeAutomation, annotationClass, annotationName);
+			
+			// calculate statistics about the contents of the annotated range
+			calculateStatistics(ra, workbookAutomation);
 			
 			// save on the AnnotationDataSheet metadata about the annotation 
 			RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);	
@@ -179,12 +188,132 @@ public class AnnotationHandler {
 			addToUndoList(ra);
 		}		
 		
+		
+		// get the OleAutomation object for the worksheet using its name
+	    OleAutomation sheetAutomationAfterAnnotating = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+				
 		// protect the worksheet to prevent user from modifying the annotations
-		WorksheetUtils.protectWorksheet(sheetAutomation);
-		WorksheetUtils.makeWorksheetActive(sheetAutomation);
-		sheetAutomation.dispose();
+		WorksheetUtils.protectWorksheet(sheetAutomationAfterAnnotating);
+		WorksheetUtils.makeWorksheetActive(sheetAutomationAfterAnnotating);
+		sheetAutomationAfterAnnotating.dispose();
 	}
 	
+	
+	public static void calculateStatistics(RangeAnnotation ra, OleAutomation workbookAuto){
+		
+		try {
+			
+			OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAuto, ra.getSheetName());
+			OleAutomation rangeAuto = WorksheetUtils.getRangeAutomation(sheetAuto, ra.getRangeAddress());
+			OleAutomation application = WorkbookUtils.getApplicationAutomation(workbookAuto);
+			
+			// count all cells in the range 
+			int count = RangeUtils.count(rangeAuto);
+			ra.setCells(count);
+			
+			// count all columns in the range 
+			OleAutomation columns = RangeUtils.getRangeColumns(rangeAuto);
+			int countColumns = 0;
+			if(columns!=null){
+				countColumns= CollectionsUtils.countItemsInCollection(columns);
+				columns.dispose();
+			}
+			ra.setColumns(countColumns);
+			
+			// count all rows in the range 
+			OleAutomation rows = RangeUtils.getRangeRows(rangeAuto);
+			int countRows = 0;
+			if(rows!=null){
+				countRows = CollectionsUtils.countItemsInCollection(rows);
+				rows.dispose();
+			}
+			ra.setRows(countRows);
+			
+			// count all blank cells in the range 		
+			int countBlank = WorksheetFunctionUtils.countBlankCells(application, rangeAuto);
+			ra.setEmptyCells(countBlank);
+			
+			// count all formula cells in the range 
+			int countFormulas = 0;
+			if(RangeUtils.getMergeCells(rangeAuto)==-1){
+				
+				ra.setContainsMergedCells(false);
+				
+				OleAutomation  formulas = RangeUtils.getSpecialCells(rangeAuto, -4123); // xlCellTypeFormulas = -4123
+				if(formulas!=null){			
+					countFormulas = RangeUtils.count(formulas);
+					formulas.dispose();
+				}
+				
+			}else if(RangeUtils.getMergeCells(rangeAuto)==0){
+				
+				ra.setContainsMergedCells(true);
+				
+				boolean mergedFormulas = false;
+				OleAutomation  formulaCells = RangeUtils.getSpecialCells(rangeAuto, -4123); // xlCellTypeFormulas = -4123
+				if(formulaCells!=null){			
+					countFormulas = RangeUtils.count(formulaCells);
+					mergedFormulas = (RangeUtils.getMergeCells(formulaCells)>=0);
+				}
+				
+				if(mergedFormulas){
+					
+					int countConstants = 0;
+					boolean mergedConstants = false;
+					OleAutomation  constantCells = RangeUtils.getSpecialCells(rangeAuto, 2); // xlCellTypeConstants = 2
+					if(constantCells!=null){			
+						countConstants = RangeUtils.count(constantCells);
+						mergedConstants = (RangeUtils.getMergeCells(constantCells)>=0);
+						
+					}
+					
+					if(mergedConstants){
+						
+						int countBlankInFormulas = 0;
+						
+						OleAutomation formulaAreas = RangeUtils.getAreas(formulaCells);
+						int k=1;
+						while(true){
+							OleAutomation area = CollectionsUtils.getItemByIndex(formulaAreas, k++, false);
+							if(area==null)
+								break;
+							
+							countBlankInFormulas += WorksheetFunctionUtils.countBlankCells(application, area);
+						}
+						countFormulas = countFormulas - countBlankInFormulas;
+						
+					}else{
+						countFormulas = count-countConstants-countBlank;
+					}
+					
+					if(constantCells!=null)
+						constantCells.dispose();
+				}
+				
+				if(formulaCells!=null)
+					formulaCells.dispose();
+			
+			}else{
+				ra.setContainsMergedCells(true);
+				
+				if(RangeUtils.hasFormula(rangeAuto)==0){
+					countFormulas = 1;
+				}
+			}
+			ra.setFormulaCells(countFormulas);
+			
+			
+			// calculate constant cells in the range
+			ra.setConstantCells(count - countBlank - countFormulas);
+			
+			rangeAuto.dispose();
+			sheetAuto.dispose();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
 	
 	/**
 	 * Generate the name of the range annotation 
@@ -223,33 +352,26 @@ public class AnnotationHandler {
 	public static boolean validateRangeAnnotation(OleAutomation  embeddedWorkbook, 
 														OleAutomation sheetAutomation, RangeAnnotation annotation){
 		
-//		// check if the range is valid (e.i., the OleAutomation can be created for this range)
-//		OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, annotation.getRangeAddress());
-//		if(selectedAreaAuto==null){					
-//			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
-//            messageBox.setMessage("Can not annotate range "+annotation.getRangeAddress()+". "
-//					+ "Please, avoid selecting entire rows or columns for annotation.");
-//            messageBox.open();           
-//			return false;
-//		}
-//		
-//		// ensure that the range contains data (i.e., range not empty)
-//		OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
-//		OleAutomation worksheetFunctionAuto = ApplicationUtils.getWorksheetFunctionAutomation(applicationAuto);
-//		
-//		Variant rangeVariant = new Variant(selectedAreaAuto);
-//		Variant methodResult = WorksheetFunctionUtils.callFunction(worksheetFunctionAuto, "COUNTA", new Variant[]{rangeVariant}); 
-//		worksheetFunctionAuto.dispose();
-//		selectedAreaAuto.dispose();
-//		
-//		double notEmpty = methodResult.getDouble();
-//		methodResult.dispose();
-//		if(notEmpty==0){
-//			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
-//            messageBox.setMessage("The selected range does not contain any value!");
-//            messageBox.open();
-//			return false;
-//		}
+		// check if the range is valid (e.i., the OleAutomation can be created for this range)
+		OleAutomation selectedAreaAuto = WorksheetUtils.getRangeAutomation(sheetAutomation, annotation.getRangeAddress());
+		if(selectedAreaAuto==null){					
+			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
+            messageBox.setMessage("Can not annotate range "+annotation.getRangeAddress()+". "
+					+ "Please, avoid selecting entire rows or columns for annotation.");
+            messageBox.open();           
+			return false;
+		}
+		
+		// ensure that the range contains data (i.e., range not empty)
+		OleAutomation applicationAuto = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);			
+		double notEmpty = WorksheetFunctionUtils.countNotEmptyCells(applicationAuto, selectedAreaAuto);
+		// System.out.println(notEmpty);
+		if(notEmpty==0){
+			MessageBox messageBox = Launcher.getInstance().createMessageBox(SWT.ICON_ERROR);
+            messageBox.setMessage("The selected range does not contain any value!");
+            messageBox.open();
+			return false;
+		}
 		
 		// ensure that the range annotation satisfies the dependencies and containment constrains  
 		AnnotationClass annotationClass =  annotation.getAnnotationClass();
@@ -544,27 +666,61 @@ public class AnnotationHandler {
 		double height = RangeUtils.getRangeHeight(rangeAutomation);
 		rangeAutomation.dispose();
 		
-		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(sheetAutomation);	
+		String currentSheetName = WorksheetUtils.getWorksheetName(sheetAutomation);
 		
-		if(annotationClass.getAnnotationTool()==AnnotationTool.TEXTBOX){	
-			
-			OleAutomation textboxAutomation = ShapeUtils.drawTextBox(shapesAutomation, left, top, width, height); 
-			setAnnotationProperties(textboxAutomation, annotationClass);
-			ShapeUtils.setShapeName(textboxAutomation, annotationName);
-			textboxAutomation.dispose();
-		}
-		
-		if(annotationClass.getAnnotationTool()==AnnotationTool.SHAPE){		
-			
-			OleAutomation shapeAuto = ShapeUtils.drawShape(shapesAutomation, annotationClass.getShapeType(), left, top, width, height);
-			setAnnotationProperties(shapeAuto, annotationClass);  
-			ShapeUtils.setShapeName(shapeAuto, annotationName);
-			shapeAuto.dispose();
-		}
+		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(sheetAutomation);
 				
+		boolean result = hasShapeAnnotations(shapesAutomation, currentSheetName, annotationClass.getLabel());
+		
+		Collection<RangeAnnotation> annotationsCollection = workbookAnnotation.getSheetAnnotationsByClass(currentSheetName, annotationClass.getLabel());	
+				
+		if(result && annotationsCollection!=null && !annotationsCollection.isEmpty()){
+			
+			ArrayList<RangeAnnotation> annotations= new ArrayList<RangeAnnotation>(annotationsCollection);
+			RangeAnnotation ra = annotations.get(0);				
+			
+			OleAutomation shapeAutomation = CollectionsUtils.getItemByName(shapesAutomation, ra.getName(), true);
+			OleAutomation copyShape = ShapeUtils.duplicateShape(shapeAutomation);
+			shapeAutomation.dispose();
+					
+			ShapeUtils.setShapeLeftPosition(copyShape, left);
+			ShapeUtils.setShapeTopPosition(copyShape, top);
+			ShapeUtils.setShapeHeight(copyShape, height);
+			ShapeUtils.setShapeWidth(copyShape, width);
+			ShapeUtils.setShapeName(copyShape, annotationName);
+			copyShape.dispose();
+				
+		}else{
+			
+			if(annotationClass.getAnnotationTool()==AnnotationTool.TEXTBOX){	
+				
+				OleAutomation textboxAutomation = ShapeUtils.drawTextBox(shapesAutomation, left, top, width, height); 
+				setAnnotationProperties(textboxAutomation, annotationClass);
+				ShapeUtils.setShapeName(textboxAutomation, annotationName);
+				textboxAutomation.dispose();
+				
+			}	
+			
+			if(annotationClass.getAnnotationTool()==AnnotationTool.SHAPE){		
+				
+				OleAutomation shapeAuto = ShapeUtils.drawShape(shapesAutomation, annotationClass.getShapeType(), left, top, width, height);
+			
+				setAnnotationProperties(shapeAuto, annotationClass);  
+				ShapeUtils.setShapeName(shapeAuto, annotationName);
+				shapeAuto.dispose();	
+			}			
+		}
 		shapesAutomation.dispose();
 	}
 	
+	
+	/**
+	 * 
+	 * @param shapesAutomation
+	 * @param rangeAutomation
+	 * @param annotationClass
+	 * @param annotationName
+	 */
 	public static void drawAnnotationShape(OleAutomation shapesAutomation, OleAutomation rangeAutomation, 
 													AnnotationClass annotationClass, String annotationName){
 
@@ -803,7 +959,12 @@ public class AnnotationHandler {
 		int processed = 0; 
 		int i = 1;
 		while (processed!=count){
-			 OleAutomation shapeAutomation = CollectionsUtils.getItemByIndex(shapesAutomation, i, true);	 
+			 OleAutomation shapeAutomation = CollectionsUtils.getItemByIndex(shapesAutomation, i, true);	
+			 if(shapeAutomation==null){ // it seems that it considers comments as shapes. although, it should not
+				 processed++;
+				 continue;
+			 }
+			 
 			 String name = ShapeUtils.getShapeName(shapeAutomation);
 			 
 			 if(name.indexOf(startString)==0){
@@ -842,12 +1003,36 @@ public class AnnotationHandler {
 		return result;
 	}
 	
+	
+	public static boolean hasShapeAnnotations(OleAutomation shapesAutomation, String sheetName, String label){
+		
+		boolean hasShapeAnnotations =false;
+		int i=1;
+		while(true){
+			OleAutomation shape = CollectionsUtils.getItemByIndex(shapesAutomation, i++, true);
+			
+			if(shape==null){
+				break;
+			}
+			
+			String shapeName = ShapeUtils.getShapeName(shape);
+			
+			if(shapeName.startsWith(getStartOfRangeAnnotationName(sheetName)) && 
+					shapeName.toLowerCase().indexOf("_"+label.toLowerCase()+"_")>0){
+				hasShapeAnnotations = true;
+				break;
+			}
+		}
+		
+		return hasShapeAnnotations;
+	}
+	
 	public static void addToUndoList(RangeAnnotation annotation){
 		undoList.add(annotation);
 		if(undoList.size()>10)
 			undoList.removeFirst();
 	}
-	
+		
 	public static void addToRedoList(RangeAnnotation annotation){
 		redoList.add(annotation);
 		if(redoList.size()>10)
