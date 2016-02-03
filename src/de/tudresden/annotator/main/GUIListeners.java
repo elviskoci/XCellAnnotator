@@ -42,7 +42,7 @@ import de.tudresden.annotator.oleutils.WorksheetUtils;
 public class GUIListeners {
 	
 	private static final Logger logger = LogManager.getLogger(GUIListeners.class.getName());
-	private static boolean includesFileSave = false;
+	public static boolean skipActionsOnSheetActivation = false;
 	
 	/**
 	 * 
@@ -73,9 +73,9 @@ public class GUIListeners {
 	 	            	
 	 	            	String filePath = directoryPath+"\\"+fileName;
 	 	            	
-	 	            	includesFileSave = true;
+	 	            	skipActionsOnSheetActivation = true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
-	 	            	includesFileSave = false;
+	 	            	skipActionsOnSheetActivation = false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int styleError = SWT.ICON_ERROR;
@@ -188,7 +188,7 @@ public class GUIListeners {
 				// hide any existing tooltip, before showing new one about the active (current) sheet
 	            Launcher.getInstance().getTooltip().setVisible(false);
 				
-	            if(!includesFileSave){
+	            if(!skipActionsOnSheetActivation){
 					
 					// when a new sheet is activate the redo and undo list are cleared.  
 					WorksheetAnnotation activeSheetAnnotation = AnnotationHandler.getWorkbookAnnotation()
@@ -286,9 +286,9 @@ public class GUIListeners {
 	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
 	 	            	
-	 	            	includesFileSave=true;
+	 	            	skipActionsOnSheetActivation=true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
-	 	            	includesFileSave=false;
+	 	            	skipActionsOnSheetActivation=false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
@@ -369,15 +369,14 @@ public class GUIListeners {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				
-				String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				String fileName = Launcher.getInstance().getFileName()+"";
 				String directory = Launcher.getInstance().getDirectoryPath();
 				String filePath = directory+"\\"+fileName;
 				
-				includesFileSave=true;
+				skipActionsOnSheetActivation=true;
 				boolean result = FileUtils.saveProgress(
 						Launcher.getInstance().getEmbeddedWorkbook(), filePath, false);
-				includesFileSave=false;
+				skipActionsOnSheetActivation=false;
 					
 				if(result){		
 					
@@ -435,9 +434,9 @@ public class GUIListeners {
 	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
 	 	            	
-	 	            	includesFileSave=true;
+	 	            	skipActionsOnSheetActivation=true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
-	 	            	includesFileSave=false;
+	 	            	skipActionsOnSheetActivation=false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
@@ -563,9 +562,9 @@ public class GUIListeners {
 	 	            	OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 	 	            	String filePath =  Launcher.getInstance().getDirectoryPath()+"\\"+Launcher.getInstance().getFileName();
 	 	            	
-	 	            	includesFileSave=true;
+	 	            	skipActionsOnSheetActivation=true;
 	 	            	boolean isSaved = FileUtils.saveProgress(embeddedWorkbook, filePath, true);
-	 	            	includesFileSave=false;
+	 	            	skipActionsOnSheetActivation=false;
 	 	            	
 	 	            	if(!isSaved){
 	 	            		int messageStyle = SWT.ICON_ERROR;
@@ -649,8 +648,26 @@ public class GUIListeners {
 							}
 							
 						}else{
-							sheetAnnotation.setCompleted(true);
-							wasUpdated=true;
+							boolean hasUnannotated = AnnotationHandler.hasUnannotatedRanges(
+									Launcher.getInstance().getEmbeddedWorkbook(), sheetName);
+							
+							if(hasUnannotated){
+								int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+								MessageBox mb = Launcher.getInstance().createMessageBox(style);
+								mb.setMessage("The selected cells contain values but have not been annotated."
+										+ "\nDo you still want to mark this sheet as \"Completed\" ?"); 
+								int option = mb.open();
+								
+								if(option == SWT.YES){
+									sheetAnnotation.setCompleted(true);
+									wasUpdated=true;
+									
+								}
+								
+							}else{
+								sheetAnnotation.setCompleted(true);
+								wasUpdated=true;
+							}
 						}
 					}	
 				}else{

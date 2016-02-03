@@ -106,12 +106,12 @@ public class ApplicationUtils {
 		
 		int[] workbookIds = application.getIDsOfNames(new String[]{"ActiveWindow"});	
 		if (workbookIds == null){			
-			logger.error("Could not get \"ActiveWindow\" property ids for \"Application\" object!");
+			logger.error("Could not get \"ActiveWindow\" property ids for \"Application\" object! \n"+application.getLastError());
 			return null;
 		}		
 		Variant workbookVariant = application.getProperty(workbookIds[0]);
 		if (workbookVariant == null) {
-			logger.error("Get \"ActiveWindow\" property for \"Application\" returned null variant!");
+			logger.error("Get \"ActiveWindow\" property for \"Application\" returned null variant! \n"+application.getLastError());
 			return null;
 		}		
 		
@@ -252,39 +252,89 @@ public class ApplicationUtils {
 		return worksheetFunctionAutomation;
 	}	
 	
+	
 	/**
-	 * Get the specified range automation from the active worksheet. The address of the top left cell and down right cell have to be provided.
-	 * The Application OleAutomation object will retrieve the range from the worksheet that is the "active" one at that moment.
+	 * Get the intersection between two ranges
+	 * 
 	 * @param applicationAutomation an OleAutomation object for accessing the (Excel) Application OLE object
-	 * @param topLeftCell address of top left cell (e.g., "A1" or "$A$1" )
-	 * @param downRightCell address of down right cell (e.g., "C3" or "$C$3" )
-	 * @return
+	 * @param range1 an OleAutomation to access the functionalities of the first range 
+	 * @param range2 an OleAutomation to access the functionalities of the second range
+	 * @return an OleAutomation of a range object that represents the intersection between two ranges
 	 */
-	public static OleAutomation getRangeAutomation(OleAutomation applicationAutomation, String topLeftCell, String downRightCell){
+	public static OleAutomation getIntersection(OleAutomation applicationAutomation, OleAutomation range1, OleAutomation range2){
 		
-		// get the OleAutomation object for the selected range 
-		int[] rangePropertyIds = applicationAutomation.getIDsOfNames(new String[]{"Range"});
-		
-		Variant[] args;
-		if(downRightCell!=null && downRightCell.length()>1){
-			args = new Variant[2];
-			args[0] = new Variant(topLeftCell);
-			args[1] = new Variant(downRightCell);
-		}else{
-			args = new Variant[1];
-			args[0] = new Variant(topLeftCell);
+		int[] intersectMethodIds = applicationAutomation.getIDsOfNames(new String[]{"Intersect"});
+		if (intersectMethodIds == null){			
+			System.out.println("Could not get the ids of the \"Intersect\" method using the given "
+					+ "Application OleAutomation object! \n"+applicationAutomation.getLastError());
+			return null;
 		}
 		
-		Variant rangeVariant = applicationAutomation.getProperty(rangePropertyIds[0],args);
-		OleAutomation rangeAutomation = rangeVariant.getAutomation();
-		for (Variant arg : args) {
-			arg.dispose();
-		}
-		rangeVariant.dispose();
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(range1);
+		args[1] = new Variant(range2);
 		
-		return rangeAutomation;
+		Variant result =applicationAutomation.invoke(intersectMethodIds[0], args);
+		
+		if(result==null ){
+
+			logger.error("Invoking \"Intersect\" method for \"Application\" returned null variant! "
+					+ "\n"+applicationAutomation.getLastError());
+			return null;
+		}
+		
+		if(result.getType()==0){
+			return null;
+		}
+		
+		logger.debug("Invoking \"Intersect\" method for \"Application\" returned variant: "+result);
+		OleAutomation intersection = result.getAutomation();
+		result.dispose();
+		
+		return intersection;
 	}
 	
+	
+	/**
+	 * Get the union of the two ranges
+	 * 
+	 * @param applicationAutomation an OleAutomation object for accessing the (Excel) Application OLE object
+	 * @param range1 an OleAutomation to access the functionalities of the first range 
+	 * @param range2 an OleAutomation to access the functionalities of the second range
+	 * @return an OleAutomation of a range object that represents the union between two ranges
+	 */
+	public static OleAutomation getUnion(OleAutomation applicationAutomation, OleAutomation range1, OleAutomation range2){
+		
+		int[] unionMethodIds = applicationAutomation.getIDsOfNames(new String[]{"Union"});
+		if (unionMethodIds == null){			
+			System.out.println("Could not get the ids of the \"Union\" method using the given "
+					+ "Application OleAutomation object! \n"+applicationAutomation.getLastError());
+			return null;
+		}
+		
+		Variant[] args = new Variant[2];
+		args[0] = new Variant(range1);
+		args[1] = new Variant(range2);
+		
+		Variant result =applicationAutomation.invoke(unionMethodIds[0], args);
+		
+		if(result==null ){
+
+			logger.error("Invoking \"Union\" method for \"Application\" returned null variant! "
+					+ "\n"+applicationAutomation.getLastError());
+			return null;
+		}
+		
+		if(result.getType()==0){
+			return null;
+		}
+		
+		logger.debug("Invoking \"Union\" method for \"Application\" returned variant: "+result);
+		OleAutomation union = result.getAutomation();
+		result.dispose();
+		
+		return union;
+	}
 	
 	/**
 	 * Set application alerts on or off 

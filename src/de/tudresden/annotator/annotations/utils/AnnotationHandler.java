@@ -21,6 +21,7 @@ import de.tudresden.annotator.annotations.WorkbookAnnotation;
 import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.main.GUIListeners;
 import de.tudresden.annotator.main.Launcher;
+import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.CharactersUtils;
 import de.tudresden.annotator.oleutils.CollectionsUtils;
 import de.tudresden.annotator.oleutils.ColorFormatUtils;
@@ -198,7 +199,11 @@ public class AnnotationHandler {
 		sheetAutomationAfterAnnotating.dispose();
 	}
 	
-	
+	/**
+	 * Calculate stats for the annotated range
+	 * @param ra a RangeAnnotation object that contains information about the annotated range
+	 * @param workbookAuto an OleAutomation that provides access to the functionalities of the embedded workbook
+	 */
 	public static void calculateStatistics(RangeAnnotation ra, OleAutomation workbookAuto){
 		
 		try {
@@ -312,7 +317,6 @@ public class AnnotationHandler {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 	
 	/**
@@ -533,6 +537,131 @@ public class AnnotationHandler {
 	}
 	
 	
+	public static boolean hasUnannotatedRanges(OleAutomation workbookAutomation, String sheetName){
+		
+		
+		WorksheetAnnotation sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
+		if(sheetAnnotation == null)
+			return false;
+		
+		if(sheetAnnotation.getAllAnnotations() == null  ||  sheetAnnotation.getAllAnnotations().isEmpty())
+			return false;
+		
+		try{
+		
+			OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+			WorksheetUtils.unprotectWorksheet(sheetAuto);
+			
+			OleAutomation application = WorkbookUtils.getApplicationAutomation(workbookAutomation);	
+			OleAutomation annotatedRanges = null;
+			for (RangeAnnotation ra : sheetAnnotation.getAllAnnotations()) {
+				
+				if(!ra.getAnnotationClass().isContainer()){
+					if(annotatedRanges!=null){
+						OleAutomation range = WorksheetUtils.getRangeAutomation(sheetAuto, ra.getRangeAddress());					
+						annotatedRanges = ApplicationUtils.getUnion(application, annotatedRanges, range);
+					}else{
+						annotatedRanges = WorksheetUtils.getRangeAutomation(sheetAuto, ra.getRangeAddress());
+					}
+				}
+			}
+			if(annotatedRanges == null){
+				return false;
+			}
+			
+			OleAutomation usedRangeAuto = WorksheetUtils.getUsedRange(sheetAuto);
+			sheetAuto.dispose();
+
+			OleAutomation constantCells = RangeUtils.getSpecialCells(usedRangeAuto, 2); // xlCellTypeConstants = 2
+			OleAutomation formulaCells = RangeUtils.getSpecialCells(usedRangeAuto, -4123); // xlCellTypeFormulas = -4123
+	
+			OleAutomation constantAreas = RangeUtils.getAreas(constantCells);		
+			int i=1;	
+			OleAutomation notAnnotated = null;
+			while(true){
+				OleAutomation area = CollectionsUtils.getItemByIndex(constantAreas, i++, false);
+				if(area == null)
+					break;
+				
+				boolean isNotAnnotated = false;
+				
+				String areaAddress = RangeUtils.getRangeAddress(area);
+				
+				OleAutomation intersection = ApplicationUtils.getIntersection(application, area, annotatedRanges);
+				if(intersection!=null){
+//					if(areaAddress.compareTo(RangeUtils.getRangeAddress(intersection))!=0){
+//						isNotAnnotated = true;
+//					}
+				}else{
+					isNotAnnotated = true;
+				}
+				
+				if(isNotAnnotated){			
+					if(notAnnotated==null){
+						notAnnotated = area;
+					}else{
+						notAnnotated = ApplicationUtils.getUnion(application, area, notAnnotated);
+					}
+				}
+			}
+			
+			
+			OleAutomation formulaAreas = RangeUtils.getAreas(formulaCells);		
+			int j=1;
+			while(true){
+				OleAutomation area = CollectionsUtils.getItemByIndex(formulaAreas, j++, false);
+				if(area == null)
+					break;
+				
+				boolean isNotAnnotated = false;
+				
+				String areaAddress = RangeUtils.getRangeAddress(area);
+		
+				OleAutomation intersection = ApplicationUtils.getIntersection(application, area, annotatedRanges);
+				if(intersection!=null){
+//					if(areaAddress.compareTo(RangeUtils.getRangeAddress(intersection))!=0){
+//						isNotAnnotated = true;
+//					}
+				}else{
+					isNotAnnotated = true;
+				}
+				
+				if(isNotAnnotated){				
+					if(notAnnotated==null){
+						notAnnotated = area;
+					}else{
+						notAnnotated = ApplicationUtils.getUnion(application, area, notAnnotated);
+					}
+				}
+			}
+					
+			boolean hasUnannotatedRanges = false;
+			if(notAnnotated!=null){
+				RangeUtils.selectRange(notAnnotated);
+				hasUnannotatedRanges = true;
+				notAnnotated.dispose();
+			}
+				
+			formulaAreas.dispose();
+			constantAreas.dispose();
+			formulaCells.dispose();
+			constantCells.dispose();
+			usedRangeAuto.dispose();
+			annotatedRanges.dispose();
+			
+			OleAutomation sheetAutoToProtect = WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, sheetName);
+			WorksheetUtils.protectWorksheet(sheetAutoToProtect);
+			sheetAutoToProtect.dispose();
+			
+			return hasUnannotatedRanges;
+			
+		}catch (Exception ex){
+			logger.error("Genereric exception on check for unannotated ranges!", ex);
+		}
+		
+		return false;
+	}
+	
 	/**
 	 * This method calls the function to draw the range annotation based on the annotation tool specified in the annotation class
 	 * @param sheetAutomation an OleAutomation for accessing the active worksheet functionalities
@@ -670,7 +799,7 @@ public class AnnotationHandler {
 		
 		OleAutomation shapesAutomation = WorksheetUtils.getWorksheetShapes(sheetAutomation);
 				
-		boolean result = hasShapeAnnotations(shapesAutomation, currentSheetName, annotationClass.getLabel());
+		boolean result = hasShapeAnnotationsWithLabel(shapesAutomation, currentSheetName, annotationClass.getLabel());
 		
 		Collection<RangeAnnotation> annotationsCollection = workbookAnnotation.getSheetAnnotationsByClass(currentSheetName, annotationClass.getLabel());	
 				
@@ -746,6 +875,35 @@ public class AnnotationHandler {
 		}
 	}
 
+
+	/**
+	 * Check if there the sheet contains shape annotations with the given label
+	 * @param shapesAutomation an OleAutomation that provides access to the functionalities of the sheet Shapes 
+	 * @param sheetName a string that represents the name of the sheet to search for shape annotations
+	 * @param label a string that represents the annotation_class label
+	 * @return
+	 */
+	public static boolean hasShapeAnnotationsWithLabel(OleAutomation shapesAutomation, String sheetName, String label){
+		
+		boolean hasShapeAnnotations =false;
+		int i=1;
+		while(true){
+			OleAutomation shape = CollectionsUtils.getItemByIndex(shapesAutomation, i++, true);
+			
+			if(shape==null){
+				break;
+			}
+			
+			String shapeName = ShapeUtils.getShapeName(shape);
+			
+			if(shapeName.startsWith(getStartOfRangeAnnotationName(sheetName)) && 
+					shapeName.toLowerCase().indexOf("_"+label.toLowerCase()+"_")>0){
+				hasShapeAnnotations = true;
+				break;
+			}
+		}	
+		return hasShapeAnnotations;
+	}
 	
 	/**
 	 * Format the annotation object (shape, textbox, etc) 
@@ -1003,29 +1161,6 @@ public class AnnotationHandler {
 		return result;
 	}
 	
-	
-	public static boolean hasShapeAnnotations(OleAutomation shapesAutomation, String sheetName, String label){
-		
-		boolean hasShapeAnnotations =false;
-		int i=1;
-		while(true){
-			OleAutomation shape = CollectionsUtils.getItemByIndex(shapesAutomation, i++, true);
-			
-			if(shape==null){
-				break;
-			}
-			
-			String shapeName = ShapeUtils.getShapeName(shape);
-			
-			if(shapeName.startsWith(getStartOfRangeAnnotationName(sheetName)) && 
-					shapeName.toLowerCase().indexOf("_"+label.toLowerCase()+"_")>0){
-				hasShapeAnnotations = true;
-				break;
-			}
-		}
-		
-		return hasShapeAnnotations;
-	}
 	
 	public static void addToUndoList(RangeAnnotation annotation){
 		undoList.add(annotation);
