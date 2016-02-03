@@ -537,15 +537,36 @@ public class AnnotationHandler {
 	}
 	
 	
+	/**
+	 * Check if the sheet has cells that are not annotated yet 
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the embedded workbook
+	 * @param sheetName a string the represents the name of the sheet
+	 * @return true if the are not annotated cells, false otherwise 
+	 */
 	public static boolean hasUnannotatedRanges(OleAutomation workbookAutomation, String sheetName){
+		OleAutomation unannotatedRanges = getUnannotatedRanges( workbookAutomation, sheetName);
+		
+		if(unannotatedRanges!=null)
+			return true;
+		
+		return false;
+	}
+	
+	/**
+	 * Get the range of cells from the sheet that are not annotated yet 
+	 * @param workbookAutomation an OleAutomation that provides access to the functionalities of the embedded workbook
+	 * @param sheetName a string the represents the name of the sheet
+	 * @return an OleAutomation of a Range object that represents the cells that are not annotated yet 
+	 */
+	public static OleAutomation getUnannotatedRanges(OleAutomation workbookAutomation, String sheetName){
 		
 		
 		WorksheetAnnotation sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 		if(sheetAnnotation == null)
-			return false;
+			return null;
 		
 		if(sheetAnnotation.getAllAnnotations() == null  ||  sheetAnnotation.getAllAnnotations().isEmpty())
-			return false;
+			return null;
 		
 		try{
 		
@@ -566,86 +587,66 @@ public class AnnotationHandler {
 				}
 			}
 			if(annotatedRanges == null){
-				return false;
+				return null;
 			}
 			
 			OleAutomation usedRangeAuto = WorksheetUtils.getUsedRange(sheetAuto);
 			sheetAuto.dispose();
 
-			OleAutomation constantCells = RangeUtils.getSpecialCells(usedRangeAuto, 2); // xlCellTypeConstants = 2
-			OleAutomation formulaCells = RangeUtils.getSpecialCells(usedRangeAuto, -4123); // xlCellTypeFormulas = -4123
-	
-			OleAutomation constantAreas = RangeUtils.getAreas(constantCells);		
-			int i=1;	
-			OleAutomation notAnnotated = null;
-			while(true){
-				OleAutomation area = CollectionsUtils.getItemByIndex(constantAreas, i++, false);
-				if(area == null)
-					break;
-				
-				boolean isNotAnnotated = false;
-				
-				String areaAddress = RangeUtils.getRangeAddress(area);
-				
-				OleAutomation intersection = ApplicationUtils.getIntersection(application, area, annotatedRanges);
-				if(intersection!=null){
-//					if(areaAddress.compareTo(RangeUtils.getRangeAddress(intersection))!=0){
-//						isNotAnnotated = true;
-//					}
-				}else{
-					isNotAnnotated = true;
-				}
-				
-				if(isNotAnnotated){			
-					if(notAnnotated==null){
-						notAnnotated = area;
-					}else{
-						notAnnotated = ApplicationUtils.getUnion(application, area, notAnnotated);
-					}
-				}
-			}
-			
-			
-			OleAutomation formulaAreas = RangeUtils.getAreas(formulaCells);		
-			int j=1;
-			while(true){
-				OleAutomation area = CollectionsUtils.getItemByIndex(formulaAreas, j++, false);
-				if(area == null)
-					break;
-				
-				boolean isNotAnnotated = false;
-				
-				String areaAddress = RangeUtils.getRangeAddress(area);
-		
-				OleAutomation intersection = ApplicationUtils.getIntersection(application, area, annotatedRanges);
-				if(intersection!=null){
-//					if(areaAddress.compareTo(RangeUtils.getRangeAddress(intersection))!=0){
-//						isNotAnnotated = true;
-//					}
-				}else{
-					isNotAnnotated = true;
-				}
-				
-				if(isNotAnnotated){				
-					if(notAnnotated==null){
-						notAnnotated = area;
-					}else{
-						notAnnotated = ApplicationUtils.getUnion(application, area, notAnnotated);
-					}
-				}
-			}
-					
+			OleAutomation constantCells = RangeUtils.getSpecialCells(usedRangeAuto, 2); // xlCellTypeConstants = 2			
 			boolean hasUnannotatedRanges = false;
-			if(notAnnotated!=null){
-				RangeUtils.selectRange(notAnnotated);
-				hasUnannotatedRanges = true;
-				notAnnotated.dispose();
-			}
+			if(constantCells!=null){
+			
+				OleAutomation constanstsIntersection = ApplicationUtils.getIntersection(application, constantCells, annotatedRanges);				
+				String intersectionAddress = "";
+				if(constanstsIntersection!=null){
+					intersectionAddress= RangeUtils.getRangeAddress(constanstsIntersection);
+				}
 				
-			formulaAreas.dispose();
-			constantAreas.dispose();
-			formulaCells.dispose();
-			constantCells.dispose();
+				String constantsAddress = RangeUtils.getRangeAddress(constantCells);		
+				if(intersectionAddress.compareTo(constantsAddress)!=0){
+					hasUnannotatedRanges = true;
+				}
+			}
+			
+			OleAutomation formulaCells = RangeUtils.getSpecialCells(usedRangeAuto, -4123); // xlCellTypeFormulas = -4123
+			if(!hasUnannotatedRanges){			
+				if(formulaCells!=null){
+					
+					OleAutomation formulasIntersection = ApplicationUtils.getIntersection(application, formulaCells, annotatedRanges);	
+					String intersectionAddress = "";
+					if(formulasIntersection!=null){
+						intersectionAddress = RangeUtils.getRangeAddress(formulasIntersection);
+					}
+					
+					String formulasAddress = RangeUtils.getRangeAddress(formulasIntersection);	
+					if(intersectionAddress.compareTo(formulasAddress)!=0){
+						hasUnannotatedRanges = true;
+					}
+				}
+			}	
+			
+			OleAutomation notAnnotated = null;
+			
+			if(hasUnannotatedRanges){
+				if(formulaCells==null){
+					notAnnotated = constantCells;
+				}else if(constantCells==null){
+					notAnnotated = formulaCells;				
+				}else{
+					notAnnotated = ApplicationUtils.getUnion(application, formulaCells, constantCells);
+					formulaCells.dispose();
+					constantCells.dispose();
+				}
+			}else{
+				
+				if(formulaCells!=null)
+					formulaCells.dispose();
+				
+				if(constantCells!=null)
+					constantCells.dispose();
+			}
+									
 			usedRangeAuto.dispose();
 			annotatedRanges.dispose();
 			
@@ -653,13 +654,13 @@ public class AnnotationHandler {
 			WorksheetUtils.protectWorksheet(sheetAutoToProtect);
 			sheetAutoToProtect.dispose();
 			
-			return hasUnannotatedRanges;
+			return notAnnotated;
 			
 		}catch (Exception ex){
 			logger.error("Genereric exception on check for unannotated ranges!", ex);
 		}
 		
-		return false;
+		return null;
 	}
 	
 	/**

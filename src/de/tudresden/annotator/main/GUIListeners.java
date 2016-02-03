@@ -648,23 +648,54 @@ public class GUIListeners {
 							}
 							
 						}else{
-							boolean hasUnannotated = AnnotationHandler.hasUnannotatedRanges(
+							OleAutomation unannotated = AnnotationHandler.getUnannotatedRanges(
 									Launcher.getInstance().getEmbeddedWorkbook(), sheetName);
 							
-							if(hasUnannotated){
-								int style = SWT.YES | SWT.NO | SWT.ICON_WARNING ;
+							if(unannotated!=null){
+								
+								RangeUtils.selectRange(unannotated);
+								
+								// go to the cell that is the farthest down right  
+								String address = RangeUtils.getRangeAddress(unannotated);
+								
+								OleAutomation workbookAuto = Launcher.getInstance().getEmbeddedWorkbook();
+								OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAuto, sheetName);
+							
+								int index = address.lastIndexOf(",");
+								
+								if(index==-1)
+									index = address.lastIndexOf(":");
+								
+								if(index==-1)
+									index = 0;
+								
+								String lastCell = address.substring(index+1);
+								OleAutomation lastCellAuto = WorksheetUtils.getRangeAutomation(sheetAuto, lastCell);
+								
+								int col = RangeUtils.getFirstColumnIndex(lastCellAuto);
+								int row = RangeUtils.getFirstRowIndex(lastCellAuto);
+								lastCellAuto.dispose();
+								sheetAuto.dispose();
+								
+								OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+								WindowUtils.setScrollColumn(window, col);
+								WindowUtils.setScrollRow(window, row);
+								
+								int style = SWT.YES | SWT.NO |SWT.ICON_WARNING ;
 								MessageBox mb = Launcher.getInstance().createMessageBox(style);
-								mb.setMessage("The selected cells contain values but have not been annotated."
-										+ "\nDo you still want to mark this sheet as \"Completed\" ?"); 
+								mb.setMessage("The sheet contains cells that have not been annotated yet!\n" 
+										+ "\na) Click \"No\" to review the highlighted areas."
+										+ "\nb) Click \"Yes\" to ignore this warning message and "
+										+ "mark the sheet as \"Completed\"."); 
 								int option = mb.open();
 								
 								if(option == SWT.YES){
 									sheetAnnotation.setCompleted(true);
-									wasUpdated=true;
-									
+									wasUpdated=true;									
 								}
 								
 							}else{
+								
 								sheetAnnotation.setCompleted(true);
 								wasUpdated=true;
 							}
@@ -800,6 +831,7 @@ public class GUIListeners {
 							WorksheetAnnotation sa = itr.next();
 							
 							if(!sa.isCompleted() && !sa.isNotApplicable()){
+								
 								if(sa.getAllAnnotations().isEmpty() || sa.getAllAnnotations().size()<3){
 									
 									hasPendingSheets = true; 
@@ -823,11 +855,70 @@ public class GUIListeners {
 									
 									if(option == SWT.NO){
 										wasUpdated = false;
+										wa.setCompleted(false);
 										AnnotationHandler.clearRedoList();
 										AnnotationHandler.clearUndoList();
 										break;
 									}		
 									
+								}else{
+													
+									OleAutomation unannotated = AnnotationHandler.getUnannotatedRanges(
+											Launcher.getInstance().getEmbeddedWorkbook(), sa.getSheetName());
+									
+									if(unannotated!=null){
+										
+										hasPendingSheets = true;
+										
+										OleAutomation embeddedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
+										OleAutomation worksheetAutomation = 
+												WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, sa.getSheetName());
+										WorksheetUtils.makeWorksheetActive(worksheetAutomation);
+										
+										RangeUtils.selectRange(unannotated);
+										String address = RangeUtils.getRangeAddress(unannotated);
+										
+										int index = address.lastIndexOf(",");
+										
+										if(index==-1)
+											index = address.lastIndexOf(":");
+										
+										if(index==-1)
+											index = 0;
+										
+										String lastCell = address.substring(index+1);
+										OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, sa.getSheetName());	
+										OleAutomation lastCellAuto = WorksheetUtils.getRangeAutomation(sheetAuto, lastCell);
+										
+										int col = RangeUtils.getFirstColumnIndex(lastCellAuto);
+										int row = RangeUtils.getFirstRowIndex(lastCellAuto);										
+										OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+										WindowUtils.setScrollColumn(window, col);
+										WindowUtils.setScrollRow(window, row);
+							
+										
+										int style = SWT.YES | SWT.NO |SWT.ICON_WARNING ;
+										MessageBox mb = Launcher.getInstance().createMessageBox(style);
+										mb.setMessage("The \""+sa.getSheetName()+"\" sheet contains cells "
+												+ "that have not been annotated yet!\n" 
+												+ "\na) Click \"No\" to review the highlighted areas."
+												+ "\nb) Click \"Yes\" to ignore this warning message and "
+												+ "mark the sheet as \"Completed\"."); 
+										int option = mb.open();
+										
+										if(option == SWT.YES){
+											wasUpdated=true;
+											wa.setCompleted(true);
+										}
+										
+										if(option == SWT.NO){
+											wasUpdated = false;
+											wa.setCompleted(false);
+											AnnotationHandler.clearRedoList();
+											AnnotationHandler.clearUndoList();
+											break;
+										}										
+									}
 								}
 							}
 						}
