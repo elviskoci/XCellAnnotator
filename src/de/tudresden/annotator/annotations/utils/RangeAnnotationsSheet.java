@@ -80,6 +80,50 @@ public class RangeAnnotationsSheet {
 	
 	
 	/**
+	 * Save the data of many range annotations at once
+	 * @param workbookAutomation an OleAutomation to access the embedded workbook
+	 */
+	public static void saveManyRangeAnnotations(OleAutomation workbookAutomation){
+			
+		OleAutomation rangeAnnotationsDataSheet =  WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, name);
+		
+		if(rangeAnnotationsDataSheet==null){		
+			rangeAnnotationsDataSheet = createRangeAnnotationsSheet(workbookAutomation);
+		}
+			
+		WorksheetUtils.unprotectWorksheet(rangeAnnotationsDataSheet);
+		
+		// delete all the existing data from the sheet. 
+		// by removing all existing data we ensure that the "new" data will have
+		// the right format. So, they are not effected by the existing data.
+		OleAutomation usedRange = WorksheetUtils.getUsedRange(rangeAnnotationsDataSheet);		
+		RangeUtils.deleteRange(usedRange);	
+		usedRange.dispose();
+		
+		// re-create the header	
+		OleAutomation rangeAuto = WorksheetUtils.getRangeAutomation(rangeAnnotationsDataSheet, startColumn+""+startRow, null);
+		int colNum = RangeUtils.getFirstColumnIndex(rangeAuto);
+		rangeAuto.dispose();
+		
+		Iterator<String> itr = fields.keySet().iterator();
+		int i = 0;	
+		while (itr.hasNext()) {
+			OleAutomation cell = WorksheetUtils.getCell(rangeAnnotationsDataSheet, startRow, colNum+i);
+			RangeUtils.setValue(cell, itr.next());
+			i++;
+		}
+		
+		// write the data for each range annotation
+		WorksheetUtils.protectWorksheet(rangeAnnotationsDataSheet);	
+		int j=startRow+1;
+		for(RangeAnnotation ra: AnnotationHandler.getWorkbookAnnotation().getAllAnnotations()){
+			AnnotationHandler.calculateStatistics(ra,workbookAutomation);
+			writeNewDataRow(rangeAnnotationsDataSheet, j++, ra);				
+		}
+		rangeAnnotationsDataSheet.dispose();
+	}
+	
+	/**
 	 * Create the sheet that will store the annotation data 
 	 * @param workbookAutomation an OleAutomation to access the embedded workbook
 	 * @return the OleAutomation of the created worksheet

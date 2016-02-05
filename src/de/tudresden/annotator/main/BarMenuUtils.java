@@ -24,10 +24,14 @@ public class BarMenuUtils {
 		MenuItem[] menuItems = menuBar.getMenuItems();
 		
 		MenuItem annotationsMenu = null;
+		MenuItem windowMenu = null;
 		for (MenuItem menuItem : menuItems) {
 			if(menuItem.getID()==2000000){
 				annotationsMenu = menuItem;
-				break;
+			}
+			
+			if(menuItem.getID()==3000000){
+				windowMenu = menuItem;
 			}
 		}
 		MenuItem[] annotationsMenuItems = annotationsMenu.getMenu().getItems();
@@ -62,7 +66,7 @@ public class BarMenuUtils {
 					if(menuItem.getID() == 2010000 || menuItem.getID() == 2050000 ||
 					   menuItem.getID() == 2080000 || menuItem.getID() == 2090000 ||
 					   menuItem.getID() == 2060000 ){ 
-							// &Range as, &Delete, Undo, and Redo, Show formulas 
+							// &Range as, &Delete, Undo, and Redo
 							menuItem.setEnabled(false);
 							disableAllSubMenus(menuItem.getMenu());
 					}else{ 
@@ -88,6 +92,13 @@ public class BarMenuUtils {
 							}
 					}
 				}
+				
+				for (MenuItem menuItem : windowMenu.getMenu().getItems()) {	
+					if(menuItem.getID()==3010000){
+						menuItem.setEnabled(false);
+						break;
+					}
+				}
 							
 			}else{
 				
@@ -97,7 +108,7 @@ public class BarMenuUtils {
 						   menuItem.getID()==2050000 || menuItem.getID()==2060000 || 
 						   menuItem.getID()==2070000 || menuItem.getID() == 2080000 || 
 						   menuItem.getID() == 2090000){  
-						   // &Range as, &Hide, &Delete, Show Formulas, and Show Annotations 
+						   // &Range as, &Hide, &Delete, and Show Annotations 
 								menuItem.setEnabled(false);
 								disableAllSubMenus(menuItem.getMenu());
 						}else{
@@ -123,9 +134,16 @@ public class BarMenuUtils {
 						}
 					}
 					
+					for (MenuItem menuItem : windowMenu.getMenu().getItems()) {	
+						if(menuItem.getID()==3010000){
+							menuItem.setEnabled(false);
+							break;
+						}
+					}
+					
 				}else{
 					
-					boolean hasAnnotations = sheetAnnotation.getAllAnnotations().size()>0;		
+					boolean hasAnnotations = sheetAnnotation.getAllAnnotations().size() > 0;		
 					if(!hasAnnotations){
 						for (MenuItem menuItem : annotationsMenuItems) { 
 							if(menuItem.getID() == 2040000 || menuItem.getID() == 2050000 || 
@@ -142,17 +160,20 @@ public class BarMenuUtils {
 								
 							}else{
 								
-								menuItem.setEnabled(true);
-								
-								if(menuItem.getID()==2060000){
-									updateShowFormulas(menuItem);
-									continue;
-								}
-								
+								menuItem.setEnabled(true);								
 								enableAllSubMenus(menuItem.getMenu());
 								unselectAllSubMenus(menuItem.getMenu());
 							}
 						}
+						
+						for (MenuItem menuItem : windowMenu.getMenu().getItems()) {
+							if(menuItem.getID()==3010000){
+								updateShowFormulas(menuItem);
+								break;
+							}
+						}
+						
+						
 					}else{
 						for (MenuItem menuItem : annotationsMenuItems) { 
 							if( menuItem.getID() == 2080000){	// Undo last annotations				
@@ -174,13 +195,16 @@ public class BarMenuUtils {
 								
 								menuItem.setEnabled(true);
 								
-								if(menuItem.getID()==2060000){
-									updateShowFormulas(menuItem);
-									continue;
-								}
-								
 								enableAllSubMenus(menuItem.getMenu());
 								unselectAllSubMenus(menuItem.getMenu());
+							}
+						}
+						
+						for (MenuItem menuItem : windowMenu.getMenu().getItems()) {
+							
+							if(menuItem.getID()==3010000){
+								updateShowFormulas(menuItem);
+								break;
 							}
 						}
 					}									
@@ -311,12 +335,13 @@ public class BarMenuUtils {
 				unselectAllSubMenus(menuItem.getMenu());
 			}
 			
-			if(menuItem.getID()==3000000){ // annotations menu
+			if(menuItem.getID()==3000000){ // window menu
 				menuItem.setEnabled(true);
-				disableAllSubMenus(menuItem.getMenu());
+				unselectAllSubMenus(menuItem.getMenu());
+				enableAllSubMenus(menuItem.getMenu());
 			}
 			
-			if(menuItem.getID()==4000000){ // annotations menu
+			if(menuItem.getID()==4000000){ // preferences menu
 				menuItem.setEnabled(true);
 				disableAllSubMenus(menuItem.getMenu());
 			}

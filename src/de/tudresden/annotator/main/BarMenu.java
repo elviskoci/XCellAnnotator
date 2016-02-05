@@ -29,7 +29,7 @@ public class BarMenu {
 		menuItems = new MenuItem[4];
 		menuItems[0] = addFileMenu(menuBar);
 		menuItems[1] = addAnnotationsMenu(menuBar);
-		menuItems[2] = addViewMenu(menuBar);
+		menuItems[2] = addWindowMenu(menuBar);
 		menuItems[3] = addPreferencesMenu(menuBar);
 	}
 
@@ -160,17 +160,7 @@ public class BarMenu {
 		 */
 		MenuItem menuItemDelete = addDeleteMenu(menuAnnotations);
 		menuItemDelete.setEnabled(false);
-		
-		/*
-		 * Show Formulas menu item  
-		 */
-		MenuItem menuItemShowFormulas = new MenuItem(menuAnnotations, SWT.CHECK);
-		menuItemShowFormulas.setID(2060000);
-		menuItemShowFormulas.setText("Show Formulas\tCtrl+F2");
-		menuItemShowFormulas.setEnabled(false);
-		menuItemShowFormulas.addSelectionListener(GUIListeners.createShowFormulasSelectionListener());
-		menuItemShowFormulas.setAccelerator(SWT.MOD1 + SWT.F2);
-		
+				
 		/*
 		 * Show Annotations menu item  
 		 */
@@ -191,29 +181,44 @@ public class BarMenu {
 		return annotationsMenu;
 	}
 	
-	private MenuItem addViewMenu(Menu menuBar) {
+	private MenuItem addWindowMenu(Menu menuBar) {
 		
 		MenuItem viewMenu = new MenuItem(menuBar, SWT.CASCADE);
-		viewMenu.setText("&View");
+		viewMenu.setText("&Window");
 		Menu menuView = new Menu(viewMenu);
 		viewMenu.setMenu(menuView);
 		viewMenu.setID(3000000);
 		
 		/*
-		 * View Folder Explorer Panel menu item  
+		 * Show Formulas menu item  
 		 */
-		MenuItem menuViewFolderExplorer = new MenuItem(menuView, SWT.CASCADE);
-		menuViewFolderExplorer.setText("Folder Explorer");
-		menuViewFolderExplorer.setID(3010000);
-		menuViewFolderExplorer.setEnabled(false);
+		MenuItem menuItemShowFormulas = new MenuItem(menuView, SWT.CHECK);
+		menuItemShowFormulas.setID(3010000);
+		menuItemShowFormulas.setText("Show Formulas\tCtrl+F2");
+		menuItemShowFormulas.setEnabled(false);
+		menuItemShowFormulas.addSelectionListener(GUIListeners.createShowFormulasSelectionListener());
+		menuItemShowFormulas.setAccelerator(SWT.MOD1 + SWT.F2);
 		
 		/*
-		 * View Annotation Management Panel menu item  
+		 * Zoom In menu item  
 		 */
-		MenuItem menuViewAnnotationsPanel = new MenuItem(menuView, SWT.CASCADE);
-		menuViewAnnotationsPanel.setText("Annotations Panel");
-		menuViewAnnotationsPanel.setID(3020000);
-		menuViewAnnotationsPanel.setEnabled(false);
+		MenuItem menuItemZoomIn = new MenuItem(menuView, SWT.NONE);
+		menuItemZoomIn.setID(3020000);
+		menuItemZoomIn.setText("Zoom in\tCtrl +");
+		menuItemZoomIn.setEnabled(false);
+		menuItemZoomIn.addSelectionListener(GUIListeners.createZoomInSelectionListener());
+		menuItemZoomIn.setAccelerator(SWT.MOD1 + '+');
+		
+		/*
+		 * Zoom Out menu item  
+		 */
+		MenuItem menuItemZoomOut = new MenuItem(menuView, SWT.NONE);
+		menuItemZoomOut.setID(3030000);
+		menuItemZoomOut.setText("Zoom out\tCtrl -");
+		menuItemZoomOut.setEnabled(false);
+		menuItemZoomOut.addSelectionListener(GUIListeners.createZoomOutSelectionListener());
+		menuItemZoomOut.setAccelerator(SWT.MOD1 + '-');
+		
 		
 		return viewMenu;
 	}

@@ -113,7 +113,7 @@ public class FileUtils {
 			AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);			
 			// delete all shape annotations
 			AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
-			
+				
 			// unprotect the workbook structure
 			WorkbookUtils.unprotectWorkbook(embeddedWorkbook);
 			// unprotect all the sheets

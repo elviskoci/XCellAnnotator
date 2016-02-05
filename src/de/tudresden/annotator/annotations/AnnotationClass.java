@@ -62,7 +62,7 @@ public class AnnotationClass {
 	private String text = null;
 	private long textColor = -1;
 	private boolean boldText = true;
-	private int fontSize = 11;
+	private int fontSize = 12;
 	private int textHAlignment = -4108; // align center
 	private int textVAlignment = -4108; // align center
 	

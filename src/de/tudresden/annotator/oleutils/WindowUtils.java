@@ -128,4 +128,61 @@ public class WindowUtils {
 		
 		return areFormulasVisible;
 	}
+	
+	/**
+	 * Get the zoom level for the window
+	 * @param windowAutomation an OleAutomation that provides access to the functionalities of the excel window
+	 * @return an integer that represents the current zoom level for the window
+	 */
+	public static int getZoom(OleAutomation windowAutomation){
+		
+		if(windowAutomation==null){
+			logger.error("Method getDisplayFormulas received null windowAutomation object");
+		}
+		
+		int[] zooomPropertyIds = windowAutomation.getIDsOfNames(new String[]{"Zoom"});	
+		
+		if(zooomPropertyIds==null){
+			logger.error("Could not get \"Zoom\" property ids for \"Window\" ole object!");
+		}
+			
+		Variant result= windowAutomation.getProperty(zooomPropertyIds[0]);	
+		if(result==null){
+			logger.error("Invoking get value for \"Zoom\" property returned null variant ");
+		}
+		
+		logger.debug("Invoking get value for \"Zoom\" property returned variant: "+result);
+		
+		int zoomLevel = result.getInt();
+		result.dispose();
+		
+		return zoomLevel;
+	}
+		
+	/**
+	 * Set the zoom level for the window
+	 * @param windowAutomation an OleAutomation that provides access to the functionalities of the excel window
+	 * @return true if the property was successfully updated, false otherwise 
+	 */
+	public static boolean setZoom(OleAutomation windowAutomation, int zoom){
+		
+		if(windowAutomation==null){
+			logger.error("Method getDisplayFormulas received null windowAutomation object");
+		}
+		
+		int[] zooomPropertyIds = windowAutomation.getIDsOfNames(new String[]{"Zoom"});	
+		
+		if(zooomPropertyIds==null){
+			logger.error("Could not get \"Zoom\" property ids for \"Window\" ole object!");
+		}
+		
+		Variant arg = new Variant(zoom);
+		
+		Boolean result= windowAutomation.setProperty(zooomPropertyIds[0], arg);	
+		
+		logger.debug("Invoking set value for \"Zoom\" property returned: "+result);
+		
+		arg.dispose();
+		return result;
+	}
 }

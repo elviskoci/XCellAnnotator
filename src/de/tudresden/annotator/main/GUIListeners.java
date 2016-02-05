@@ -655,31 +655,31 @@ public class GUIListeners {
 								
 								RangeUtils.selectRange(unannotated);
 								
-								// go to the cell that is the farthest down right  
-								String address = RangeUtils.getRangeAddress(unannotated);
-								
-								OleAutomation workbookAuto = Launcher.getInstance().getEmbeddedWorkbook();
-								OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAuto, sheetName);
-							
-								int index = address.lastIndexOf(",");
-								
-								if(index==-1)
-									index = address.lastIndexOf(":");
-								
-								if(index==-1)
-									index = 0;
-								
-								String lastCell = address.substring(index+1);
-								OleAutomation lastCellAuto = WorksheetUtils.getRangeAutomation(sheetAuto, lastCell);
-								
-								int col = RangeUtils.getFirstColumnIndex(lastCellAuto);
-								int row = RangeUtils.getFirstRowIndex(lastCellAuto);
-								lastCellAuto.dispose();
-								sheetAuto.dispose();
-								
-								OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
-								WindowUtils.setScrollColumn(window, col);
-								WindowUtils.setScrollRow(window, row);
+//								// go to the cell that is the farthest down right  
+//								String address = RangeUtils.getRangeAddress(unannotated);
+//								
+//								OleAutomation workbookAuto = Launcher.getInstance().getEmbeddedWorkbook();
+//								OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(workbookAuto, sheetName);
+//							
+//								int index = address.lastIndexOf(",");
+//								
+//								if(index==-1)
+//									index = address.lastIndexOf(":");
+//								
+//								if(index==-1)
+//									index = 0;
+//								
+//								String lastCell = address.substring(index+1);
+//								OleAutomation lastCellAuto = WorksheetUtils.getRangeAutomation(sheetAuto, lastCell);
+//								
+//								int col = RangeUtils.getFirstColumnIndex(lastCellAuto);
+//								int row = RangeUtils.getFirstRowIndex(lastCellAuto);
+//								lastCellAuto.dispose();
+//								sheetAuto.dispose();
+//								
+//								OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+//								WindowUtils.setScrollColumn(window, col);
+//								WindowUtils.setScrollRow(window, row);
 								
 								int style = SWT.YES | SWT.NO |SWT.ICON_WARNING ;
 								MessageBox mb = Launcher.getInstance().createMessageBox(style);
@@ -876,25 +876,26 @@ public class GUIListeners {
 										WorksheetUtils.makeWorksheetActive(worksheetAutomation);
 										
 										RangeUtils.selectRange(unannotated);
-										String address = RangeUtils.getRangeAddress(unannotated);
 										
-										int index = address.lastIndexOf(",");
-										
-										if(index==-1)
-											index = address.lastIndexOf(":");
-										
-										if(index==-1)
-											index = 0;
-										
-										String lastCell = address.substring(index+1);
-										OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, sa.getSheetName());	
-										OleAutomation lastCellAuto = WorksheetUtils.getRangeAutomation(sheetAuto, lastCell);
-										
-										int col = RangeUtils.getFirstColumnIndex(lastCellAuto);
-										int row = RangeUtils.getFirstRowIndex(lastCellAuto);										
-										OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
-										WindowUtils.setScrollColumn(window, col);
-										WindowUtils.setScrollRow(window, row);
+//										String address = RangeUtils.getRangeAddress(unannotated);
+//										
+//										int index = address.lastIndexOf(",");
+//										
+//										if(index==-1)
+//											index = address.lastIndexOf(":");
+//										
+//										if(index==-1)
+//											index = 0;
+//										
+//										String lastCell = address.substring(index+1);
+//										OleAutomation sheetAuto = WorkbookUtils.getWorksheetAutomationByName(embeddedWorkbook, sa.getSheetName());	
+//										OleAutomation lastCellAuto = WorksheetUtils.getRangeAutomation(sheetAuto, lastCell);
+//										
+//										int col = RangeUtils.getFirstColumnIndex(lastCellAuto);
+//										int row = RangeUtils.getFirstRowIndex(lastCellAuto);										
+//										OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+//										WindowUtils.setScrollColumn(window, col);
+//										WindowUtils.setScrollRow(window, row);
 							
 										
 										int style = SWT.YES | SWT.NO |SWT.ICON_WARNING ;
@@ -1245,7 +1246,7 @@ public class GUIListeners {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				   
-				int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION;
+				int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
         		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
  	            messageBox.setMessage("Are you sure you want to delete all annotations?");
  	            
@@ -1289,7 +1290,7 @@ public class GUIListeners {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				   
-				int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION;
+				int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
         		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
  	            messageBox.setMessage("Are you sure you want to delete the annotations in this sheet?");
  	            
@@ -1330,7 +1331,7 @@ public class GUIListeners {
 				
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				   
-				int style = SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION;
+				int style = SWT.YES | SWT.NO | SWT.ICON_QUESTION;
         		MessageBox messageBox = Launcher.getInstance().createMessageBox(style);
  	            messageBox.setMessage("Are you sure you want to delete the annotations inside the selected range?");
  	            
@@ -1373,9 +1374,7 @@ public class GUIListeners {
 						AnnotationHandler.clearRedoList();
 						AnnotationHandler.clearUndoList();
 						
-						BarMenuUtils.adjustBarMenuForSheet(sheetName);
-						
-					
+						BarMenuUtils.adjustBarMenuForSheet(sheetName);				
 					}			
 				}
  	            
@@ -1397,6 +1396,73 @@ public class GUIListeners {
 				WindowUtils.setDisplayFormulas(window, !areFormulasDisplayed);
 				
 				Launcher.getInstance().setExcelPanelEnabled(true);
+			}
+		};
+	}
+	
+	protected static SelectionListener createZoomInSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				
+				OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+				int zoom = WindowUtils.getZoom(window);
+				
+				Launcher lr =Launcher.getInstance();
+				lr.getTooltip().setVisible(false);	
+				lr.recreateToolTipWithStyle(SWT.ICON_INFORMATION);
+				lr.getTooltip().setText("Information");
+				lr.placeToolTipOnExcelPanel();
+				if(zoom>=400){
+					lr.getTooltip().setMessage("Maximum Zoom level: "+400+"%");
+					lr.getTooltip().setVisible(true);
+					return;
+				}			
+				
+				int newZoom = (zoom+10);
+				if(newZoom%10 != 0){
+					newZoom=(int) (Math.floor(newZoom/10)*10);
+				}
+				
+				WindowUtils.setZoom(window, newZoom);
+				
+				
+				lr.getTooltip().setMessage("Zoom level: "+newZoom+"%");
+				lr.getTooltip().setVisible(true);	
+			}
+		};
+	}
+	
+	protected static SelectionListener createZoomOutSelectionListener(){
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				
+				OleAutomation window = Launcher.getInstance().getEmbeddedWindow();
+				int zoom = WindowUtils.getZoom(window);
+				
+				Launcher lr =Launcher.getInstance();
+				lr.getTooltip().setVisible(false);	
+				lr.recreateToolTipWithStyle(SWT.ICON_INFORMATION);
+				lr.getTooltip().setText("Information");
+				lr.placeToolTipOnExcelPanel();
+				
+				if(zoom<=10){
+					lr.getTooltip().setMessage("Minimum Zoom level: "+zoom+"%");
+					lr.getTooltip().setVisible(true);
+					return;
+				}
+				
+				int newZoom = (zoom-10);
+				if(newZoom%10 != 0){
+					newZoom=(int) (Math.ceil(newZoom/10)*10);
+				}
+				
+				WindowUtils.setZoom(window, newZoom);
+				
+				lr.getTooltip().setMessage("Zoom level: "+newZoom+"%");
+				lr.getTooltip().setVisible(true);
+					
 			}
 		};
 	}
