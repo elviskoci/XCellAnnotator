@@ -175,7 +175,8 @@ public class Launcher {
 	protected void embedExcelFile(File excelFile){	
 		
 		try {
-			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));        
+			// setControlSite(new OleControlSite(getOleFrame(), SWT.NONE, excelFile));
+			setControlSite(new OleControlSite(getOleFrame(), SWT.NONE,"Excel.Sheet", excelFile));
 		} catch (IllegalArgumentException iaEx) {
 			
 			logger.fatal("IllegalArgumentException on embed file/creation of control site", iaEx);

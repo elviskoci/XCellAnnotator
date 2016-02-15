@@ -669,6 +669,29 @@ public class RangeAnnotationsSheet {
 	public static String getName() {
 		return name;
 	}
-	
+
+
+	/**
+	 * @return the startColumn
+	 */
+	public static String getStartColumn() {
+		return startColumn;
+	}
+
+
+	/**
+	 * @return the startRow
+	 */
+	public static int getStartRow() {
+		return startRow;
+	}
+
+
+	/**
+	 * @return the fields
+	 */
+	public static LinkedHashMap<String, Integer> getFields() {
+		return fields;
+	}
 	
 }

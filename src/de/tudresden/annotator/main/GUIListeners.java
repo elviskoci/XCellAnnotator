@@ -31,6 +31,7 @@ import de.tudresden.annotator.annotations.WorksheetAnnotation;
 import de.tudresden.annotator.annotations.utils.AnnotationHandler;
 import de.tudresden.annotator.annotations.utils.AnnotationStatusSheet;
 import de.tudresden.annotator.annotations.utils.RangeAnnotationsSheet;
+import de.tudresden.annotator.oleutils.ApplicationUtils;
 import de.tudresden.annotator.oleutils.RangeUtils;
 import de.tudresden.annotator.oleutils.WindowUtils;
 import de.tudresden.annotator.oleutils.WorkbookUtils;
@@ -268,6 +269,7 @@ public class GUIListeners {
 			@Override
 			public void widgetSelected(SelectionEvent e){
 				
+				// block user input (keyboard mouse) while file is loading
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				// warn the user user if there exist an opened file
@@ -311,28 +313,36 @@ public class GUIListeners {
 			
 				// open the files selection window
 				FileUtils.fileOpen();
-					
+				
 				// get the OleAutomation for the embedded workbook
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
 				if (workbookAutomation == null) {
+					Launcher.getInstance().setExcelPanelEnabled(true);
 					return; // there is no embedded workbook (file)
 				}
-												
+				
+						
 				// clear all existing annotations in memory structure, 
 				// if they exist from the previously opened file 
 				AnnotationHandler.getWorkbookAnnotation().removeAllAnnotations();
-								
+				
+				// turn off screen updating to speed the following actions.  
+				OleAutomation application = WorkbookUtils.getApplicationAutomation(workbookAutomation);
+				ApplicationUtils.setScreenUpdating(application, false);
+	
 				// create the base in memory structure for storing annotation data
 				// retrieve the annotation statuses from previous session
 				AnnotationStatusSheet.readAnnotationStatuses(workbookAutomation);
 				
 				// read the data and re-create the range annotation objects
-				RangeAnnotation[] rangeAnnotations = RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);
-				
+				RangeAnnotation[] rangeAnnotations = RangeAnnotationsSheet.readRangeAnnotations(workbookAutomation);				
 				if(rangeAnnotations!=null){		
 					// update workbook annotation and re-draw all the range annotations  
 					AnnotationHandler.recreateRangeAnnotations(workbookAutomation, rangeAnnotations);	
 				}
+				
+				// turn on screen updating after all previous annotations are restored
+				ApplicationUtils.setScreenUpdating(application, true);
 				
 				// save the current hash of the workbook annotation
 				// will be used later to determine if user has made some changes 
@@ -345,13 +355,14 @@ public class GUIListeners {
 						WorkbookUtils.getWorksheetAutomationByIndex(workbookAutomation, 1);	
 				WorksheetUtils.makeWorksheetActive(sheetAuto);
 				sheetAuto.dispose();
-				
+								
 				//adjust display of active sheet for annotation
 				Launcher.getInstance().updateActiveSheetDisplay();
-					
+				
 				// adjust the menu items in the menu bar for the file that was just openned
 				BarMenuUtils.adjustBarMenuForOpennedFile();
 				
+				// enable the excel panel to accept user inputs
 				Launcher.getInstance().setExcelPanelEnabled(true);
 			}
 		};
@@ -620,7 +631,7 @@ public class GUIListeners {
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 				
 				if(sheetAnnotation==null){
-					// System.out.println(sheetName);
+					Launcher.getInstance().setExcelPanelEnabled(true);
 					return;
 				}
 						
@@ -740,7 +751,7 @@ public class GUIListeners {
 				WorksheetAnnotation  sheetAnnotation = workbookAnnotation.getWorksheetAnnotations().get(sheetName);
 				
 				if(sheetAnnotation==null){
-					// System.out.println(sheetName);
+					Launcher.getInstance().setExcelPanelEnabled(true);
 					return;
 				}
 				
@@ -1031,12 +1042,15 @@ public class GUIListeners {
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				 OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook();
-				 
+				 OleAutomation application = WorksheetUtils.getApplicationAutomation(workbookAutomation);
+					
 				 String sheetName = Launcher.getInstance().getActiveWorksheetName();
 				 int sheetIndex = Launcher.getInstance().getActiveWorksheetIndex();
 				 String[] currentSelection = Launcher.getInstance().getCurrentSelection();
 				 
-
+				 // turn off screen updating to speed up the following actions
+				 ApplicationUtils.setScreenUpdating(application, false);
+					
 				 try{
 					 AnnotationHandler.annotate(workbookAutomation, sheetName, sheetIndex,   
 				 		 currentSelection, annotationClass);								 
@@ -1044,7 +1058,9 @@ public class GUIListeners {
 					 logger.error("Generic exception on create new annotation", ex);
 				 }
 				 
- 
+				 // turn on screen updating after annotating
+				 ApplicationUtils.setScreenUpdating(application, true);
+				 		 
 				 // if the sheet was empty, had no annotations, 
 				 // the menu needs to be updated
 				 BarMenuUtils.adjustBarMenuForSheet(sheetName);
@@ -1069,14 +1085,19 @@ public class GUIListeners {
 				Launcher.getInstance().setExcelPanelEnabled(false);
 				
 				RangeAnnotation  ra = AnnotationHandler.getLastFromUndoList();	
-				if(ra==null)
+				if(ra==null){
+					Launcher.getInstance().setExcelPanelEnabled(true);
 					return;
+				}
 				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook(); 
 				OleAutomation sheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
+				OleAutomation application = WorksheetUtils.getApplicationAutomation(workbookAutomation);
 				
-							 
+				// turn off screen updating to speed up the following actions
+				ApplicationUtils.setScreenUpdating(application, true);
+										 
 				WorksheetUtils.unprotectWorksheet(sheetAutomation);		
 				boolean isSuccess = AnnotationHandler.deleteShapeAnnotation(sheetAutomation, ra);
 				WorksheetUtils.protectWorksheet(sheetAutomation);
@@ -1100,6 +1121,9 @@ public class GUIListeners {
 	 	            messageBox.open();
 				}
 				
+				// turn on screen updating after all range annotations are re-drawn
+				ApplicationUtils.setScreenUpdating(application, true);
+				
 				BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());
 				
 				Launcher.getInstance().setExcelPanelEnabled(true);
@@ -1120,13 +1144,17 @@ public class GUIListeners {
 				
 				RangeAnnotation  ra = AnnotationHandler.getLastFromRedoList();		
 				if(ra==null){
+					Launcher.getInstance().setExcelPanelEnabled(true);
 					return;
 				}
 				
 				OleAutomation workbookAutomation = Launcher.getInstance().getEmbeddedWorkbook(); 
 				OleAutomation worksheetAutomation = 
 						WorkbookUtils.getWorksheetAutomationByName(workbookAutomation, ra.getSheetName());
-				
+				OleAutomation application = WorksheetUtils.getApplicationAutomation(workbookAutomation);
+			
+				// turn off screen updating to speed up the following actions
+				ApplicationUtils.setScreenUpdating(application, true);
 				
 				WorksheetUtils.unprotectWorksheet(worksheetAutomation);						
 				Boolean result = false;
@@ -1142,13 +1170,20 @@ public class GUIListeners {
 				AnnotationHandler.removeLastFromRedoList();
 				if(!result){
 					AnnotationHandler.getWorkbookAnnotation().removeRangeAnnotation(ra);
-					BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());	
+					ApplicationUtils.setScreenUpdating(application, true);
+					
+					BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());
+					Launcher.getInstance().setExcelPanelEnabled(true);
+					
 					return;
 				}
 				
-				AnnotationHandler.addToUndoList(ra);	
-				
 				RangeAnnotationsSheet.saveRangeAnnotationData(workbookAutomation, ra);
+				
+				// turn on screen updating after all range annotations are re-drawn
+				ApplicationUtils.setScreenUpdating(application, true);
+				
+				AnnotationHandler.addToUndoList(ra);			
 				AnnotationHandler.getWorkbookAnnotation().addRangeAnnotation(ra);
 							
 				BarMenuUtils.adjustBarMenuForSheet(ra.getSheetName());			

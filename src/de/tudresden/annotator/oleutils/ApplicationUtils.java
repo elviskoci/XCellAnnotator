@@ -344,10 +344,26 @@ public class ApplicationUtils {
 	 */
 	public static boolean setDisplayAlerts(OleAutomation applicationAutomation, boolean display){
 		
-		// get the OleAutomation object for the selected range 
 		int[] displayAlertsPropertyIds = applicationAutomation.getIDsOfNames(new String[]{"DisplayAlerts"});
 		Variant valueVariant = new Variant(display);
 		boolean isSuccess = applicationAutomation.setProperty(displayAlertsPropertyIds[0], valueVariant);
+		valueVariant.dispose();
+		
+		return isSuccess;
+	}
+
+		
+	/**
+	 * Set the value for the "ScreenUpdating" property 
+	 * @param applicationAutomation an OleAutomation object for accessing the (Excel) Application OLE object
+	 * @param update true to turn on updating for the screen, false to turn off 
+	 * @return true if the operation was successful, false otherwise
+	 */
+	public static boolean setScreenUpdating(OleAutomation applicationAutomation, boolean update){
+		
+		int[] screenUpdatingPropertyIds = applicationAutomation.getIDsOfNames(new String[]{"ScreenUpdating"});
+		Variant valueVariant = new Variant(update);
+		boolean isSuccess = applicationAutomation.setProperty(screenUpdatingPropertyIds[0], valueVariant);
 		valueVariant.dispose();
 		
 		return isSuccess;

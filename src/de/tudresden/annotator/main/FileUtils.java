@@ -106,11 +106,13 @@ public class FileUtils {
 		OleAutomation application = WorkbookUtils.getApplicationAutomation(embeddedWorkbook);
 		Launcher.getInstance().deactivateControlSite();
 		ApplicationUtils.setDisplayAlerts(application, false);
+	
 		
 		if(!AnnotationHandler.getWorkbookAnnotation().getAllAnnotations().isEmpty()){
 			
 			// save the status of all worksheet annotations and the workbook annotation 
-			AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);			
+			AnnotationStatusSheet.saveAnnotationStatuses(embeddedWorkbook);		
+			
 			// delete all shape annotations
 			AnnotationHandler.deleteAllShapeAnnotations(embeddedWorkbook);
 				
@@ -140,10 +142,8 @@ public class FileUtils {
 			WorkbookUtils.unprotectAllWorksheets(embeddedWorkbook);
 		}
 							
-		
 		// save the file
 		boolean isSuccess = WorkbookUtils.saveWorkbookAs(embeddedWorkbook, filePath, null);
-
 		
 		// activate alerts after save
 		ApplicationUtils.setDisplayAlerts(application, true);
@@ -161,26 +161,25 @@ public class FileUtils {
 					
 			OleAutomation reopenedWorkbook = Launcher.getInstance().getEmbeddedWorkbook();
 			
+			// turn off screen updating before re-drawing range annotations. this speeds up the process. 
+			OleAutomation reopenedApplication = WorkbookUtils.getApplicationAutomation(reopenedWorkbook);		
+			ApplicationUtils.setScreenUpdating(reopenedApplication, false);
+			
 			// draw again the range annotations  
 			Collection<RangeAnnotation> collection= AnnotationHandler.getWorkbookAnnotation().getAllAnnotations();
 			RangeAnnotation[] rangeAnnotations = collection.toArray(new RangeAnnotation[collection.size()]);
 			if(rangeAnnotations!=null){			
-		
-//				Date s = new Date();
-//				long start = s.getTime();
 				
 				// update workbook annotation and re-draw all the range annotations  	
 				AnnotationHandler.drawManyRangeAnnotations(reopenedWorkbook, rangeAnnotations, false);
 //				AnnotationHandler.drawManyRangeAnnotationsOptimized(reopenedWorkbook, rangeAnnotations, false);
-								
-//				Date e = new Date();
-//				long end = e.getTime();
-//				
-//				System.out.println("Duration in milliseconds: "+String.valueOf(end-start));
 			}
-						
+			
 			// make range_annotations sheet again visible
 			RangeAnnotationsSheet.setVisibility(reopenedWorkbook, true);
+			
+			// turn on screen updating after all range annotations are re-drawn
+			ApplicationUtils.setScreenUpdating(reopenedApplication, true);
 		}
 		return isSuccess;
 	}
