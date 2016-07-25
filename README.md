@@ -1,6 +1,6 @@
 # XCellAnnotator
 
-This is software was build as part of the [DeExcelerator](https://wwwdb.inf.tu-dresden.de/misc/DeExcelarator/) research project. The aim is to develop a desktop application for interactive annotations of cell regions in Microsoft Office Excel files. 
+This software was build as part of the [DeExcelerator](https://wwwdb.inf.tu-dresden.de/misc/DeExcelarator/) research project. The aim is to develop a desktop application for interactive annotations of cell regions in Microsoft Office Excel files. 
 
 The XCellAnnotator is still in development stage. It is only tested in the following environment: 
 * **Operating System:** Windows 7 Service Pack 1
